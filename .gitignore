@@ -1,0 +1,7 @@
+kinematic-model/data/raw/
+kinematic-model/data/auto_labels/
+kinematic-model/output/
+kinematic-model/weights/
+kinematic-model/runs/
+__pycache__/
+*.pt

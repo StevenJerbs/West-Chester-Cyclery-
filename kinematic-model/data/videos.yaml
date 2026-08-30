@@ -1,0 +1,13 @@
+# Training video manifest for the downhill bike kinematic visual model.
+# Each session appends the videos it trained on; the pipeline reads this
+# file to know which footage is part of the training set.
+videos:
+  - id: u2gOY98G0B8
+    url: https://youtu.be/u2gOY98G0B8
+    added: "2026-08-30"
+    focus: suspension cycling in rough terrain
+    status: pending  # pending -> processed -> trained
+    notes: >
+      Selected for shots where front/rear suspension is actively cycling
+      through rough terrain. Highlight shots should show the model tracking
+      both rider pose and bike geometry through compressions and rebounds.
