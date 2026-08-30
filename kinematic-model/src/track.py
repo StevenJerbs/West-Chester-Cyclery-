@@ -183,10 +183,64 @@ class BikeRiderTracker:
             rec.com_offset_x = com_x - bike_cx
 
 
+_ROTATIONS = {
+    0: None,
+    90: cv2.ROTATE_90_CLOCKWISE,
+    180: cv2.ROTATE_180,
+    270: cv2.ROTATE_90_COUNTERCLOCKWISE,
+}
+
+
+def detect_orientation(video_path: str | Path, tracker: "BikeRiderTracker",
+                       samples: int = 6) -> int:
+    """Probe a few frames in each rotation; return the rotation (degrees,
+    clockwise) with the most confident person detections.
+
+    Handles footage (e.g. some screen recordings) that decodes with content
+    rotated 90/270 degrees but carries no rotation metadata OpenCV can read.
+    """
+    cap = cv2.VideoCapture(str(video_path))
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
+    idxs = [int(total * f) for f in np.linspace(0.1, 0.9, samples)]
+    frames = []
+    for i in idxs:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
+        ok, f = cap.read()
+        if ok:
+            frames.append(f)
+    cap.release()
+    if not frames:
+        return 0
+
+    best_deg, best_conf = 0, -1.0
+    for deg, code in _ROTATIONS.items():
+        total_conf = 0.0
+        for f in frames:
+            test = cv2.rotate(f, code) if code is not None else f
+            pose = tracker.pose(test, conf=tracker.conf, verbose=False)[0]
+            if pose.keypoints is not None and len(pose.keypoints) > 0:
+                confs = pose.keypoints.data[..., 2].cpu().numpy()
+                total_conf += float(confs.max(axis=1).sum()) if confs.size else 0.0
+        if total_conf > best_conf:
+            best_deg, best_conf = deg, total_conf
+    return best_deg
+
+
 def track_video(video_path: str | Path, out_json: str | Path,
-                stride: int = 1, max_frames: int | None = None) -> list[FrameTrack]:
-    """Track every `stride`-th frame of a video; write records to JSON."""
+                stride: int = 1, max_frames: int | None = None,
+                rotate_deg: int | None = None) -> list[FrameTrack]:
+    """Track every `stride`-th frame of a video; write records to JSON.
+
+    rotate_deg: force a rotation (0/90/180/270); None auto-detects from
+    which orientation the pose model finds people in most confidently.
+    """
     tracker = BikeRiderTracker()
+    if rotate_deg is None:
+        rotate_deg = detect_orientation(video_path, tracker)
+    rot_code = _ROTATIONS.get(rotate_deg % 360)
+    if rotate_deg:
+        print(f"    detected {rotate_deg}deg rotation, correcting")
+
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise RuntimeError(f"cannot open video: {video_path}")
@@ -197,6 +251,8 @@ def track_video(video_path: str | Path, out_json: str | Path,
         ok, frame = cap.read()
         if not ok:
             break
+        if rot_code is not None:
+            frame = cv2.rotate(frame, rot_code)
         if idx % stride == 0:
             records.append(tracker.track_frame(frame, idx, idx / fps))
         idx += 1

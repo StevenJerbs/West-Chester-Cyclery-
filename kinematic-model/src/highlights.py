@@ -14,7 +14,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from track import SKELETON_EDGES
+from track import SKELETON_EDGES, _ROTATIONS
 
 GREEN = (80, 220, 80)
 CYAN = (255, 220, 60)
@@ -94,10 +94,15 @@ def annotate(frame, rec: dict | None, score: float):
 
 def export_highlights(video_path: str | Path, track_json: str | Path,
                       score_json: str | Path, windows: list[tuple[float, float, float]],
-                      out_dir: str | Path) -> list[dict]:
-    """Write one annotated MP4 + peak-frame PNG per window; return a manifest."""
+                      out_dir: str | Path, rotate_deg: int = 0) -> list[dict]:
+    """Write one annotated MP4 + peak-frame PNG per window; return a manifest.
+
+    rotate_deg must match the rotation track_video() used, so keypoint
+    coordinates (recorded in the corrected frame) line up with pixels.
+    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    rot_code = _ROTATIONS.get(rotate_deg % 360)
 
     track_data = json.loads(Path(track_json).read_text())
     lookup = _frame_lookup(track_data)
@@ -123,6 +128,8 @@ def export_highlights(video_path: str | Path, track_json: str | Path,
             ok, frame = cap.read()
             if not ok or t > end:
                 break
+            if rot_code is not None:
+                frame = cv2.rotate(frame, rot_code)
             idx = int(round(t * fps))
             rec = lookup.get(idx)
             s = _score_at(times, scores, t)

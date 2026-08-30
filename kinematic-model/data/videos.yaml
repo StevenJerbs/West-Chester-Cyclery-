@@ -20,3 +20,13 @@ videos:
       10.8s DH race clip, 2622x1206 @ 27fps. Rider pose tracked in 70% of
       frames, bike in 23% (motion blur limits the nano detector). Top
       suspension-cycling shot: 0.58-3.57s, peak activity 1.0.
+  - id: eca6c43c-ScreenRecording_08302026_093954_1
+    source: user upload (screen recording)
+    added: "2026-08-30"
+    focus: joint-angle analysis, vision path
+    status: processed
+    notes: >
+      9.4s DH clip, chase POV, decoded with a 90/270-degree orientation
+      mismatch (no rotation metadata) -- pipeline now auto-detects and
+      corrects this via track.detect_orientation. Pose tracked in 95% of
+      frames, bike in 35%. Attack-position score 0.32, look-ahead 30%.

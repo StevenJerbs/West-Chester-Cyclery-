@@ -13,7 +13,7 @@ from pathlib import Path
 
 import cv2
 
-from track import KP
+from track import KP, _ROTATIONS
 
 MIN_CONF = 0.6         # only train on confident detections
 MIN_KEYPOINTS = 8      # need most of the skeleton visible
@@ -24,8 +24,12 @@ DATASET_DIR = ROOT / "data" / "auto_labels"
 
 
 def build_dataset(video_path: str | Path, track_json: str | Path,
-                  every_n: int = 10) -> int:
-    """Export confident frames as YOLO-pose images + labels. Returns count."""
+                  every_n: int = 10, rotate_deg: int = 0) -> int:
+    """Export confident frames as YOLO-pose images + labels. Returns count.
+
+    rotate_deg must match the rotation track_video() used when it produced
+    track_json, so exported images line up with the recorded keypoints.
+    """
     data = json.loads(Path(track_json).read_text())
     img_dir = DATASET_DIR / "images" / "train"
     lbl_dir = DATASET_DIR / "labels" / "train"
@@ -35,6 +39,7 @@ def build_dataset(video_path: str | Path, track_json: str | Path,
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise RuntimeError(f"cannot open video: {video_path}")
+    rot_code = _ROTATIONS.get(rotate_deg % 360)
     stem = Path(video_path).stem
 
     n = 0
@@ -48,6 +53,8 @@ def build_dataset(video_path: str | Path, track_json: str | Path,
         ok, frame = cap.read()
         if not ok:
             continue
+        if rot_code is not None:
+            frame = cv2.rotate(frame, rot_code)
         h, w = frame.shape[:2]
 
         xs = [p[0] for p in kps.values()]

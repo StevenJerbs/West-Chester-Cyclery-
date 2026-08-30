@@ -8,3 +8,9 @@ riders:
       - video: f1d77c07-ScreenRecording_08302026_004143_1
         date: "2026-08-30"
         performance: unlabeled   # good | poor | unlabeled
+  - id: rider-02
+    name: unknown (uploaded clip, chase POV)
+    runs:
+      - video: eca6c43c-ScreenRecording_08302026_093954_1
+        date: "2026-08-30"
+        performance: unlabeled   # good | poor | unlabeled

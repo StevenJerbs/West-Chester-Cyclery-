@@ -48,7 +48,7 @@ def main():
                     help="skip the fine-tuning stage")
     args = ap.parse_args()
 
-    from track import track_video
+    from track import track_video, detect_orientation, BikeRiderTracker
     from suspension import suspension_score, pick_windows
     from highlights import export_highlights
 
@@ -60,8 +60,10 @@ def main():
     out = ROOT / "output" / vid_id
 
     print(f"[1/4] tracking {video.name} ...")
+    rotate_deg = detect_orientation(video, BikeRiderTracker())
     track_json = out / "track.json"
-    track_video(video, track_json, stride=args.stride, max_frames=args.max_frames)
+    track_video(video, track_json, stride=args.stride, max_frames=args.max_frames,
+                rotate_deg=rotate_deg)
 
     print("[2/4] scoring suspension activity ...")
     score_json = out / "suspension.json"
@@ -70,7 +72,7 @@ def main():
     print("[3/4] exporting highlight shots ...")
     windows = pick_windows(times, scores, n=args.clips, clip_len_s=args.clip_len)
     manifest = export_highlights(video, track_json, score_json, windows,
-                                 out / "highlights")
+                                 out / "highlights", rotate_deg=rotate_deg)
     for m in manifest:
         print(f"    #{m['rank']}  {m['start_s']:7.2f}s - {m['end_s']:7.2f}s"
               f"  score {m['mean_score']:.3f}  -> {m['clip']}")
@@ -81,7 +83,7 @@ def main():
 
     print("[4/4] continuing model training on this video ...")
     from finetune import build_dataset, finetune
-    n = build_dataset(video, track_json)
+    n = build_dataset(video, track_json, rotate_deg=rotate_deg)
     print(f"    added {n} auto-labeled frames")
     if n:
         finetune()
