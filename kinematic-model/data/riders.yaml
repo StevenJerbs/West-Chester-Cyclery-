@@ -4,13 +4,15 @@
 riders:
   - id: rider-01
     name: unknown (uploaded clip)
+    level: high
     runs:
       - video: f1d77c07-ScreenRecording_08302026_004143_1
         date: "2026-08-30"
-        performance: unlabeled   # good | poor | unlabeled
+        performance: good   # equal pace with rider-02 per owner
   - id: rider-02
     name: unknown (uploaded clip, chase POV)
+    level: high
     runs:
       - video: eca6c43c-ScreenRecording_08302026_093954_1
         date: "2026-08-30"
-        performance: unlabeled   # good | poor | unlabeled
+        performance: good   # equal pace with rider-01 per owner
