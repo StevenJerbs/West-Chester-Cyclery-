@@ -1,0 +1,10 @@
+# Rider registry for run comparison and improvement tracking.
+# performance: label runs good / poor once known (race result, coach's eye)
+# so joint_analysis.compare() can contrast what separates them.
+riders:
+  - id: rider-01
+    name: unknown (uploaded clip)
+    runs:
+      - video: f1d77c07-ScreenRecording_08302026_004143_1
+        date: "2026-08-30"
+        performance: unlabeled   # good | poor | unlabeled

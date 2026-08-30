@@ -20,6 +20,7 @@ GREEN = (80, 220, 80)
 CYAN = (255, 220, 60)
 ORANGE = (40, 140, 255)
 WHITE = (240, 240, 240)
+MAGENTA = (200, 80, 230)
 
 
 def _frame_lookup(track_data: dict) -> dict[int, dict]:
@@ -50,9 +51,29 @@ def annotate(frame, rec: dict | None, score: float):
         for p in kps.values():
             cv2.circle(frame, (int(p[0]), int(p[1])), 3, WHITE, -1, cv2.LINE_AA)
 
+        # vision path: sightline ray from the head, dashed
+        if rec.get("gaze_origin") and rec.get("gaze_vec"):
+            ox, oy = rec["gaze_origin"]
+            dx, dy = rec["gaze_vec"]
+            length = w * 0.25
+            steps = 14
+            for i in range(0, steps, 2):
+                a = (int(ox + dx * length * i / steps),
+                     int(oy + dy * length * i / steps))
+                b = (int(ox + dx * length * (i + 1) / steps),
+                     int(oy + dy * length * (i + 1) / steps))
+                cv2.line(frame, a, b, MAGENTA, 2, cv2.LINE_AA)
+            tip = (int(ox + dx * length), int(oy + dy * length))
+            cv2.circle(frame, tip, 5, MAGENTA, -1, cv2.LINE_AA)
+            cv2.putText(frame, f"vision {rec.get('gaze_angle', 0):+.0f} deg",
+                        (tip[0] + 8, tip[1]), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.55, MAGENTA, 1, cv2.LINE_AA)
+
         y = 24
         for label, key in (("hip", "hip_angle"), ("knee", "knee_angle"),
-                           ("elbow", "elbow_angle")):
+                           ("elbow", "elbow_angle"), ("shoulder", "shoulder_angle"),
+                           ("neck", "neck_angle"), ("ankle", "ankle_angle"),
+                           ("wrist", "wrist_angle")):
             v = rec.get(key)
             if v is not None:
                 cv2.putText(frame, f"{label}: {v:5.1f} deg", (10, y),

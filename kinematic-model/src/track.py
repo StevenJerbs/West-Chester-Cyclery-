@@ -25,6 +25,8 @@ BICYCLE_CLASS = 1  # COCO class id
 # COCO keypoint indices used for rider geometry
 KP = {
     "nose": 0,
+    "l_eye": 1, "r_eye": 2,
+    "l_ear": 3, "r_ear": 4,
     "l_shoulder": 5, "r_shoulder": 6,
     "l_elbow": 7, "r_elbow": 8,
     "l_wrist": 9, "r_wrist": 10,
@@ -55,6 +57,14 @@ class FrameTrack:
     hip_angle: float | None = None        # shoulder-hip-knee, degrees
     knee_angle: float | None = None       # hip-knee-ankle, degrees
     elbow_angle: float | None = None      # shoulder-elbow-wrist, degrees
+    shoulder_angle: float | None = None   # elbow-shoulder-hip, degrees
+    neck_angle: float | None = None       # nose-shoulder-hip, degrees
+    wrist_angle: float | None = None      # forearm inclination vs horizontal (no hand kp)
+    ankle_angle: float | None = None      # shank inclination vs vertical (no toe kp)
+    torso_angle: float | None = None      # hip->shoulder line vs horizontal, degrees
+    gaze_angle: float | None = None       # ear->nose sightline vs horizontal; + = down
+    gaze_origin: list | None = None       # [x, y] head point the sightline starts from
+    gaze_vec: list | None = None          # unit [dx, dy] of the sightline
     com_offset_x: float | None = None     # rider COM x minus bike center x, px
 
 
@@ -145,6 +155,28 @@ class BikeRiderTracker:
             rec.knee_angle = _angle(hip, knee, ankle)
         if shoulder and elbow and wrist:
             rec.elbow_angle = _angle(shoulder, elbow, wrist)
+        if elbow and shoulder and hip:
+            rec.shoulder_angle = _angle(elbow, shoulder, hip)
+        nose = k.get("nose")
+        if nose and shoulder and hip:
+            rec.neck_angle = _angle(nose[:2], shoulder, hip)
+        if elbow and wrist:
+            rec.wrist_angle = math.degrees(math.atan2(wrist[1] - elbow[1],
+                                                      abs(wrist[0] - elbow[0]) + 1e-6))
+        if knee and ankle:
+            rec.ankle_angle = math.degrees(math.atan2(abs(ankle[0] - knee[0]),
+                                                      max(ankle[1] - knee[1], 1e-6)))
+        if hip and shoulder:
+            rec.torso_angle = math.degrees(math.atan2(hip[1] - shoulder[1],
+                                                      abs(shoulder[0] - hip[0]) + 1e-6))
+        ear = _side_avg(k, "l_ear", "r_ear") or _side_avg(k, "l_eye", "r_eye")
+        if ear and nose:
+            dx, dy = nose[0] - ear[0], nose[1] - ear[1]
+            n = math.hypot(dx, dy)
+            if n > 1e-6:
+                rec.gaze_angle = math.degrees(math.atan2(dy, abs(dx)))
+                rec.gaze_origin = [float(ear[0]), float(ear[1])]
+                rec.gaze_vec = [float(dx / n), float(dy / n)]
         if hip and shoulder and rec.bike_box:
             com_x = (hip[0] + shoulder[0]) / 2
             bike_cx = (rec.bike_box[0] + rec.bike_box[2]) / 2
