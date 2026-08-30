@@ -16,3 +16,11 @@ riders:
       - video: eca6c43c-ScreenRecording_08302026_093954_1
         date: "2026-08-30"
         performance: good   # equal pace with rider-01 per owner
+  - id: braydon-bringhurst
+    name: Braydon Bringhurst
+    level: unlabeled   # named in source video title; no independent assessment made
+    runs:
+      - video: liFHsc8h0hc
+        clip: cand_01476s (24:36 mark, technical redrock feature)
+        date: "2026-08-30"
+        performance: unlabeled

@@ -30,3 +30,21 @@ videos:
       mismatch (no rotation metadata) -- pipeline now auto-detects and
       corrects this via track.detect_orientation. Pose tracked in 95% of
       frames, bike in 35%. Attack-position score 0.32, look-ahead 30%.
+  - id: liFHsc8h0hc
+    url: https://youtu.be/liFHsc8h0hc
+    title: "Braydon Bringhurst's 8600FT"
+    added: "2026-08-30"
+    focus: full-length source (92 min, 1080p, AV1) -- scanned for shots
+    status: trained
+    notes: >
+      Too long to track frame-by-frame; used a two-stage funnel instead
+      (src/long_video.py): a fast ffmpeg-based motion scan across all 92
+      minutes picked 12 candidate peaks spaced >=3 min apart, then the
+      real tracker verified each short clip. Only one candidate held up
+      as a genuine, clean highlight (24:36 -- a technical redrock feature,
+      "14th Attempt" overlay, bike conf 0.87, attack score 0.50). One
+      candidate (10:52) turned out to be unrelated third-party footage
+      (a home-security clip of children) spliced into the source video --
+      discarded, not used in any output. One candidate (0:41) was genuine
+      slickrock riding but the pose model tracked the rider's shadow
+      instead of the rider -- also discarded as a tracking artifact.
