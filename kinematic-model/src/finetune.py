@@ -58,8 +58,12 @@ def build_dataset(video_path: str | Path, track_json: str | Path,
         bw, bh = (x2 - x1) / w, (y2 - y1) / h
 
         parts = [f"0 {cx:.6f} {cy:.6f} {bw:.6f} {bh:.6f}"]
-        for name in KP:  # canonical COCO order (dict preserves insertion order)
-            if name in kps:
+        # full 17-slot COCO keypoint layout; indices we don't track
+        # (eyes/ears) and missing detections get "0 0 0"
+        idx_to_name = {i: n for n, i in KP.items()}
+        for i in range(17):
+            name = idx_to_name.get(i)
+            if name and name in kps:
                 x, y, _ = kps[name]
                 parts.append(f"{x / w:.6f} {y / h:.6f} 2")
             else:

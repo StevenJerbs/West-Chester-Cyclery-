@@ -6,8 +6,17 @@ videos:
     url: https://youtu.be/u2gOY98G0B8
     added: "2026-08-30"
     focus: suspension cycling in rough terrain
-    status: pending  # pending -> processed -> trained
+    status: pending  # blocked: youtube.com unreachable from remote env
     notes: >
       Selected for shots where front/rear suspension is actively cycling
       through rough terrain. Highlight shots should show the model tracking
       both rider pose and bike geometry through compressions and rebounds.
+  - id: f1d77c07-ScreenRecording_08302026_004143_1
+    source: user upload (screen recording of the above)
+    added: "2026-08-30"
+    focus: suspension cycling in rough terrain
+    status: processed
+    notes: >
+      10.8s DH race clip, 2622x1206 @ 27fps. Rider pose tracked in 70% of
+      frames, bike in 23% (motion blur limits the nano detector). Top
+      suspension-cycling shot: 0.58-3.57s, peak activity 1.0.
