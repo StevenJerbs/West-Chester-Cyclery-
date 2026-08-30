@@ -240,7 +240,7 @@ joint wasn't confidently detected · hover any chart for values</p>
 <div class="grid" id="grid"></div>
 
 <div class="section">
-  <p class="eyebrow">Run comparison · good vs poor</p>
+  <p class="eyebrow">Run comparison</p>
   <div class="tablewrap"><table id="cmp"></table></div>
   <p class="note" id="cmpnote"></p>
 </div>
@@ -387,7 +387,7 @@ if(D.compare.length){
   cmp.innerHTML='<tr>'+names.map(n=>`<th>${n}</th>`).join('')+'</tr>'+
     D.compare.map(r=>'<tr>'+cols.map(c=>`<td>${r[c]??'—'}</td>`).join('')+'</tr>').join('');
   document.getElementById('cmpnote').textContent =
-    D.compare.length<2 ? 'One run analyzed so far. Label runs good or poor in data/riders.yaml and re-run the pipeline; this table then shows which joints and cues separate the fast riders from the rest.' : 'Sorted by attack-position score. Label runs good/poor in data/riders.yaml to turn this into a real fast-vs-slow contrast.';
+    D.compare.length<2 ? 'One run analyzed so far. Label runs good or poor in data/riders.yaml and re-run the pipeline; this table then shows which joints and cues separate the fast riders from the rest.' : 'Sorted by attack-position score. Both riders are labeled high-level with equal pace, so differences here read as style contrasts between peers, not a skill gap.';
 }
 </script>
 """
