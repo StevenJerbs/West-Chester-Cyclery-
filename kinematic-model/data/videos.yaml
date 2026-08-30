@@ -24,7 +24,7 @@ videos:
     source: user upload (screen recording)
     added: "2026-08-30"
     focus: joint-angle analysis, vision path
-    status: processed
+    status: trained
     notes: >
       9.4s DH clip, chase POV, decoded with a 90/270-degree orientation
       mismatch (no rotation metadata) -- pipeline now auto-detects and
