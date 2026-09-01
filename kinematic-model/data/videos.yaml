@@ -48,3 +48,8 @@ videos:
       discarded, not used in any output. One candidate (0:41) was genuine
       slickrock riding but the pose model tracked the rider's shadow
       instead of the rider -- also discarded as a tracking artifact.
+  - id: hdspQwUno_Q
+    url: https://youtu.be/hdspQwUno_Q
+    added: "2026-09-01"
+    focus: crash footage -- negatives for the control classifier
+    status: pending  # blocked: youtube.com unreachable; awaiting upload or LFS push

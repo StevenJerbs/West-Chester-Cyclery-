@@ -1,0 +1,11 @@
+# Crash labels for the control/crash-risk classifier (src/crash_model.py).
+# Each entry names a processed video and the moment(s) the rider goes
+# down, in seconds on that video's own timeline. Windows ending in the
+# ~4s before each crash_time become negatives ("losing control");
+# windows in clean runs are positives.
+#
+# crashes:
+#   - video: <video id / stem as used in output/<id>/track.json>
+#     crash_times_s: [12.4, 31.0]
+#     notes: optional description of each crash
+crashes: []
