@@ -89,11 +89,12 @@ def attitude_from_frame(bike_mask: np.ndarray | None, kps: dict) -> dict:
             out["view"] = "compact"
             # major axis near vertical in a rear view; lean = deviation from it
             lean = angle - 90 if angle > 0 else angle + 90
-            out["lean_deg"] = round(lean, 1)
+            if abs(lean) <= 60:  # beyond that the axis is ambiguous, not a real lean
+                out["lean_deg"] = round(lean, 1)
     tt = torso_tilt(kps)
     if tt is not None:
         out["torso_tilt_deg"] = round(tt, 1)
-        if out["lean_deg"] is None and out["view"] != "side":
+        if out["lean_deg"] is None and out["view"] != "side" and abs(tt) <= 60:
             out["lean_deg"] = round(tt, 1)  # rider lean stands in for bike lean
     return out
 

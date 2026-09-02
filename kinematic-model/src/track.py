@@ -94,6 +94,8 @@ class BikeRiderTracker:
         self.det = YOLO(det_weights)
         self.pose = YOLO(pose_weights)
         self.conf = conf
+        self._last_hip = None   # rider identity continuity across frames
+        self._miss = 0          # frames since the rider was last confirmed
 
     def track_frame(self, frame_bgr, idx: int, time_s: float) -> FrameTrack:
         rec = FrameTrack(frame=idx, time_s=time_s)
@@ -113,7 +115,7 @@ class BikeRiderTracker:
 
         pose = self.pose(frame_bgr, conf=self.conf, verbose=False)[0]
         if pose.keypoints is not None and len(pose.keypoints) > 0:
-            person = self._closest_person(pose, rec.bike_box)
+            person = self._closest_person(pose, rec.bike_box, frame_bgr.shape)
             if person is not None:
                 for name, i in KP.items():
                     x, y, c = person[i]
@@ -122,23 +124,62 @@ class BikeRiderTracker:
                 self._derive_geometry(rec)
         return rec
 
-    def _closest_person(self, pose_result, bike_box):
-        """Pick the detected person whose hips sit closest to the bike box."""
+    def _closest_person(self, pose_result, bike_box, shape):
+        """Pick the rider, not a bystander.
+
+        Anchor = the bike box center when the bike is detected, else the
+        rider's hip position from the last confirmed frame. The person whose
+        hips are nearest the anchor wins, but only within MAX_JUMP of it --
+        otherwise no rider is recorded for this frame. Falling back to "the
+        most confident person" is what graded spectators as the rider.
+        With no anchor at all (first frames, no bike) the largest skeleton
+        is taken: the subject fills more of the frame than the crowd.
+        """
         kps = pose_result.keypoints.data.cpu().numpy()  # (n, 17, 3)
-        if bike_box is None:
-            return kps[0]
-        bx = (bike_box[0] + bike_box[2]) / 2
-        by = (bike_box[1] + bike_box[3]) / 2
-        best, best_d = None, float("inf")
-        for person in kps:
-            hips = [person[i] for i in (KP["l_hip"], KP["r_hip"]) if person[i][2] > 0.3]
-            if not hips:
-                continue
-            hx, hy = np.mean([h[:2] for h in hips], axis=0)
-            d = math.hypot(hx - bx, hy - by)
-            if d < best_d:
-                best, best_d = person, d
-        return best if best is not None else kps[0]
+        h, w = shape[:2]
+        max_jump = 0.25 * math.hypot(w, h)
+
+        def hips(person):
+            pts = [person[i] for i in (KP["l_hip"], KP["r_hip"]) if person[i][2] > 0.3]
+            return np.mean([p[:2] for p in pts], axis=0) if pts else None
+
+        def extent(person):
+            vis = person[person[:, 2] > 0.3]
+            if len(vis) < 4:
+                return 0.0
+            return float((vis[:, 0].max() - vis[:, 0].min()) * (vis[:, 1].max() - vis[:, 1].min()))
+
+        anchor = None
+        if bike_box is not None:
+            anchor = ((bike_box[0] + bike_box[2]) / 2, (bike_box[1] + bike_box[3]) / 2)
+        elif self._last_hip is not None and self._miss < 15:
+            anchor = self._last_hip
+
+        chosen = None
+        if anchor is None:
+            chosen = max(kps, key=extent)
+            if extent(chosen) <= 0:
+                chosen = None
+        else:
+            best_d = float("inf")
+            for person in kps:
+                hp = hips(person)
+                if hp is None:
+                    continue
+                d = math.hypot(hp[0] - anchor[0], hp[1] - anchor[1])
+                if d < best_d:
+                    chosen, best_d = person, d
+            if chosen is not None and best_d > max_jump:
+                chosen = None
+
+        if chosen is not None:
+            hp = hips(chosen)
+            if hp is not None:
+                self._last_hip = (float(hp[0]), float(hp[1]))
+            self._miss = 0
+        else:
+            self._miss += 1
+        return chosen
 
     def _derive_geometry(self, rec: FrameTrack):
         k = rec.keypoints
