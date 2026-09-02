@@ -47,3 +47,35 @@ output/<video_id>/
   suspension.json    activity score over time
   highlights/        highlight_NN_*.mp4 / *_peak.png + highlights.json
 ```
+
+## Merged model (rider-form-1.0) and the harshmellow.ai service
+
+Everything above is now one model. `src/rider_model.py::RiderFormModel.analyze()`
+runs: orientation detect → track (bike box + 17-kp pose + joint angles + gaze)
+→ suspension activity → segmentation → bike attitude proxies → cornering →
+discipline-aware form grade with timestamped deviations → fatigue drift →
+crash risk (once a control model exists) → factor report → labeled video.
+
+| Layer | Module | Status |
+|---|---|---|
+| Detection + pose | `track.py`, checkpoints `weights/kinematic_pose_v*.pt` | trained, v003 |
+| Suspension / terrain roughness | `suspension.py` | rule-based, validated |
+| Joint angles + vision path | `joint_analysis.py` | validated on 3 runs |
+| Silhouette outlines | `outline.py` | YOLOv8-seg |
+| Bike attitude (pitch / lean / yaw) | `attitude.py` | monocular proxies |
+| Cornering | `cornering.py` | metrics only; no verdicts until labeled data |
+| Discipline envelopes (12) | `disciplines.py` | coaching priors; learned bands after ≥3 advanced runs |
+| Form grade, deviations, fatigue, factors | `form_grade.py` | grades against envelope; factor report needs ≥3 runs per level |
+| Crash risk | `crash_model.py` + `data/crashes.yaml` | built, untrained (no crash footage yet) |
+| Long-video funnel | `long_video.py` | validated on a 92-min source |
+| Service: web UI, REST, MCP | `service/` | see `service/README.md` |
+
+Data registries: `data/videos.yaml` (sources processed), `data/riders.yaml`
+(rider + run labels incl. level and discipline), `data/crashes.yaml` (crash
+moments), `data/sources.yaml` (footage sources by discipline with licensing
+status). Consented uploads land in `data/submissions/train/`.
+
+Honest limits: attitude and speed are 2D proxies; cornering and fatigue are
+descriptive until enough labeled runs exist to learn what separates advanced
+riders; crash risk needs crash-labeled footage. Each result document says
+which of these apply.
