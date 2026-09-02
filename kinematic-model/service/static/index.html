@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>harshmellow.ai · Rider Form</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{color-scheme:light dark;--surface:#fcfcfb;--card:#fff;--line:#e4e2dc;--ink:#0b0b0b;--ink-2:#52514e;--ink-3:#8a8880;--accent:#2a78d6;--bad:#c63a3a;--warn:#c98500;--ok:#1c5f1c;--ok-bg:#e7f2e7}
+@media(prefers-color-scheme:dark){:root{--surface:#1a1a19;--card:#222220;--line:#35342f;--ink:#fff;--ink-2:#c3c2b7;--ink-3:#8a897f;--accent:#3987e5;--bad:#e66767;--warn:#e0a020;--ok:#8ed48e;--ok-bg:#1e3320}}
+*{box-sizing:border-box}body{margin:0;background:var(--surface);color:var(--ink);font:400 15px/1.55 Barlow,system-ui,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:28px 20px 60px}
+h1{font:700 40px/1.05 "Barlow Condensed",sans-serif;margin:0}
+.sub{color:var(--ink-2);max-width:65ch;margin:6px 0 24px}
+.eyebrow{font:600 12px/1 "Barlow Condensed",sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:block;font-size:13px;color:var(--ink-2);margin-bottom:4px}
+input[type=text],input[type=url],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit}
+textarea{min-height:70px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.check input{margin-top:4px}
+button{background:var(--accent);color:#fff;border:0;border-radius:6px;padding:10px 18px;font:600 15px Barlow,sans-serif;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile .num{font:600 32px/1 "Barlow Condensed",sans-serif;font-variant-numeric:tabular-nums}
+.tile .lbl{color:var(--ink-2);font-size:12px}
+.dev{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.dev .t{color:var(--ink-3);font-variant-numeric:tabular-nums;min-width:110px}
+.dev .sev{color:var(--bad);font-weight:600}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;border:1px solid var(--line);color:var(--ink-2)}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+video{width:100%;border-radius:8px;background:#000}
+.note{color:var(--ink-2);font-size:13px}
+#status{font-size:14px;color:var(--ink-2)}
+.hidden{display:none}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px;overflow:auto;font-size:12px}
+</style>
+</head>
+<body><div class="wrap">
+<p class="eyebrow">harshmellow.ai</p>
+<h1>Rider Form Analysis</h1>
+<p class="sub">Upload a riding clip or paste a link. The model tracks bike and rider, grades form against advanced riders in your discipline, flags where and when it drifts, and returns a labeled video. Agents can do the same through the MCP endpoint at <code>/mcp</code>.</p>
+
+<form id="f" class="card">
+  <p class="eyebrow">Footage</p>
+  <div class="grid">
+    <div><label>Video file</label><input type="file" name="video" accept="video/*"></div>
+    <div><label>…or a link (YouTube etc.)</label><input type="url" name="url" placeholder="https://"></div>
+  </div>
+  <p class="eyebrow" style="margin-top:18px">About the scene</p>
+  <div class="grid">
+    <div><label>Discipline</label><select name="discipline" id="disc"></select></div>
+    <div><label>Terrain</label><input type="text" name="terrain" placeholder="rocky, roots, flow, loam, slickrock, tarmac…"></div>
+    <div><label>Bike model</label><input type="text" name="bike_model" placeholder="e.g. Santa Cruz V10, Trek Slash"></div>
+    <div><label>Camera view</label><select name="camera_view"><option value="">unknown</option><option>side</option><option>chase</option><option>pov</option><option>static</option><option>drone</option></select></div>
+    <div><label>Rider level (self-reported)</label><select name="rider_level"><option value="">prefer not to say</option><option>beginner</option><option>intermediate</option><option>advanced</option><option>pro</option></select></div>
+  </div>
+  <div style="margin-top:10px"><label>Scene notes</label><textarea name="scene" placeholder="Where, conditions, what happened, what you want feedback on"></textarea></div>
+  <div class="grid" style="margin-top:10px">
+    <label class="check"><input type="checkbox" name="is_crash" value="true"> This clip contains a crash</label>
+    <label class="check"><input type="checkbox" name="is_race" value="true"> This is race footage</label>
+  </div>
+  <p class="eyebrow" style="margin-top:18px">Help train the model</p>
+  <label class="check"><input type="checkbox" name="consent_training" value="true" id="consent">
+    <span>Keep this video and the details above to improve future models. Your clip becomes part of the training set for its discipline; crash clips teach the crash-risk model. You can withdraw by emailing us with your job id. <strong>Unchecked = we delete the source after analysis and keep only your result and labeled video.</strong></span></label>
+  <div style="margin-top:10px"><label>If you consent, how should we credit you? (optional)</label><input type="text" name="consent_attribution" placeholder="name / handle / anonymous"></div>
+  <div style="margin-top:16px"><button id="go">Analyze</button> <span id="status"></span></div>
+</form>
+
+<div id="out" class="hidden">
+  <div class="card">
+    <p class="eyebrow">Result</p>
+    <div class="tiles">
+      <div class="tile"><div class="num" id="grade">–</div><div class="lbl">form grade / 100 <span class="pill" id="band"></span></div></div>
+      <div class="tile"><div class="num" id="attack">–</div><div class="lbl">time in attack position</div></div>
+      <div class="tile"><div class="num" id="look">–</div><div class="lbl">vision path on the look-ahead cue</div></div>
+      <div class="tile"><div class="num" id="turns">–</div><div class="lbl">turns detected</div></div>
+      <div class="tile"><div class="num" id="risk">–</div><div class="lbl">crash risk (peak)</div></div>
+    </div>
+  </div>
+  <div class="card"><p class="eyebrow">Labeled video</p><video id="vid" controls></video></div>
+  <div class="card"><p class="eyebrow">Where form is not on par</p><div id="devs"></div><p class="note" id="devnote"></p></div>
+  <div class="card"><p class="eyebrow">Cornering</p><div id="corner"></div></div>
+  <div class="card"><p class="eyebrow">Fatigue &amp; risk</p><div id="fatigue"></div></div>
+  <details class="card"><summary>Full result JSON</summary><pre id="json"></pre></details>
+</div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+fetch('/disciplines').then(r=>r.json()).then(d=>{$('#disc').innerHTML=d.disciplines.map(x=>`<option>${x}</option>`).join('')});
+$('#f').addEventListener('submit',async e=>{
+  e.preventDefault(); $('#go').disabled=true; $('#status').textContent='uploading…';
+  const fd=new FormData(e.target);
+  for(const k of ['is_crash','is_race','consent_training']) if(!fd.get(k)) fd.set(k,'false');
+  const r=await fetch('/analyze',{method:'POST',body:fd});
+  if(!r.ok){$('#status').textContent='error: '+(await r.text());$('#go').disabled=false;return}
+  const {job_id}=await r.json();
+  $('#status').textContent='analyzing (job '+job_id+') — this takes a few minutes…';
+  const poll=async()=>{
+    const j=await (await fetch('/jobs/'+job_id)).json();
+    if(j.status==='done'){render(j);$('#go').disabled=false;$('#status').textContent='done';}
+    else if(j.status==='error'){$('#status').textContent='error: '+j.error;$('#go').disabled=false;}
+    else setTimeout(poll,4000);
+  }; poll();
+});
+function render(j){
+  const r=j.result; $('#out').classList.remove('hidden');
+  $('#grade').textContent=r.form.grade??'–'; $('#band').textContent=r.form.envelope_source+' band';
+  $('#attack').textContent=r.attack_position_pct+'%'; $('#look').textContent=(r.lookahead_pct??'–')+'%';
+  $('#turns').textContent=r.cornering.n_turns;
+  $('#risk').textContent=r.crash_risk.available?Math.round(100*r.crash_risk.peak_risk)+'%':'n/a';
+  if(j.video_url){$('#vid').src=j.video_url}
+  const d=r.form.deviations||[];
+  $('#devs').innerHTML=d.length?d.slice(0,12).map(x=>`<div class="dev"><span class="t">${x.start_s}s – ${x.end_s}s</span><span>${x.joint.replace('_angle','')} <span class="sev">${x.side} band by ${x.severity_deg}°</span></span><span class="note">${x.cue}</span></div>`).join(''):'<span class="pill ok">no sustained deviations from the '+r.form.envelope_source+' band</span>';
+  $('#devnote').textContent=r.form.envelope_source==='coaching'?'Graded against coaching ranges — learned advanced-rider bands replace these once enough advanced runs in this discipline are in the training set.':'Graded against bands learned from advanced riders in this discipline.';
+  const t=r.cornering.turns||[];
+  $('#corner').innerHTML=t.length?t.map((x,i)=>`<div class="dev"><span class="t">${x.start_s}s – ${x.end_s}s</span><span>turn ${i+1} ${x.direction} · lean ${x.peak_lean_deg}° · smoothness ${x.lean_smoothness} · gaze lead ${x.gaze_lead_pct??'–'}% · exit speed ×${x.exit_speed_ratio??'–'}</span></div>`).join('')+`<p class="note">${r.cornering.note}</p>`:'<span class="note">no sustained turns detected in this clip</span>';
+  const f=r.fatigue, c=r.crash_risk;
+  $('#fatigue').innerHTML=(f.available?(f.flags.length?f.flags.map(x=>`<div class="dev"><span class="sev">fatigue signal</span><span>${x}</span></div>`).join(''):'<span class="pill ok">no fatigue drift within this run</span>'):`<span class="note">${f.reason}</span>`)
+    +'<div style="margin-top:8px">'+(c.available?`crash risk mean ${Math.round(100*c.mean_risk)}%, peak ${Math.round(100*c.peak_risk)}% at ${c.peak_at_s}s`:`<span class="note">crash risk: ${c.reason}</span>`)+'</div>';
+  $('#json').textContent=JSON.stringify(r,null,1);
+}
+</script>
+</body></html>

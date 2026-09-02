@@ -5,3 +5,6 @@ kinematic-model/weights/
 kinematic-model/runs/
 __pycache__/
 *.pt
+kinematic-model/data/submissions/
+kinematic-model/data/raw_parts/
+*.joblib

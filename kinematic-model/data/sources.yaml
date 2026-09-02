@@ -1,0 +1,67 @@
+# Where training footage comes from, by discipline, with the licensing
+# reality attached. The sustainable source is the consent funnel on the
+# upload path (service/): riders opt in to have their submission kept for
+# training and tag it with discipline / terrain / bike / crash / race.
+# Everything else below is for building the initial cold-start set and
+# must be checked per-video: a YouTube upload is not a training license.
+#
+# status of each source: open = permissive license confirmed per item;
+#                        review = use only with permission / fair-dealing
+#                        review; consent = collected through our own form.
+
+sources:
+  - name: rider submissions (consented)
+    disciplines: all
+    status: consent
+    notes: >
+      Primary long-term source. Each submission carries discipline, terrain,
+      bike, camera view, crash/race flags and a training-consent bit. Only
+      consent=true submissions enter data/submissions/train/.
+
+  - name: Pinkbike Friday Fails compilations
+    disciplines: [downhill, enduro, trail, dirt_jump]
+    status: review
+    notes: crash negatives; user-submitted clips, third-party rights vary per clip.
+
+  - name: UCI MTB World Cup / World Series broadcast highlights
+    disciplines: [downhill, xc, enduro]
+    status: review
+    notes: advanced-rider positives at the top level; broadcast rights, review before storage.
+
+  - name: Red Bull Bike (Hardline, Rampage, Joyride)
+    disciplines: [downhill, dirt_jump, bmx_park]
+    status: review
+    notes: elite freeride/slopestyle; rights held by Red Bull Media House.
+
+  - name: GoPro / Insta360 rider POV channels
+    disciplines: [trail, enduro, downhill, gravel]
+    status: review
+    notes: first-person; useful for vision-path and terrain, weak for rider pose.
+
+  - name: UCI Road / Track broadcast
+    disciplines: [road, track]
+    status: review
+    notes: peloton pose is dense and occluded; time-trial and track pursuit are cleanest.
+
+  - name: Cyclocross national series streams
+    disciplines: [cyclocross]
+    status: review
+
+  - name: USA BMX / UCI BMX Supercross
+    disciplines: [bmx_race]
+    status: review
+
+  - name: Trials (Danny MacAskill, Fabio Wibmer)
+    disciplines: [trials]
+    status: review
+    notes: extreme ROM; envelopes here are widest.
+
+  - name: Academic pose datasets with cycling (e.g. sports-action subsets of COCO/OpenImages)
+    disciplines: [road, xc]
+    status: open
+    notes: still images; useful for pose fine-tune, not for time-series form models.
+
+  - name: Local shop / team footage (West Chester Cyclery)
+    disciplines: all
+    status: consent
+    notes: shop rides, demo days, local races -- with rider consent at capture.
