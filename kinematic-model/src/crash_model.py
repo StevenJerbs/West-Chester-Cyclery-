@@ -52,7 +52,7 @@ HOP_S = 0.5
 
 
 def _interp_nan(x):
-    x = np.asarray(x, dtype=float)
+    x = np.array(x, dtype=float)  # copy: never mutate the caller's raw series
     nans = np.isnan(x)
     if nans.all() or len(x) == 0:
         return np.zeros_like(x)

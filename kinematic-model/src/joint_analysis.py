@@ -36,7 +36,7 @@ JOINTS = list(REFERENCE)
 
 
 def _interp_nan(x):
-    x = np.asarray(x, dtype=float)
+    x = np.array(x, dtype=float)  # copy: never mutate the caller's raw series
     nans = np.isnan(x)
     if nans.all():
         return x
