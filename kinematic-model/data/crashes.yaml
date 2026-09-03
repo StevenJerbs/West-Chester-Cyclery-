@@ -4,8 +4,66 @@
 # ~4s before each crash_time become negatives ("losing control");
 # windows in clean runs are positives.
 #
-# crashes:
-#   - video: <video id / stem as used in output/<id>/track.json>
-#     crash_times_s: [12.4, 31.0]
-#     notes: optional description of each crash
-crashes: []
+# Source: Friday Fails 2025 compilation (crash_training/, id hdspQwUno_Q),
+# funneled to 20 candidate windows via src/long_video.py
+# (output/friday2/candidates_manifest.json), then verified frame-by-frame
+# (before/at/after the flagged moment) before being trusted as real --
+# a pose-tracking drop can just as easily be a hard cut between
+# compilation clips as an actual crash, and 4 of 11 heuristic-flagged
+# moments turned out to be exactly that (see excluded, below).
+crashes:
+  - video: output/friday2/candidates/cand_00748s
+    crash_times_s: [9.1]
+    notes: >
+      Rider #135 crash-lands off a jump and tumbles; bike separates from
+      rider on landing. Continuous fall confirmed via before/at/after
+      frames, same rider number and background throughout.
+  - video: output/friday2/candidates/cand_00854s
+    crash_times_s: [7.53]
+    notes: >
+      Rider #155 descending a steep rocky/grassy chute; bike whips
+      sideways and rider goes over the bars. Same background and
+      bystander visible across all three frames.
+  - video: output/friday2/candidates/cand_00960s
+    crash_times_s: [0.73]
+    notes: >
+      Rider #172 goes down hard sideways into trailside brush on a
+      grassy descent; after-frame shows the bike still cartwheeling on
+      the same trail.
+  - video: output/friday2/candidates/cand_01020s
+    crash_times_s: [8.87]
+    notes: >
+      Rider #184 crashes on a berm feature -- bike flips over the rider,
+      head/shoulder impact, consistent spectators and background across
+      before/at/after frames.
+  - video: output/friday2/candidates/cand_01081s
+    crash_times_s: [4.8]
+    notes: >
+      Rider #194 endos hard over the bars on a grassy trail, shown fully
+      inverted with the bike vertical, other riders watching in
+      background. (A second heuristic-flagged moment in this same clip
+      at 2.83s was a false positive -- a static already-crashed-bike
+      shot for rider #193 followed by a hard cut to rider #194 -- and is
+      intentionally NOT labeled as a crash time.)
+  - video: output/friday2/candidates/cand_01420s
+    crash_times_s: [8.7]
+    notes: >
+      Rider #255 loses control going over a trailside log, ends up
+      pinned under the bike with two other riders (blue jacket, red
+      jacket) looking on, consistent across all three frames.
+  - video: output/friday2/candidates/cand_01685s
+    crash_times_s: [5.5]
+    notes: >
+      Rider #301 loses balance crossing a wooden skinny/log feature,
+      goes airborne separated from the bike, bike lands on the trail
+      feature. Continuous, same rider number and background.
+
+# Heuristic-flagged "pose disappears" moments confirmed as FALSE POSITIVES
+# (hard cuts between compilation clips, not real crashes) and deliberately
+# excluded above:
+#   - cand_00009s @ 5.03s: channel's animated intro bumper graphic
+#   - cand_00273s @ 0.9s:  cut from rider #48 (post-crash aftermath, static)
+#                          to rider #49 (unrelated POV clip)
+#   - cand_01081s @ 2.83s: cut from rider #193 (aftermath) to rider #194
+#   - cand_01257s @ 1.13s: cut from rider #224 (aftermath, static) to
+#                          rider #225 (unrelated chase-cam clip)

@@ -50,6 +50,25 @@ videos:
       instead of the rider -- also discarded as a tracking artifact.
   - id: hdspQwUno_Q
     url: https://youtu.be/hdspQwUno_Q
+    title: "Friday Fails 2025"
     added: "2026-09-01"
     focus: crash footage -- negatives for the control classifier
-    status: pending  # blocked: youtube.com unreachable; awaiting upload or LFS push
+    status: trained
+    notes: >
+      1808s compilation, too long to track frame-by-frame. Funneled via
+      src/long_video.py's motion scan into 20 candidate 10s clips, each
+      verified with the real tracker (output/friday2/summary.json), then
+      screened for crash moments with the pose-drop heuristic and
+      confirmed/rejected by reading before/at/after frames -- 7 of 11
+      flagged moments were genuine continuous falls, 4 were hard cuts
+      between compilation clips (see data/crashes.yaml). Fed
+      src/crash_model.py's control_model_v001.joblib (144 windows across
+      23 videos, 23 pre-crash negatives, leave-one-video-out AUC 0.719).
+  - id: Y50K3ZZEdVY
+    url: https://youtu.be/Y50K3ZZEdVY
+    title: "Asa Vermette vs. An Average Rider - How Much Faster is a DH Pro?"
+    added: "2026-09-02"
+    focus: advanced-vs-intermediate rider comparison (pro vs. average, same lines)
+    status: pending  # blocked: needs asa/charlie sub-segment split within
+                     # comparison_1/2/3 (145-232s) before per-rider tracking;
+                     # segment map at crash_training/Y50K3ZZEdVY.segments.json
