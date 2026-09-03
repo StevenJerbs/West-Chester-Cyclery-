@@ -1,0 +1,98 @@
+{
+ "video_id": "JQXt8o4FMys",
+ "title": "Loic Bruni vs Average Rider: This is Why Pros Are Faster",
+ "rider_ids": {
+  "A": "Loic Bruni (pro) - visual ID cue NOT YET PROVIDED",
+  "B": "host / average rider ('Charlie' per Loic) - rented DH bike, visual ID cue NOT YET PROVIDED"
+ },
+ "track": "Andorra World Cup DH track (Bruni's home track), long, rough; ~3:40 for Bruni",
+ "stated_gaps": {
+  "section_1_s": "4-5",
+  "section_2_pct": 50,
+  "head_start_s": 60,
+  "pro_run_s": 220,
+  "earlier_episodes_pct": 23
+ },
+ "timestamps_source": "narration in YouTube auto-captions; refine cut points against harvester shot list in data/harvest/shots/",
+ "segments": [
+  {
+   "start_s": 0,
+   "end_s": 115,
+   "rider": "B",
+   "type": "intro",
+   "notes": "Host intro narration. Series context: earlier episodes with Amaury Pierron and Loris Vergier were not on World Cup tracks. Host on a rented DH bike. Loic arrives ~1:23."
+  },
+  {
+   "start_s": 115,
+   "end_s": 407,
+   "rider": "both",
+   "type": "interview",
+   "notes": "Standing interview in Andorra (Bruni's home World Cup track). Loic's timed run: 3:40. Host gets a 1 min head start. Host gym: none since 2010; Loic 3x/week."
+  },
+  {
+   "start_s": 412,
+   "end_s": 426,
+   "rider": "both",
+   "type": "setup",
+   "notes": "Loic tows host over the big jumps; they agree a shared race line."
+  },
+  {
+   "start_s": 426,
+   "end_s": 475,
+   "rider": "both",
+   "type": "comparison_1",
+   "notes": "Section 1: fast opener into nasty rock garden. Loic jumps into the flat of the rock garden and out again, touching ground once, lined up for the jump. Host gets bucked, loses speed holding the high line. GoPro split shown. Loic barely brakes. ~4-5 s gained over first four corners. PAIRED A/B footage, includes POV.",
+   "delta_s": 4.5
+  },
+  {
+   "start_s": 476,
+   "end_s": 515,
+   "rider": "both",
+   "type": "comparison_2",
+   "notes": "Section 2: roots. Both start similarly; host brakes before a massive root, Loic accelerates and gaps the whole section, then accelerates on landing. Loic peaks at 50% faster (1.5x speed). PAIRED A/B footage.",
+   "delta_pct": 50
+  },
+  {
+   "start_s": 518,
+   "end_s": 527,
+   "rider": "none",
+   "type": "broll",
+   "notes": "Walking up the track."
+  },
+  {
+   "start_s": 527,
+   "end_s": 569,
+   "rider": "both",
+   "type": "comparison_3",
+   "notes": "Section 3: rock garden into root garden. Loic holds the high line, skims a tree, then jumps the entire root section (~2 s). Host brakes to avoid being bucked on first root as it steepens. Narration on braking: Loic pulls the lever only when strictly necessary, never from lack of control. PAIRED A/B footage."
+  },
+  {
+   "start_s": 569,
+   "end_s": 625,
+   "rider": "both",
+   "type": "race_setup",
+   "notes": "Race rules: host gets 1 min head start on a ~3:40 track, no pedalling for either."
+  },
+  {
+   "start_s": 625,
+   "end_s": 725,
+   "rider": "B",
+   "type": "race_pov",
+   "notes": "Host starts (10:25). Intercut with Loic waiting at the gate; Loic starts ~12:00."
+  },
+  {
+   "start_s": 725,
+   "end_s": 1099,
+   "rider": "B",
+   "type": "race_pov",
+   "notes": "Race, mostly host POV on rental bike with brake fade. Loic catches and passes host ~17:16-17:34 (1036-1054 s). Some cuts to Loic. Low value for side-on bike keypoints."
+  },
+  {
+   "start_s": 1099,
+   "end_s": 1136,
+   "rider": "both",
+   "type": "outro",
+   "notes": "Finish, post-race."
+  }
+ ]
+}
