@@ -2,11 +2,16 @@
  "video_id": "Y50K3ZZEdVY",
  "title": "Asa Vermette vs. An Average Rider - How Much Faster is a DH Pro?",
  "rider_ids": {
-  "A": "Asa Vermette (pro) - black Fox gloves",
-  "B": "host / average rider - no gloves, wrist watch, rental bike"
+  "A": "Asa Vermette (pro) -- light/white Fox kit, Red Bull-branded helmet, bib #3",
+  "B": "Charlie (average/amateur rider, host) -- black kit, plain dark helmet"
  },
- "track": "Australian national DH track, dry and dusty (captions say 'Medina' bike park, likely Maydena, Tasmania)",
- "timestamps_source": "narration in YouTube auto-captions; refine cut points against harvester shot list in data/harvest/shots/",
+ "track": "Australian national DH track, dry and dusty (Maydena Bike Park, Tasmania)",
+ "timestamps_source": "verified frame-by-frame (1s-interval contact sheets, kit-color + helmet ID) against the three in-video 'Section N: Asa X.XXs / Charlie X.XXs' stat overlays, which are exact ground truth for each section's timed run",
+ "section_times_s": {
+  "section_1": {"asa": 10.18, "charlie": 13.08, "asa_faster_by_pct": 21},
+  "section_2": {"asa": 6.07, "charlie": 9.00, "asa_faster_by_pct": 48},
+  "section_3": {"asa": 10.28, "charlie": 13.19, "asa_faster_by_pct": 28}
+ },
  "segments": [
   {
    "start_s": 0,
@@ -27,33 +32,37 @@
    "end_s": 145,
    "rider": "both",
    "type": "setup",
-   "notes": "Setup: Asa rides top lines, host follows to copy lines."
+   "notes": "Setup: Asa rides top lines, host follows to copy lines. Both seen walking bikes up together 145-148s."
   },
   {
    "start_s": 145,
    "end_s": 175,
    "rider": "both",
    "type": "comparison_1",
-   "notes": "Section 1: rock section, dusty corners, off-camber corner, step entry. Asa 3 s faster, narrated as 21% faster. PAIRED A/B footage.",
-   "delta_s": 3,
-   "delta_pct": 21
+   "notes": "Section 1: rock section, dusty corners, off-camber corner, step entry. Asa 21% faster (10.18s vs 13.08s, exact per in-video overlay). Sub-split verified via kit color/helmet across 1s-interval frames.",
+   "asa_range": [148, 156],
+   "charlie_range": [157, 171],
+   "recap_graphic_range": [172, 175]
   },
   {
    "start_s": 182,
    "end_s": 203,
    "rider": "both",
    "type": "comparison_2",
-   "notes": "Section 2: Asa gaps into rut; host rolls the rock. Asa 3 s faster on ~9 s run. PAIRED A/B footage.",
-   "delta_s": 3,
-   "run_s": 9
+   "notes": "Section 2: Asa gaps into rut; host rolls the rock. Asa 48% faster (6.07s vs 9.00s, exact per in-video overlay). Sub-split verified via kit color/helmet.",
+   "asa_range": [184, 190],
+   "charlie_range": [191, 198],
+   "recap_graphic_range": [199, 204]
   },
   {
    "start_s": 204,
    "end_s": 232,
    "rider": "both",
    "type": "comparison_3",
-   "notes": "Section 3: G-out compression. Asa full speed, no brakes, holds compression. Host brakes harder -> bigger compression at lower speed. Host ~30% slower. BEST SECTION FOR SUSPENSION KINEMATICS A/B.",
-   "delta_pct": 30
+   "notes": "Section 3: G-out compression. Asa full speed, no brakes, holds compression. Host brakes harder -> bigger compression at lower speed. Asa 28% faster (10.28s vs 13.19s, exact per in-video overlay). BEST SECTION FOR SUSPENSION KINEMATICS A/B. Sub-split verified via kit color/helmet.",
+   "asa_range": [207, 213],
+   "charlie_range": [216, 222],
+   "recap_graphic_range": [224, 232]
   },
   {
    "start_s": 237,

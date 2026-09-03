@@ -13,14 +13,18 @@ Each video ships with its YouTube closed captions (`<id>.captions.vtt`), a clean
 
 ## Rider ID cues for the A/B videos
 
-- Asa Vermette (A, pro): black Fox gloves. Host / average rider (B): no gloves, wrist watch, rental bike.
+- Asa Vermette (A, pro): light/white Fox kit, Red Bull-branded helmet, bib #3, black Fox gloves.
+  Charlie / average rider (B): black kit, plain dark helmet, no gloves, wrist watch, rental bike.
 - Loic Bruni (A, pro) vs host (B, rented DH bike): visual cues not yet recorded.
 
 ## Segment maps
 
 `*.segments.json` list time ranges with the rider on screen, section type, and the time gaps stated in the narration.
-Best suspension-kinematics contrasts: Asa video section 3 (3:24-3:52, G-out compression) and Bruni video sections 1-3
-(rock garden entries and root gaps, ~4-5 s and up to 50% speed difference). Windrock crash timestamps are in the
-`crashes` list of its segment map (Pinkerton ~42:29, Gwin ~60:24).
+The Asa video's `Y50K3ZZEdVY.segments.json` also carries exact per-section split times (read straight off the
+video's own "Section N: Asa X.XXs / Charlie X.XXs" stat overlays) plus verified `asa_range`/`charlie_range`
+sub-segments for each comparison, confirmed frame-by-frame against kit color and helmet -- not narration-derived
+estimates. Best suspension-kinematics contrast: section 3 (3:24-3:52, G-out compression, Asa 28% faster) and Bruni
+video sections 1-3 (rock garden entries and root gaps, ~4-5 s and up to 50% speed difference). Windrock crash
+timestamps are in the `crashes` list of its segment map (Pinkerton ~42:29, Gwin ~60:24).
 
 Timestamps come from caption narration, not shot cuts. Refine against a scene list before slicing.
