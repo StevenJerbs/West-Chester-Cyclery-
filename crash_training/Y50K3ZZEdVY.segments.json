@@ -1,0 +1,87 @@
+{
+ "video_id": "Y50K3ZZEdVY",
+ "title": "Asa Vermette vs. An Average Rider - How Much Faster is a DH Pro?",
+ "rider_ids": {
+  "A": "Asa Vermette (pro) - black Fox gloves",
+  "B": "host / average rider - no gloves, wrist watch, rental bike"
+ },
+ "track": "Australian national DH track, dry and dusty (captions say 'Medina' bike park, likely Maydena, Tasmania)",
+ "timestamps_source": "narration in YouTube auto-captions; refine cut points against harvester shot list in data/harvest/shots/",
+ "segments": [
+  {
+   "start_s": 0,
+   "end_s": 63,
+   "rider": "B",
+   "type": "intro",
+   "notes": "Host narration/intro. Some riding b-roll of host (avg rider) likely. Asa introduced at 0:34."
+  },
+  {
+   "start_s": 63,
+   "end_s": 124,
+   "rider": "A",
+   "type": "interview",
+   "notes": "Asa interview, standing. Not riding footage. Asa mentions gaining time in fast off-camber and quick rock gardens."
+  },
+  {
+   "start_s": 124,
+   "end_s": 145,
+   "rider": "both",
+   "type": "setup",
+   "notes": "Setup: Asa rides top lines, host follows to copy lines."
+  },
+  {
+   "start_s": 145,
+   "end_s": 175,
+   "rider": "both",
+   "type": "comparison_1",
+   "notes": "Section 1: rock section, dusty corners, off-camber corner, step entry. Asa 3 s faster, narrated as 21% faster. PAIRED A/B footage.",
+   "delta_s": 3,
+   "delta_pct": 21
+  },
+  {
+   "start_s": 182,
+   "end_s": 203,
+   "rider": "both",
+   "type": "comparison_2",
+   "notes": "Section 2: Asa gaps into rut; host rolls the rock. Asa 3 s faster on ~9 s run. PAIRED A/B footage.",
+   "delta_s": 3,
+   "run_s": 9
+  },
+  {
+   "start_s": 204,
+   "end_s": 232,
+   "rider": "both",
+   "type": "comparison_3",
+   "notes": "Section 3: G-out compression. Asa full speed, no brakes, holds compression. Host brakes harder -> bigger compression at lower speed. Host ~30% slower. BEST SECTION FOR SUSPENSION KINEMATICS A/B.",
+   "delta_pct": 30
+  },
+  {
+   "start_s": 237,
+   "end_s": 245,
+   "rider": "none",
+   "type": "gear",
+   "notes": "Camera gear shot, no comparison."
+  },
+  {
+   "start_s": 245,
+   "end_s": 260,
+   "rider": "both",
+   "type": "race_setup",
+   "notes": "Race setup: ~2 min track, host gets 40 s head start."
+  },
+  {
+   "start_s": 260,
+   "end_s": 580,
+   "rider": "B",
+   "type": "race_pov",
+   "notes": "Race, mostly host POV/chase cam on a rental bike. Asa catches host ~9:03 (543 s). Low value for side-on bike keypoints; possible Asa appearance near end."
+  },
+  {
+   "start_s": 582,
+   "end_s": 608,
+   "rider": "both",
+   "type": "outro",
+   "notes": "Post-race chat, standing."
+  }
+ ]
+}
