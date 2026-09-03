@@ -10,6 +10,7 @@ Each video ships with its YouTube closed captions (`<id>.captions.vtt`), a clean
 | `asa_vermette_vs_avg_rider_Y50K3ZZEdVY.mp4` | https://youtu.be/Y50K3ZZEdVY | Pinkbike, Asa Vermette vs. An Average Rider. 1080p25, 10m08s. Pro vs average on the same track, paired A/B footage 2:25-3:52. |
 | `loic_bruni_vs_avg_rider_JQXt8o4FMys.mp4` | https://youtu.be/JQXt8o4FMys | Pinkbike, Loic Bruni vs Average Rider. 1080p25, 18m56s. Pro vs average on the Andorra World Cup track, paired A/B footage 7:06-9:29. |
 | `windrock_2026_redbull_tn_national_iWW26z6MqSQ.mp4` | https://youtu.be/iWW26z6MqSQ | Windrock Bike Park, 2026 Red Bull Tennessee National Downhill Race. 1080p24, 1h05m53s. Full pro women and pro men finals broadcast; many pro riders on the same features, plus four narrated crashes. |
+| `fpv_drone_jackson_goldstone_msa_2023_3oUbTSelGH8.mp4` | https://youtu.be/3oUbTSelGH8 | RED- FPV, Drone FPV: Jackson Goldstone's Insane Run, 2023 UCI World Cup Mont-Sainte-Anne. 1080p24, 52s. Continuous FPV drone chase of a pro race run, whole-bike view throughout. No narration, so no captions or transcript. |
 
 ## Rider ID cues for the A/B videos
 
