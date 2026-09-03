@@ -97,12 +97,19 @@ videos:
     bike_id: jackson-goldstone-v10
     notes: >
       35s, 1080p25, AV1 (transcoded to H.264 at data/raw/goldstone/vds_2023.mp4).
-      Continuous FPV chase with both wheels in frame for most of the run;
-      rear/quarter views, strong motion blur. First run of src/wheels.py
-      (wheel ellipses, axle line, fork/shock compression, contact) and
-      src/tire_model.py (slip, camber, Magic-Formula grip envelope), with
-      the V10 specs from the owner-supplied Pinkbike bike check giving the
-      mm scale. See output/goldstone/vds_2023/result.json.
+      Continuous FPV chase, rear/quarter views, strong motion blur. First
+      run of src/wheels.py + src/tire_model.py with the V10 specs from the
+      owner-supplied Pinkbike bike check giving the mm scale (8.0 mm/px).
+      Results: bike tracked 33% of frames (detection retries at 1280 px),
+      both wheels found 24%, front/rear labels verified correct in rear
+      views on the labeled video; contact 82-88%, airborne 6-9%. Fork and
+      shock compression saturate at their cap (p95 220 / 244 mm vs 200 /
+      208 travel): at this scale the sprung-unsprung distances jitter by
+      a wheel radius, so travel is a bounded proxy here. Slip ratio, slip
+      angle and lateral drift all failed the estimator self-check (median
+      |kappa| 0.98, alpha 29 deg, "sliding" 91%): reported as unmeasurable,
+      and the tyre envelope fit refused. Needs sharper, closer footage.
+      See output/goldstone/vds_2023/result.json and labeled.mp4.
   - id: 3oUbTSelGH8
     url: https://youtu.be/3oUbTSelGH8
     title: "Drone FPV: Jackson Goldstone's Insane Run, 2023 Mont-Sainte-Anne"
@@ -110,4 +117,8 @@ videos:
     focus: wheel/suspension/tyre layer, second pro reference run
     status: trained
     bike_id: jackson-goldstone-v10
-    notes: 52s, 1080p24, AV1 (transcoded to data/raw/goldstone/msa_2023.mp4). Same layer as above.
+    notes: >
+      52s, 1080p24, AV1 (transcoded to data/raw/goldstone/msa_2023.mp4).
+      Bike is too small and blurred for the detector even with the 1280 px
+      retry: bicycle found in 1% of frames, rider pose 34%. Wheel and tyre
+      layer produced nothing usable; kept as pose-only reference.

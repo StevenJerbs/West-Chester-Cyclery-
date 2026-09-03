@@ -290,6 +290,23 @@ def self_check(frames: list[dict], env: dict) -> dict:
                 t["utilisation"] = round(fy, 3)
                 t["state"] = "sliding" if a_eq > T["peak_alpha_deg"] else ("limit" if fy >= env.get("limit_fraction", 0.85) else "grip")
                 t["why"] = (t.get("why") or "") + " | states from lateral drift only (estimator self-check)"
+    # third check: rolling contact dominates any real run, so if the states
+    # now say "sliding" most of the time the lateral-drift channel is biased
+    # too (camera pan reads as the tyre stepping sideways) -- unmeasurable
+    states = [((f.get("tire") or {}).get(s) or {}).get("state") for f in frames for s in ("front", "rear")]
+    known = [s for s in states if s and s != "unknown"]
+    share = known.count("sliding") / len(known) if known else 0.0
+    status["lateral_drift"] = "ok"
+    if known and share > 0.5:
+        status["lateral_drift"] = f"biased on this footage (sliding {share:.0%} of frames); states set to unmeasurable"
+        for f in frames:
+            for s in ("front", "rear"):
+                t = (f.get("tire") or {}).get(s)
+                if t and t.get("state") != "unknown":
+                    t["state"] = "unmeasurable"; t["utilisation"] = None
+    status["usable"] = all(status[k] == "ok" for k in ("slip_ratio", "slip_angle", "lateral_drift"))
+    status["note"] = ("slip needs a sharp, oblique view of the wheel with sharp ground under it: "
+                      "trackside or on-bike footage at higher frame rate, not a blurred chase cam")
     return status
 
 
@@ -303,7 +320,7 @@ def tire_summary(frames: list[dict], fps: float, env: dict) -> dict:
         gam = np.array([r.get("camber_deg") if r.get("camber_deg") is not None else np.nan for r in recs], float)
         util = np.array([r.get("utilisation") if r.get("utilisation") is not None else np.nan for r in recs], float)
         states = [r.get("state", "unknown") for r in recs]
-        known = [s for s in states if s != "unknown"]
+        known = [s for s in states if s not in ("unknown", "unmeasurable")]
         # roll of the tyre while slipping: camber during sliding/locked frames
         slip_mask = np.array([s in ("sliding", "locked", "spinning") for s in states])
         roll_when_slipping = gam[slip_mask & ~np.isnan(gam)]
@@ -356,11 +373,17 @@ def fit_envelope(track_jsons: list[str | Path], crashes: dict[str, list[float]] 
     """
     crashes = crashes or {}
     clean_k, clean_a, pre_k, pre_a = [], [], [], []
-    n_frames = 0
+    n_frames, skipped = 0, []
     for p in track_jsons:
         p = Path(p)
         if not p.exists():
             continue
+        # only runs whose estimator passed its own self-check can teach the envelope
+        res = p.parent / "result.json"
+        if res.exists():
+            st = (json.loads(res.read_text()).get("tire") or {}).get("estimator_status") or {}
+            if st and not st.get("usable", False):
+                skipped.append(str(p.parent.name)); continue
         d = json.loads(p.read_text())
         cts = crashes.get(p.parent.name) or crashes.get(str(p.parent)) or []
         for f in d["frames"]:
@@ -373,9 +396,11 @@ def fit_envelope(track_jsons: list[str | Path], crashes: dict[str, list[float]] 
                 pre = any(ct - lead_s <= f["time_s"] <= ct for ct in cts)
                 (pre_a if pre else clean_a).append(a if a is not None else np.nan)
                 (pre_k if pre else clean_k).append(k if k is not None else np.nan)
-    report = {"scorable_frames": n_frames, "clean": len(clean_a), "pre_crash": len(pre_a), "runs": len(track_jsons)}
+    report = {"scorable_frames": n_frames, "clean": len(clean_a), "pre_crash": len(pre_a), "runs": len(track_jsons),
+              "skipped_biased_runs": skipped}
     if n_frames < min_frames:
-        return None, {**report, "fitted": False, "reason": f"need >= {min_frames} scorable wheel-frames"}
+        return None, {**report, "fitted": False,
+                      "reason": f"need >= {min_frames} scorable wheel-frames from runs whose slip estimator passed its self-check"}
     env = json.loads(json.dumps(DEFAULT_ENVELOPE))
     ca = np.abs(np.array(clean_a, float)); ck = np.abs(np.array(clean_k, float))
     ca, ck = ca[~np.isnan(ca)], ck[~np.isnan(ck)]

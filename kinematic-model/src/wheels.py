@@ -366,6 +366,13 @@ def wheel_series(track_frames: list[dict], fps: float, specs: dict | None = None
     rdx = highpass(rx - cxs) if both.any() else np.zeros(n)
 
     mm = _fill(mmpp) if (~np.isnan(mmpp)).any() else np.full(n, np.nan)
+    # wheel tilt relative to the rider's torso: camera-roll-invariant (an FPV
+    # drone banks through turns, so tilt vs image vertical includes the camera)
+    torso = np.array([(f.get("attitude") or {}).get("torso_tilt_deg") if (f.get("attitude") or {}).get("torso_tilt_deg") is not None else np.nan for f in track_frames], float)
+    rel_roll = {}
+    for side in ("front", "rear"):
+        tilt = np.array([((f.get("wheels") or {}).get(side) or {}).get("inplane_tilt_deg") if ((f.get("wheels") or {}).get(side) or {}).get("inplane_tilt_deg") is not None else np.nan for f in track_frames], float)
+        rel_roll[side] = tilt - torso
     for i, f in enumerate(track_frames):
         g = {"axle_line_deg": _r(axle_ang[i]), "wheelbase_px": _r(wb_px[i]),
              "yaw_proxy": _r(yaw[i], 3), "mm_per_px": _r(mm[i], 3),
@@ -373,7 +380,8 @@ def wheel_series(track_frames: list[dict], fps: float, specs: dict | None = None
              "fork_comp_mm": _r(fork_px[i] * mm[i]) if not np.isnan(mm[i]) else None,
              "rear_comp_mm": _r(rear_px[i] * mm[i]) if not np.isnan(mm[i]) else None,
              "front_defl_v_px": _r(fdy[i]), "rear_defl_v_px": _r(rdy[i]),
-             "front_defl_lat_px": _r(fdx[i]), "rear_defl_lat_px": _r(rdx[i])}
+             "front_defl_lat_px": _r(fdx[i]), "rear_defl_lat_px": _r(rdx[i]),
+             "front_roll_vs_torso_deg": _r(rel_roll["front"][i]), "rear_roll_vs_torso_deg": _r(rel_roll["rear"][i])}
         if fork_t and g["fork_comp_mm"] is not None:
             g["fork_comp_pct"] = _r(100 * min(g["fork_comp_mm"], fork_t) / fork_t)
         if rear_t and g["rear_comp_mm"] is not None:
@@ -389,24 +397,50 @@ def wheel_series(track_frames: list[dict], fps: float, specs: dict | None = None
             return None
         d = {"mean": _r(float(v.mean())), "p95": _r(float(np.percentile(v, 95))), "max": _r(float(v.max()))}
         return d
+    scale_med = float(np.nanmedian(mmpp)) if (~np.isnan(mmpp)).any() else None
+    # noise floor from the data: the median frame-to-frame jump of the axle
+    # centres relative to the bike box is fit jitter, not the wheel moving
+    # (a wheel cannot move a large fraction of its radius in one frame)
+    jumps = []
+    for x, c in ((fx, cxs), (fy, cys), (rx, cxs), (ry, cys)):
+        rel = x - c
+        d = np.abs(np.diff(rel))
+        jumps += list(d[~np.isnan(d)])
+    jitter_px = float(np.median(jumps)) if jumps else 5.0
+    noise_mm = jitter_px * scale_med if scale_med else None
+    def rms_mm(x):
+        if not scale_med:
+            return None
+        v = float(np.sqrt(np.nanmean((x * mm) ** 2)))
+        return {"rms_mm": _r(v), "at_noise_floor": bool(v < 2 * noise_mm)}
     summary = {
         "coverage": {"front": _r(float(np.mean(~np.isnan(fx))), 2), "rear": _r(float(np.mean(~np.isnan(rx))), 2),
                      "both": _r(float(both.mean()), 2)},
-        "scale_mm_per_px": _r(float(np.nanmedian(mmpp)), 3) if (~np.isnan(mmpp)).any() else None,
+        "scale_mm_per_px": _r(scale_med, 3) if scale_med else None,
+        "noise_floor_mm": _r(noise_mm) if noise_mm else None,
+        "axle_jitter_px": _r(jitter_px),
+        "travel_note": ("compression readings that reach the 1.25x-travel cap mean the axle-to-bar / axle-to-pedal "
+                        "distance is jittering by about a wheel radius: at that point travel is a bounded proxy, "
+                        "not a measurement -- needs closer or sharper footage"),
+        "travel_saturated": bool(
+            (fork_t and (~np.isnan(fork_px)).any() and scale_med and float(np.nanpercentile(fork_px * mm, 95)) >= fork_t) or
+            (rear_t and (~np.isnan(rear_px)).any() and scale_med and float(np.nanpercentile(rear_px * mm, 95)) >= rear_t)),
         "axle_line_deg": stat(axle_ang),
         "axle_line_means": ("pitch" if dominant == "side" else "roll" if dominant == "compact" else "pitch-or-roll (view unknown)"),
         "yaw_proxy": stat(yaw),
         "fork_comp_mm": stat(fork_px * mm), "rear_comp_mm": stat(rear_px * mm),
         "fork_comp_pct_of_travel": _r(100 * float(np.nanpercentile(fork_px * mm, 95)) / fork_t) if fork_t and (~np.isnan(fork_px)).any() and (~np.isnan(mm)).any() else None,
         "rear_comp_pct_of_travel": _r(100 * float(np.nanpercentile(rear_px * mm, 95)) / rear_t) if rear_t and (~np.isnan(rear_px)).any() and (~np.isnan(mm)).any() else None,
-        "front_defl_v_rms_mm": _r(float(np.sqrt(np.nanmean((fdy * mm) ** 2)))) if (~np.isnan(mm)).any() else None,
-        "rear_defl_v_rms_mm": _r(float(np.sqrt(np.nanmean((rdy * mm) ** 2)))) if (~np.isnan(mm)).any() else None,
-        "front_defl_lat_rms_mm": _r(float(np.sqrt(np.nanmean((fdx * mm) ** 2)))) if (~np.isnan(mm)).any() else None,
-        "rear_defl_lat_rms_mm": _r(float(np.sqrt(np.nanmean((rdx * mm) ** 2)))) if (~np.isnan(mm)).any() else None,
+        "front_defl_v": rms_mm(fdy), "rear_defl_v": rms_mm(rdy),
+        "front_defl_lat": rms_mm(fdx), "rear_defl_lat": rms_mm(rdx),
         "wheel_roll": {
-            "front_inplane_deg": stat(np.array([abs(f["wheels"]["front"]["inplane_tilt_deg"]) if (f.get("wheels") or {}).get("front") and f["wheels"]["front"].get("inplane_tilt_deg") is not None else np.nan for f in track_frames])),
-            "rear_inplane_deg": stat(np.array([abs(f["wheels"]["rear"]["inplane_tilt_deg"]) if (f.get("wheels") or {}).get("rear") and f["wheels"]["rear"].get("inplane_tilt_deg") is not None else np.nan for f in track_frames])),
-            "note": "in-plane tilt of the wheel ellipse from image vertical: roll in rear/chase views, steering/yaw in side views; undefined (None) when the wheel is seen near face-on"},
+            "front_vs_image_vertical_deg": stat(np.abs(np.array([((f.get("wheels") or {}).get("front") or {}).get("inplane_tilt_deg") if ((f.get("wheels") or {}).get("front") or {}).get("inplane_tilt_deg") is not None else np.nan for f in track_frames], float))),
+            "rear_vs_image_vertical_deg": stat(np.abs(np.array([((f.get("wheels") or {}).get("rear") or {}).get("inplane_tilt_deg") if ((f.get("wheels") or {}).get("rear") or {}).get("inplane_tilt_deg") is not None else np.nan for f in track_frames], float))),
+            "front_vs_torso_deg": stat(np.abs(rel_roll["front"])),
+            "rear_vs_torso_deg": stat(np.abs(rel_roll["rear"])),
+            "note": ("in-plane tilt of the wheel ellipse. vs image vertical includes camera roll (FPV drones bank); "
+                     "vs torso is the bike-lean/body-lean separation, camera-invariant. Undefined (None) when the "
+                     "wheel is seen near face-on; roll in rear/chase views, steering/yaw in side views")},
         "contact": _contact_summary(track_frames),
         "note": ("travel = sprung-unsprung distance change from the run's own extended baseline (95th pct); "
                  "mm via wheel-diameter scale from data/bike_specs.yaml; heuristics, not sensor data"),
