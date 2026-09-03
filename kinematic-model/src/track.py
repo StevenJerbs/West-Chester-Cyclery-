@@ -88,6 +88,12 @@ def _side_avg(kps: dict, left: str, right: str):
 
 
 class BikeRiderTracker:
+    # Inference sizes. YOLO's default 640 turns a distant bike in a 1920-px
+    # FPV/chase frame into a ~40 px object and can lose it; 1280 keeps it
+    # but misses some frames 640 catches, so 1280 is the retry, not the default.
+    IMGSZ = 640
+    IMGSZ_RETRY = 1280
+
     def __init__(self, det_weights: str = "yolov8n.pt",
                  pose_weights: str = "yolov8n-pose.pt", conf: float = 0.25):
         from ultralytics import YOLO  # imported lazily; heavy dependency
@@ -100,20 +106,25 @@ class BikeRiderTracker:
     def track_frame(self, frame_bgr, idx: int, time_s: float) -> FrameTrack:
         rec = FrameTrack(frame=idx, time_s=time_s)
 
-        det = self.det(frame_bgr, conf=self.conf, verbose=False)[0]
         best = None
-        for box in det.boxes:
-            if int(box.cls) == BICYCLE_CLASS:
-                c = float(box.conf)
-                if best is None or c > best[1]:
-                    best = (box.xyxy[0].tolist(), c)
+        for imgsz in (self.IMGSZ, self.IMGSZ_RETRY):
+            det = self.det(frame_bgr, conf=self.conf, imgsz=imgsz, verbose=False)[0]
+            for box in det.boxes:
+                if int(box.cls) == BICYCLE_CLASS:
+                    c = float(box.conf)
+                    if best is None or c > best[1]:
+                        best = (box.xyxy[0].tolist(), c)
+            if best:
+                break
         if best:
             (x1, y1, x2, y2), rec.bike_conf = best
             rec.bike_box = [x1, y1, x2, y2]
             rec.bike_center_y = (y1 + y2) / 2
             rec.bike_height = y2 - y1
 
-        pose = self.pose(frame_bgr, conf=self.conf, verbose=False)[0]
+        pose = self.pose(frame_bgr, conf=self.conf, imgsz=self.IMGSZ, verbose=False)[0]
+        if pose.keypoints is None or len(pose.keypoints) == 0:
+            pose = self.pose(frame_bgr, conf=self.conf, imgsz=self.IMGSZ_RETRY, verbose=False)[0]
         if pose.keypoints is not None and len(pose.keypoints) > 0:
             person = self._closest_person(pose, rec.bike_box, frame_bgr.shape)
             if person is not None:

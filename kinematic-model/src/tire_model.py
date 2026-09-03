@@ -174,8 +174,8 @@ def tire_state_for_wheel(prev_gray, gray, wheel, prev_wheel, plane_dir, view, en
     ratio = wheel["minor_px"] / max(wheel["major_px"], 1e-6)
     if view == "auto":
         view = "side" if ratio >= 0.75 else "compact"
-    gamma = wheel["inplane_tilt_deg"] if view != "side" else 0.0
-    out["camber_deg"] = round(gamma, 1)
+    gamma = (wheel.get("inplane_tilt_deg") or 0.0) if view != "side" else 0.0
+    out["camber_deg"] = round(gamma, 1) if wheel.get("inplane_tilt_deg") is not None else None
     oblique = ratio >= 0.45
 
     axle_vel = (wheel["cx"] - prev_wheel["cx"], wheel["cy"] - prev_wheel["cy"])
@@ -243,8 +243,58 @@ def tire_state_for_wheel(prev_gray, gray, wheel, prev_wheel, plane_dir, view, en
 
 # --------------------------------------------------------------- per-run
 
+def self_check(frames: list[dict], env: dict) -> dict:
+    """Is the slip estimator trustworthy on this footage?
+
+    Rolling contact is the normal state of a bike, so over a run the median
+    |slip ratio| must sit near 0 and the median slip angle well inside the
+    grip peak. If they do not, the estimator -- not the tyre -- is off
+    (blur, wrong wheel plane, flow aliasing at high ground speed), and the
+    per-frame states are recomputed without the offending input rather
+    than reported as lock-ups and slides. Mutates frames; returns status."""
+    kap, alp = [], []
+    for f in frames:
+        for side in ("front", "rear"):
+            t = (f.get("tire") or {}).get(side) or {}
+            if t.get("slip_ratio") is not None: kap.append(abs(t["slip_ratio"]))
+            if t.get("slip_angle_deg") is not None: alp.append(t["slip_angle_deg"])
+    peak_a = env["lateral"]["peak_alpha_deg"]
+    status = {"slip_ratio": "ok", "slip_angle": "ok", "n_kappa": len(kap), "n_alpha": len(alp)}
+    if len(kap) < 10:
+        status["slip_ratio"] = "too few frames"
+    elif float(np.median(kap)) > 0.5:
+        status["slip_ratio"] = f"biased on this footage (median |kappa| {np.median(kap):.2f}); dropped from states"
+    if len(alp) < 10:
+        status["slip_angle"] = "too few frames"
+    elif float(np.median(alp)) > 1.5 * peak_a:
+        status["slip_angle"] = f"biased on this footage (median alpha {np.median(alp):.0f} deg); dropped from states"
+    drop_k = status["slip_ratio"] != "ok"
+    drop_a = status["slip_angle"] != "ok"
+    if drop_k or drop_a:
+        T = env["lateral"]
+        for f in frames:
+            for side in ("front", "rear"):
+                t = (f.get("tire") or {}).get(side)
+                if not t or t.get("state") == "unknown":
+                    continue
+                if drop_k:
+                    t["slip_ratio"] = None; t["wheel_speed_px_s"] = None
+                if drop_a:
+                    t["slip_angle_deg"] = None
+                drift = t.get("lateral_drift_r_s")
+                if drift is None:
+                    t["state"] = "unknown"; t["utilisation"] = None
+                    continue
+                a_eq = math.degrees(math.atan(abs(drift))) * (T["peak_alpha_deg"] / 45.0)
+                fy = abs(magic_formula(math.radians(a_eq), T["B"], T["C"], T["D"], T["E"])) / T["D"]
+                t["utilisation"] = round(fy, 3)
+                t["state"] = "sliding" if a_eq > T["peak_alpha_deg"] else ("limit" if fy >= env.get("limit_fraction", 0.85) else "grip")
+                t["why"] = (t.get("why") or "") + " | states from lateral drift only (estimator self-check)"
+    return status
+
+
 def tire_summary(frames: list[dict], fps: float, env: dict) -> dict:
-    out = {"envelope_source": env.get("source"), "wheels": {}}
+    out = {"envelope_source": env.get("source"), "estimator_status": self_check(frames, env), "wheels": {}}
     for side in ("front", "rear"):
         recs = [((f.get("tire") or {}).get(side) or {}) for f in frames]
         con = [(((f.get("contact") or {}).get(side) or {}).get("state")) for f in frames]

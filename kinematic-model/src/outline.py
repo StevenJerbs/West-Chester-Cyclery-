@@ -41,6 +41,8 @@ class OutlineTracker:
         """
         h, w = frame_bgr.shape[:2]
         result = self.seg(frame_bgr, conf=self.conf, verbose=False)[0]
+        if result.masks is None or BICYCLE_CLASS not in result.boxes.cls.cpu().numpy().astype(int):
+            result = self.seg(frame_bgr, conf=self.conf, imgsz=1280, verbose=False)[0]  # small, distant bike
         bike_mask = rider_mask = None
         if result.masks is None:
             return bike_mask, rider_mask

@@ -167,16 +167,31 @@ def find_wheels(frame_bgr, bike_mask, bike_box, kps: dict, prev: dict | None = N
 
     def assign(two):
         a, b = two
+        # temporal continuity first: keep the labels of the wheels we tracked
+        # a frame ago when both candidates sit near their previous positions
+        if prev and prev.get("front") and prev.get("rear"):
+            pf, pr = prev["front"], prev["rear"]
+            tol = 0.6 * max(pf["radius_px"], pr["radius_px"])
+            def near(w, p): return math.hypot(w["cx"] - p["cx"], w["cy"] - p["cy"]) < tol
+            if near(a, pf) and near(b, pr):
+                return (a, b)
+            if near(b, pf) and near(a, pr):
+                return (b, a)
         d = math.hypot(a["cx"] - b["cx"], a["cy"] - b["cy"])
         dia = (a["major"] + b["major"]) / 2
-        end_on = d < 1.1 * dia          # wheels overlap along the line of sight: front/rear view
-        if end_on:
-            near, far = (a, b) if a["major"] >= b["major"] else (b, a)   # bigger = nearer the camera
-            return (near, far) if facing_camera else (far, near)        # chase view: nearer = rear
+        # hands sit over the front wheel, feet over the rear: decisive whenever
+        # the two wheels are separated enough in the image for it to mean anything
         if wrist is not None and ankle is not None:
             da = math.hypot(a["cx"] - wrist[0], a["cy"] - wrist[1]) - math.hypot(a["cx"] - ankle[0], a["cy"] - ankle[1])
             db = math.hypot(b["cx"] - wrist[0], b["cy"] - wrist[1]) - math.hypot(b["cx"] - ankle[0], b["cy"] - ankle[1])
-            return (a, b) if da < db else (b, a)          # nearer the hands = front
+            if abs(da - db) > 0.25 * dia:
+                return (a, b) if da < db else (b, a)          # nearer the hands = front
+        # truly end-on (wheels stacked along the line of sight, both thin): the
+        # bigger one is nearer the camera; from behind, nearer = rear
+        thin = min(a["minor"] / max(a["major"], 1e-6), b["minor"] / max(b["major"], 1e-6)) < 0.55
+        if d < 0.8 * dia and thin:
+            near, far = (a, b) if a["major"] >= b["major"] else (b, a)
+            return (near, far) if facing_camera else (far, near)
         if prev and prev.get("front") and prev.get("rear"):
             pf = prev["front"]
             da = math.hypot(a["cx"] - pf["cx"], a["cy"] - pf["cy"])
@@ -211,16 +226,17 @@ def find_wheels(frame_bgr, bike_mask, bike_box, kps: dict, prev: dict | None = N
 
 def _pack(w):
     tilt = w["angle"]                      # cv2 ellipse angle: major axis from x-axis, deg
-    if w["major"] == w["minor"]:
-        tilt = 0.0
     inplane = ((tilt + 90) % 180) - 90     # major-axis angle relative to vertical, (-90, 90]
+    # a near-circular ellipse has no defined major axis: its tilt is noise, not roll
+    if w["minor"] / max(w["major"], 1e-6) > 0.85:
+        inplane = None
     # lowest image point of the ellipse: a semi-axis along the steepest direction
     th = math.radians(w["angle"]); a, b = w["major"] / 2, w["minor"] / 2
     drop = math.sqrt((a * math.sin(th)) ** 2 + (b * math.cos(th)) ** 2)
     return {"cx": round(w["cx"], 1), "cy": round(w["cy"], 1),
             "major_px": round(w["major"], 1), "minor_px": round(w["minor"], 1),
             "radius_px": round(w["major"] / 2, 1),
-            "inplane_tilt_deg": round(inplane, 1),
+            "inplane_tilt_deg": round(inplane, 1) if inplane is not None else None,
             "outplane_deg": round(math.degrees(math.acos(min(1.0, w["minor"] / max(w["major"], 1e-6)))), 1),
             "bottom_y": round(w["cy"] + drop, 1),
             "hough": bool(w.get("hough", False)), "approx": bool(w.get("approx", False))}
@@ -309,19 +325,33 @@ def wheel_series(track_frames: list[dict], fps: float, specs: dict | None = None
     dia = np.nanmean(np.stack([fr, rr]), axis=0) * 2
     yaw[both] = np.clip(wb_px[both] / np.maximum(dia[both], 1e-6) / 1.7, 0, 1.2)
 
-    # travel: compression = extended baseline (95th pct of distance) minus current, in wheel radii
-    def travel(d, r):
+    # travel: compression = extended baseline minus current sprung-unsprung
+    # distance, in wheel radii (scale-free), then px. The baseline is a
+    # rolling 90th percentile over +-1.5 s so a camera that zooms through the
+    # run does not read as travel, and compression is capped at the bike's
+    # travel: anything beyond that is a label swap or a bad keypoint, not
+    # suspension, and is dropped.
+    def travel(d, r, cap_mm):
         out = np.full(n, np.nan)
         ok = ~np.isnan(d) & ~np.isnan(r) & (r > 0)
         if ok.sum() < 5:
-            return out, None
-        norm = d[ok] / r[ok]
-        base = float(np.percentile(norm, 95))
-        comp = (base - d / np.where(ok, r, np.nan)) * r  # px
-        out[ok] = np.clip(comp[ok], 0, None)
-        return out, base
-    fork_px, fork_base = travel(fork_d, fr)
-    rear_px, rear_base = travel(rear_d, rr)
+            return out
+        norm = np.where(ok, d / np.where(ok, r, 1.0), np.nan)
+        half = max(2, int(1.5 * fps))
+        for i in np.where(ok)[0]:
+            seg = norm[max(0, i - half): i + half + 1]
+            seg = seg[~np.isnan(seg)]
+            if len(seg) < 3:
+                continue
+            comp_px = (float(np.percentile(seg, 90)) - norm[i]) * r[i]
+            if comp_px < 0:
+                comp_px = 0.0
+            if cap_mm and not np.isnan(mmpp[i]) and comp_px * mmpp[i] > 1.25 * cap_mm:
+                continue
+            out[i] = comp_px
+        return out
+    fork_px = travel(fork_d, fr, fork_t)
+    rear_px = travel(rear_d, rr, rear_t)
 
     # deflection: fast axle motion relative to the bike box centre
     win = max(3, int(fps / 2) | 1)
@@ -374,9 +404,9 @@ def wheel_series(track_frames: list[dict], fps: float, specs: dict | None = None
         "front_defl_lat_rms_mm": _r(float(np.sqrt(np.nanmean((fdx * mm) ** 2)))) if (~np.isnan(mm)).any() else None,
         "rear_defl_lat_rms_mm": _r(float(np.sqrt(np.nanmean((rdx * mm) ** 2)))) if (~np.isnan(mm)).any() else None,
         "wheel_roll": {
-            "front_inplane_deg": stat(np.array([abs(f["wheels"]["front"]["inplane_tilt_deg"]) if f.get("wheels", {}).get("front") else np.nan for f in track_frames])),
-            "rear_inplane_deg": stat(np.array([abs(f["wheels"]["rear"]["inplane_tilt_deg"]) if f.get("wheels", {}).get("rear") else np.nan for f in track_frames])),
-            "note": "in-plane tilt of the wheel ellipse from image vertical: roll in rear/chase views, steering/yaw in side views"},
+            "front_inplane_deg": stat(np.array([abs(f["wheels"]["front"]["inplane_tilt_deg"]) if (f.get("wheels") or {}).get("front") and f["wheels"]["front"].get("inplane_tilt_deg") is not None else np.nan for f in track_frames])),
+            "rear_inplane_deg": stat(np.array([abs(f["wheels"]["rear"]["inplane_tilt_deg"]) if (f.get("wheels") or {}).get("rear") and f["wheels"]["rear"].get("inplane_tilt_deg") is not None else np.nan for f in track_frames])),
+            "note": "in-plane tilt of the wheel ellipse from image vertical: roll in rear/chase views, steering/yaw in side views; undefined (None) when the wheel is seen near face-on"},
         "contact": _contact_summary(track_frames),
         "note": ("travel = sprung-unsprung distance change from the run's own extended baseline (95th pct); "
                  "mm via wheel-diameter scale from data/bike_specs.yaml; heuristics, not sensor data"),
@@ -441,7 +471,7 @@ def draw_wheels(frame, rec: dict):
         st = (con.get(side) or {}).get("state", "unknown")
         color = (60, 220, 60) if st == "contact" else (40, 40, 240) if st == "airborne" else col
         cv2.ellipse(frame, (int(w["cx"]), int(w["cy"])), (int(w["major_px"] / 2), int(w["minor_px"] / 2)),
-                    w["inplane_tilt_deg"] + 90, 0, 360, color, 2, cv2.LINE_AA)
+                    (w.get("inplane_tilt_deg") or 0.0) + 90, 0, 360, color, 2, cv2.LINE_AA)
         cv2.circle(frame, (int(w["cx"]), int(w["cy"])), 3, color, -1)
         pts[side] = (int(w["cx"]), int(w["cy"]))
         t = (tire.get(side) or {})
