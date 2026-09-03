@@ -1,0 +1,55 @@
+{
+ "video_id": "iWW26z6MqSQ",
+ "title": "2026 Red Bull Tennessee National Downhill Race - Windrock Bikepark",
+ "uploader": "Windrock Bike Park",
+ "content": "Full race broadcast, pro women and pro men finals, with commentary. Positive examples: many pro riders on identical features. Negative examples: crash list below.",
+ "timestamps_source": "commentary in YouTube auto-captions; refine cut points against harvester shot list in data/harvest/shots/",
+ "segments": [
+  {
+   "start_s": 0,
+   "end_s": 550,
+   "type": "preshow",
+   "notes": "Broadcast intro, track walk and course preview (Windrock Bike Park, Tennessee; hard-pack dirt, whoops, rock sections, Red Bull drop near the finish). Rider profiles, seeding recap."
+  },
+  {
+   "start_s": 550,
+   "end_s": 1660,
+   "type": "pro_women_final",
+   "notes": "Pro women finals, run order from ~9:21 (first rider Anna Newkirk). Zana Logar sets benchmark 2:53.54 at 11:50. Kailey Skelton (reigning US champ) ~18:24. Eleonora Ostgaard wins, back-to-back, ~25:54. Winner interview ~27:29. Broadcast + trackside angles, multiple riders on the same features."
+  },
+  {
+   "start_s": 1740,
+   "end_s": 3690,
+   "type": "pro_men_final",
+   "notes": "Pro men finals from ~29:10 (Luca Shaw opens). Dooley into hot seat ~34:02. Pinkerton crashes ~42:29 (2 s up, clipped a tree on an off-camber, elbow tucked). Dante Silva ~46:59, crashed at top of his run. Dylan Maples ~55:06. Aaron Gwin crashes ~60:21-60:24 while 2.2 s up (came in too fast on a diagonal route behind a rock). Austin Dooley wins ~61:26."
+  },
+  {
+   "start_s": 3690,
+   "end_s": 3953,
+   "type": "wrapup",
+   "notes": "Post-race analysis and podiums. Commentary: number one and two seeds (Gwin, Shaw) both crashed; nobody had a smooth run."
+  }
+ ],
+ "crashes": [
+  {
+   "t_s": 1549,
+   "rider": "Pinkerton",
+   "notes": "Off-camber, pinched against tree, body position upset. Was 2 s up."
+  },
+  {
+   "t_s": 3621,
+   "rider": "Aaron Gwin",
+   "notes": "Came in too fast on diagonal route behind a rock. Was 2.2 s up."
+  },
+  {
+   "t_s": null,
+   "rider": "Luca Shaw",
+   "notes": "Crashed in his run (opened men's final ~29:12); exact moment not narrated in captions."
+  },
+  {
+   "t_s": null,
+   "rider": "Dante Silva",
+   "notes": "Crashed at top of his run (~46:59 start); referenced at 49:28, +13.6 s."
+  }
+ ]
+}
