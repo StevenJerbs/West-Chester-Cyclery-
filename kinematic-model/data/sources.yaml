@@ -33,6 +33,16 @@ sources:
     status: review
     notes: elite freeride/slopestyle; rights held by Red Bull Media House.
 
+  - name: FPV drone chase channels (RED- FPV)
+    disciplines: [downhill]
+    status: review
+    notes: >
+      Continuous whole-bike chase of World Cup race runs -- the best view
+      for wheel, suspension-travel and bike-attitude work (both wheels in
+      frame the whole run). Mostly rear/quarter views, heavy motion blur:
+      wheel roll and travel are measurable, wheel rotation (slip ratio)
+      rarely is. Rights with the channel; review before storage.
+
   - name: GoPro / Insta360 rider POV channels
     disciplines: [trail, enduro, downhill, gravel]
     status: review

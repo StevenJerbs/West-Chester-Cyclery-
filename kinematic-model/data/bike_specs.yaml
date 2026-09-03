@@ -1,0 +1,51 @@
+# Known bike geometry per rider/video, used by src/wheels.py to turn pixel
+# measurements into millimetres and by src/tire_model.py for tyre defaults.
+# Scale comes from the wheel: the ellipse major axis of a wheel in the image
+# is its true outside diameter under projection, so mm_per_px is per-frame.
+#
+# tire_od_mm = bead-seat diameter + 2 * tyre height. DH 2.5" casings run
+# roughly 62 mm tall, giving ~746 mm (29") and ~708 mm (27.5"). Adjust per
+# tyre if a spec sheet lists the measured OD.
+
+default:
+  wheel_front_in: 29
+  wheel_rear_in: 29
+  tire_od_front_mm: 746
+  tire_od_rear_mm: 746
+  fork_travel_mm: 200
+  rear_travel_mm: 200
+  wheelbase_mm: 1260
+  tire_pressure_front_psi: 25
+  tire_pressure_rear_psi: 28
+  rider_mass_kg: 75
+  bike_mass_kg: 17
+  source: generic DH defaults -- override per bike
+
+bikes:
+  jackson-goldstone-v10:
+    rider: Jackson Goldstone
+    frame: Santa Cruz V10, size M, centred headset cup, low BB setting
+    wheel_front_in: 29
+    wheel_rear_in: 27.5          # Reserve 30DH Carbon MX (mullet)
+    tire_od_front_mm: 746
+    tire_od_rear_mm: 708
+    tire: Maxxis prototype tread, DH casing, MaxxGrip, no inserts
+    tire_pressure_front_psi: 23
+    tire_pressure_rear_psi: 27
+    fork: Fox 40 RAD prototype
+    fork_travel_mm: 200
+    shock: Fox DHX2, 475 lb spring
+    rear_travel_mm: 208
+    reach_mm: 447
+    chainstay_mm: 455
+    wheelbase_mm: 1265           # not in the check; V10 M w/ 455 CS, estimate
+    rider_mass_kg: 64
+    rider_height_cm: 172
+    bike_mass_kg: 17.5           # not stated; typical for this build
+    source: >
+      Pinkbike "Bike Check: Jackson Goldstone's Santa Cruz V10 - 2025
+      Mont-Sainte-Anne DH World Cup" (Matt Beer, Oct 10 2025), supplied by
+      the owner as a PDF. Setup is the 2025 bike; the 2023 Val di Sole and
+      MSA runs used the same V10 platform, MX wheels and 200/208 travel, so
+      the scale numbers hold, while spring/pressure/reach may have differed.
+    videos: [E_ENTKM2_q4, 3oUbTSelGH8]

@@ -52,9 +52,10 @@ output/<video_id>/
 
 Everything above is now one model. `src/rider_model.py::RiderFormModel.analyze()`
 runs: orientation detect → track (bike box + 17-kp pose + joint angles + gaze)
-→ suspension activity → segmentation → bike attitude proxies → cornering →
-discipline-aware form grade with timestamped deviations → fatigue drift →
-crash risk (once a control model exists) → factor report → labeled video.
+→ suspension activity → segmentation → wheels (axles, fork/shock travel,
+wheel roll, ground contact) → tyre model (slip, camber, grip envelope) → bike
+attitude proxies → cornering → discipline-aware form grade with timestamped
+deviations → fatigue drift → crash risk → factor report → labeled video.
 
 | Layer | Module | Status |
 |---|---|---|
@@ -63,10 +64,12 @@ crash risk (once a control model exists) → factor report → labeled video.
 | Joint angles + vision path | `joint_analysis.py` | validated on 3 runs |
 | Silhouette outlines | `outline.py` | YOLOv8-seg |
 | Bike attitude (pitch / lean / yaw) | `attitude.py` | monocular proxies |
+| Wheels: axles, fork/shock travel, wheel roll, contact, deflection | `wheels.py` + `data/bike_specs.yaml` | mm scale from wheel diameter; travel is sprung-vs-unsprung distance change; contact is heuristic |
+| Tyre: slip ratio, slip angle, camber, grip envelope, traction-loss events | `tire_model.py` | Magic-Formula (Pacejka) envelope, rally-sim loose-surface defaults, refit from corpus via `fit_envelope()`; slip needs a sharp, oblique wheel |
 | Cornering | `cornering.py` | metrics only; no verdicts until labeled data |
 | Discipline envelopes (12) | `disciplines.py` | coaching priors; learned bands after ≥3 advanced runs |
-| Form grade, deviations, fatigue, factors | `form_grade.py` | grades against envelope; factor report needs ≥3 runs per level |
-| Crash risk | `crash_model.py` + `data/crashes.yaml` | built, untrained (no crash footage yet) |
+| Form grade, deviations, fatigue, factors | `form_grade.py` | grades against envelope; factor report live (Asa vs Charlie, Goldstone) |
+| Crash risk | `crash_model.py` + `data/crashes.yaml` | control_model_v001: 7 verified Friday Fails crashes, LOO AUC 0.72 |
 | Long-video funnel | `long_video.py` | validated on a 92-min source |
 | Service: web UI, REST, MCP | `service/` | see `service/README.md` |
 
@@ -77,5 +80,10 @@ status). Consented uploads land in `data/submissions/train/`.
 
 Honest limits: attitude and speed are 2D proxies; cornering and fatigue are
 descriptive until enough labeled runs exist to learn what separates advanced
-riders; crash risk needs crash-labeled footage. Each result document says
-which of these apply.
+riders; crash risk is trained on 7 crashes. The wheel/tyre layer measures
+what a single camera can see: wheel ellipses give roll and the mm scale,
+axle-to-bar / axle-to-pedal distances give travel, and slip needs the wheel
+seen obliquely with sharp ground under it -- on blurred FPV chase footage it
+reports "unmeasurable" rather than a number. Tyre sidewall deformation is
+below pixel resolution and is not reported. Each result document says which
+of these apply.

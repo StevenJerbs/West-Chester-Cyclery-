@@ -88,3 +88,26 @@ videos:
       learned advanced-vs-other comparison is now live (3 runs each
       level). Race-POV section (260-580s) not processed -- low value for
       side-on keypoints per the segment map.
+  - id: E_ENTKM2_q4
+    url: https://youtu.be/E_ENTKM2_q4
+    title: "FPV Drone View GoPro: Jackson Goldstone's Winning Run, Val di Sole 2023"
+    added: "2026-09-03"
+    focus: wheel/suspension/tyre layer -- axle travel, wheel roll, ground contact, traction
+    status: trained
+    bike_id: jackson-goldstone-v10
+    notes: >
+      35s, 1080p25, AV1 (transcoded to H.264 at data/raw/goldstone/vds_2023.mp4).
+      Continuous FPV chase with both wheels in frame for most of the run;
+      rear/quarter views, strong motion blur. First run of src/wheels.py
+      (wheel ellipses, axle line, fork/shock compression, contact) and
+      src/tire_model.py (slip, camber, Magic-Formula grip envelope), with
+      the V10 specs from the owner-supplied Pinkbike bike check giving the
+      mm scale. See output/goldstone/vds_2023/result.json.
+  - id: 3oUbTSelGH8
+    url: https://youtu.be/3oUbTSelGH8
+    title: "Drone FPV: Jackson Goldstone's Insane Run, 2023 Mont-Sainte-Anne"
+    added: "2026-09-03"
+    focus: wheel/suspension/tyre layer, second pro reference run
+    status: trained
+    bike_id: jackson-goldstone-v10
+    notes: 52s, 1080p24, AV1 (transcoded to data/raw/goldstone/msa_2023.mp4). Same layer as above.

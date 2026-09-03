@@ -96,8 +96,15 @@ class RiderFormModel:
         sus_times, sus_scores = suspension_score(track_json, out_dir / "suspension.json")
         analysis = joint_analyze(track_json, out_dir / "analysis.json")
 
-        masks = self._segment(video, track, rot) if self.with_segmentation else None
+        from wheels import wheel_series, load_bike_specs
+        from tire_model import tire_summary, load_envelope
+
+        masks = self._segment(video, track, rot, fps) if self.with_segmentation else None
         attitude_series(track["frames"], masks)
+        specs = load_bike_specs((metadata or {}).get("bike_id"))
+        wheels_summary = wheel_series(track["frames"], fps, specs)
+        tire_env = load_envelope()
+        tire = tire_summary(track["frames"], fps, tire_env)
         track_json.write_text(json.dumps(track))
 
         cornering = analyze_cornering(track["frames"], fps)
@@ -137,6 +144,11 @@ class RiderFormModel:
             "attack_position_pct": round(100 * (analysis.get("attack_score_mean") or 0), 1),
             "lookahead_pct": analysis.get("gaze_lookahead_pct"),
             "attitude": attitude_summary,
+            "wheels": wheels_summary,
+            "tire": tire,
+            "bike_specs": {k: specs.get(k) for k in ("wheel_front_in", "wheel_rear_in", "fork_travel_mm",
+                                                     "rear_travel_mm", "tire_pressure_front_psi",
+                                                     "tire_pressure_rear_psi", "source")},
             "cornering": cornering,
             "fatigue": fatigue,
             "crash_risk": risk,
@@ -178,14 +190,21 @@ class RiderFormModel:
             raise RuntimeError("no window with a tracked bike + rider found in this long video")
         return best, f"long input ({_duration_s(video):.0f}s); analyzed best verified window {best.name}"
 
-    def _segment(self, video: Path, track: dict, rot: int) -> dict[int, np.ndarray]:
+    def _segment(self, video: Path, track: dict, rot: int, fps: float = 30.0) -> dict[int, np.ndarray]:
+        """Segmentation pass, and -- since it already walks every frame with
+        the bike mask in hand -- the wheel / contact / tyre pass too. Each
+        tracked frame gains `wheels`, `contact` and `tire` records."""
         from outline import OutlineTracker
         from track import _ROTATIONS
+        from wheels import find_wheels, contact_score
+        from tire_model import tire_state_for_wheel, load_envelope
         seg = OutlineTracker()
+        env = load_envelope()
         code = _ROTATIONS.get(rot % 360)
         by_idx = {f["frame"]: f for f in track["frames"]}
         cap = cv2.VideoCapture(str(video))
         masks, i = {}, 0
+        prev_gray, prev_wheels, plane = None, None, (1.0, 0.0)
         while True:
             ok, frame = cap.read()
             if not ok:
@@ -200,6 +219,26 @@ class RiderFormModel:
             bike_mask, _ = seg.masks_for_frame(frame, near_point=near)
             if bike_mask is not None:
                 masks[i] = bike_mask
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if rec is not None:
+                wh = find_wheels(frame, bike_mask, rec.get("bike_box"), rec.get("keypoints", {}), prev=prev_wheels)
+                F, R = wh.get("front"), wh.get("rear")
+                if F and R:
+                    dx, dy = F["cx"] - R["cx"], F["cy"] - R["cy"]
+                    n = max(np.hypot(dx, dy), 1e-6)
+                    plane = (dx / n, dy / n)
+                rec["wheels"] = {"front": F, "rear": R, "method": wh["method"]}
+                rec["contact"], rec["tire"] = {}, {}
+                for side in ("front", "rear"):
+                    w = wh.get(side)
+                    if not w:
+                        continue
+                    pw = (prev_wheels or {}).get(side)
+                    av = (w["cx"] - pw["cx"], w["cy"] - pw["cy"]) if pw else None
+                    rec["contact"][side] = contact_score(gray, prev_gray, w, av)
+                    rec["tire"][side] = tire_state_for_wheel(prev_gray, gray, w, pw, plane, "auto", env, fps)
+                prev_wheels = wh
+            prev_gray = gray
             i += 1
         cap.release()
         return masks
@@ -224,6 +263,9 @@ class RiderFormModel:
             t = i / fps
             rec = lookup.get(i)
             annotate(frame, rec, _score_at(sus_times, sus_scores, t))
+            if rec:
+                from wheels import draw_wheels
+                draw_wheels(frame, rec)
             h, w = frame.shape[:2]
             # deviation flags: the "not on par" highlights
             y = h - 60

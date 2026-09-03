@@ -41,6 +41,20 @@ riders:
         date: "2026-09-03"
         source: Y50K3ZZEdVY comparison_3 (G-out compression), asa_range [207, 213]
         performance: good   # timed 10.28s on this section, 28% faster than Charlie
+  - id: jackson-goldstone
+    name: Jackson Goldstone
+    level: advanced   # World Cup DH winner (Val di Sole 2023 finals), 2025 World Champion
+    discipline: downhill
+    bike_id: jackson-goldstone-v10   # data/bike_specs.yaml
+    runs:
+      - video: goldstone/vds_2023
+        date: "2026-09-03"
+        source: E_ENTKM2_q4, FPV drone chase of the 2023 Val di Sole winning run, 35s
+        performance: good   # race-winning run
+      - video: goldstone/msa_2023
+        date: "2026-09-03"
+        source: 3oUbTSelGH8, FPV drone chase, 2023 Mont-Sainte-Anne World Cup, 52s
+        performance: good
   - id: charlie
     name: Charlie (average/amateur rider, host)
     level: intermediate   # ID'd by black kit, plain dark helmet, rental bike
