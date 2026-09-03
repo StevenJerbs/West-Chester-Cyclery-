@@ -24,3 +24,37 @@ riders:
         clip: cand_01476s (24:36 mark, technical redrock feature)
         date: "2026-08-30"
         performance: unlabeled
+  - id: asa-vermette
+    name: Asa Vermette
+    level: advanced   # World Cup DH pro; ID'd by light/white Fox kit + Red Bull helmet, bib #3
+    discipline: downhill
+    runs:
+      - video: asa_vs_charlie/s1_asa
+        date: "2026-09-03"
+        source: Y50K3ZZEdVY comparison_1, asa_range [148, 156]
+        performance: good   # timed 10.18s on this section, 21% faster than Charlie
+      - video: asa_vs_charlie/s2_asa
+        date: "2026-09-03"
+        source: Y50K3ZZEdVY comparison_2, asa_range [184, 190]
+        performance: good   # timed 6.07s on this section, 48% faster than Charlie
+      - video: asa_vs_charlie/s3_asa
+        date: "2026-09-03"
+        source: Y50K3ZZEdVY comparison_3 (G-out compression), asa_range [207, 213]
+        performance: good   # timed 10.28s on this section, 28% faster than Charlie
+  - id: charlie
+    name: Charlie (average/amateur rider, host)
+    level: intermediate   # ID'd by black kit, plain dark helmet, rental bike
+    discipline: downhill
+    runs:
+      - video: asa_vs_charlie/s1_charlie
+        date: "2026-09-03"
+        source: Y50K3ZZEdVY comparison_1, charlie_range [157, 171]
+        performance: poor   # timed 13.08s, 21% slower than Asa on the same line
+      - video: asa_vs_charlie/s2_charlie
+        date: "2026-09-03"
+        source: Y50K3ZZEdVY comparison_2, charlie_range [191, 198]
+        performance: poor   # timed 9.00s, 48% slower than Asa on the same line
+      - video: asa_vs_charlie/s3_charlie
+        date: "2026-09-03"
+        source: Y50K3ZZEdVY comparison_3 (G-out compression), charlie_range [216, 222]
+        performance: poor   # timed 13.19s, 28% slower than Asa on the same line

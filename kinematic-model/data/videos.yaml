@@ -69,6 +69,22 @@ videos:
     title: "Asa Vermette vs. An Average Rider - How Much Faster is a DH Pro?"
     added: "2026-09-02"
     focus: advanced-vs-intermediate rider comparison (pro vs. average, same lines)
-    status: pending  # blocked: needs asa/charlie sub-segment split within
-                     # comparison_1/2/3 (145-232s) before per-rider tracking;
-                     # segment map at crash_training/Y50K3ZZEdVY.segments.json
+    status: trained
+    notes: >
+      Asa Vermette (light/white Fox kit, Red Bull helmet, bib #3) vs
+      Charlie the average rider (black kit, plain helmet), identified by
+      kit color per user-supplied cue and verified frame-by-frame across
+      the video's own three "Section N: Asa X.XXs / Charlie X.XXs" stat
+      overlays -- exact ground truth: section 1 Asa 10.18s/Charlie
+      13.08s (21% faster), section 2 Asa 6.07s/Charlie 9.00s (48%
+      faster), section 3 (G-out compression) Asa 10.28s/Charlie 13.19s
+      (28% faster). Cut 6 clean single-rider sub-clips (asa_range /
+      charlie_range in crash_training/Y50K3ZZEdVY.segments.json) and ran
+      the full RiderFormModel pipeline on each (data/raw/asa_vs_charlie/,
+      output/asa_vs_charlie/). Form grade, attack-position %, and
+      look-ahead % all favor Asa across all three sections; look-ahead
+      is the largest and most consistent gap (e.g. section 3: 46.2% vs
+      19.6%). Fed data/riders.yaml so form_grade.factor_report()'s
+      learned advanced-vs-other comparison is now live (3 runs each
+      level). Race-POV section (260-580s) not processed -- low value for
+      side-on keypoints per the segment map.
