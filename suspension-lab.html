@@ -144,11 +144,11 @@
       <h2><span class="name">FRONT FORK</span><span class="spec">170 mm &middot; 64&deg; HTA &middot; 44 mm offset &middot; air + 4-way</span></h2>
       <div class="desk">
         <div class="ch"><div class="val" id="fUsed">0</div><div class="bar" id="barF"><div class="bo-zone"></div><div class="fill" id="fillF"></div><div class="sag" id="sagF"></div><div class="pack" id="packF"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
-        <div class="ch"><output class="val" id="fSpringOut">96</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="96" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
-        <div class="ch"><output class="val" id="fVolOut">3</output><div class="fader"><input id="fVol" type="range" min="0" max="5" step="1" value="3" aria-label="Fork volume spacers"></div><label class="lbl2" for="fVol"><u>TOKENS</u><br>vol.</label></div>
-        <div class="ch"><output class="val" id="fLscOut">8</output><div class="fader"><input id="fLsc" type="range" min="0" max="16" step="1" value="8" aria-label="Fork low-speed compression clicks"></div><label class="lbl2" for="fLsc"><u>LSC</u><br>/16</label></div>
-        <div class="ch"><output class="val" id="fHscOut">4</output><div class="fader"><input id="fHsc" type="range" min="0" max="8" step="1" value="4" aria-label="Fork high-speed compression clicks"></div><label class="lbl2" for="fHsc"><u>HSC</u><br>/8</label></div>
-        <div class="ch"><output class="val" id="fLsrOut">8</output><div class="fader"><input id="fLsr" type="range" min="0" max="16" step="1" value="8" aria-label="Fork low-speed rebound clicks"></div><label class="lbl2" for="fLsr"><u>LSR</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="fSpringOut">82</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="82" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
+        <div class="ch"><output class="val" id="fVolOut">2</output><div class="fader"><input id="fVol" type="range" min="0" max="5" step="1" value="2" aria-label="Fork volume spacers"></div><label class="lbl2" for="fVol"><u>TOKENS</u><br>vol.</label></div>
+        <div class="ch"><output class="val" id="fLscOut">5</output><div class="fader"><input id="fLsc" type="range" min="0" max="16" step="1" value="5" aria-label="Fork low-speed compression clicks"></div><label class="lbl2" for="fLsc"><u>LSC</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="fHscOut">3</output><div class="fader"><input id="fHsc" type="range" min="0" max="8" step="1" value="3" aria-label="Fork high-speed compression clicks"></div><label class="lbl2" for="fHsc"><u>HSC</u><br>/8</label></div>
+        <div class="ch"><output class="val" id="fLsrOut">6</output><div class="fader"><input id="fLsr" type="range" min="0" max="16" step="1" value="6" aria-label="Fork low-speed rebound clicks"></div><label class="lbl2" for="fLsr"><u>LSR</u><br>/16</label></div>
         <div class="ch"><output class="val" id="fHsrOut">4</output><div class="fader"><input id="fHsr" type="range" min="0" max="8" step="1" value="4" aria-label="Fork high-speed rebound clicks"></div><label class="lbl2" for="fHsr"><u>HSR</u><br>/8</label></div>
       </div>
       <div class="reads">
@@ -163,7 +163,7 @@
   <p class="note"><b>What is simulated.</b> A planar rigid chassis (19 kg sprung, pitch inertia), two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping), a 78 kg rider on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 3.05&rarr;2.47 (19% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
   <br><b>Sources in the repo's uploads.</b> Pinkbike's 2021 Bullit review (Kazimer): 29/27.5, 170 mm, 64&deg; HTA, 449 mm stays, 22.3 kg size L, 475 reach on the L, Fox 38 E-Tune 170 and a RockShox Super Deluxe; his setup was 175 psi in the shock for 30% sag and 100 psi + 3 tokens in the fork at 72.6 kg. The Loam Wolf shootout bike ran the Super Deluxe Coil Ultimate (51.7 lb). Pinkbike's Megatower "Behind the Numbers" scan gives the lower-link VPP family its shape: a near-linear falling leverage curve with an end-stroke shoulder, ~2 mm rearward then forward axle path, anti-squat ~110% falling off late in the travel, anti-rise 85%&rarr;&minus;25%. The linkage here is fitted to those outputs with the pivots and shock placed where the photos show them.
   <br><b>Rider posture.</b> PRO targets come from side-on frames in <code>crash_training/asa_vermette_vs_avg_rider_Y50K3ZZEdVY.mp4</code> (Asa at 185.5 s and 208.7 s: torso near trail-parallel, front knee ~135&ndash;140&deg;, elbows ~120&ndash;150&deg;) and the Goldstone FPV run; AVERAGE mirrors Charlie at 160.5 s and 194.5 s (upright torso, knee ~165&deg;, stiff legs). Hip height is solved from a target knee angle and torso angle from a target elbow angle, knees always bend forward and elbows down, and caps (knee &le;165&deg;, elbow &le;160&deg; for PRO) stop any lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.
-  <br><b>Course.</b> Flat start &rarr; 11% climb (rider stands) &rarr; crest &rarr; rollers &rarr; braking-bump washboard &rarr; 18% rock garden &rarr; two G-outs &rarr; 0.8 m kicker over a 4 m gap &rarr; 1 m huck to flat. Speed carried into the lip decides whether the gap is cleared.</p>
+  <br><b>Course.</b> Flat start &rarr; 11% climb (rider stands, root-log and a rock step) &rarr; crest &rarr; rollers with a log &rarr; braking-bump washboard &rarr; 18% rock garden with boulders, a rock shelf step-down and a log &rarr; a 40 cm log-over &rarr; two G-outs &rarr; 0.75 m kicker onto a 5.5 m tabletop &rarr; 1 m huck to flat. Speed carried into the lip decides whether the gap is cleared.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -252,8 +252,8 @@ const SEG = {
     const w = Math.pow(Math.sin(Math.PI * t / len), 0.3);
     return (a + (b - a) * smooth((f - 0.82) / 0.18)) * w; } }),
   gout: (len, D, grade) => ({ len, grade, type: 'dirt', h: t => -D * (1 - Math.pow(Math.abs(2 * t / len - 1), 1.5)) }),
-  kicker: (H, L, deck, gapLen, gapDepth, landH, landL, grade) => ({ len: L + deck + gapLen + landL, grade, type: 'built',
-    h: t => t < L ? H * Math.pow(t / L, 1.5) : t < L + deck ? H : t < L + deck + gapLen ? -gapDepth : landH * (1 - (t - L - deck - gapLen) / landL) }),
+  kicker: (H, L, deck, gapLen, gapDepth, landH, landL, grade) => ({ len: L + deck + gapLen + landL, grade, type: 'built',   // tabletop: lip, deck, landing
+    h: t => t < L ? H * Math.pow(t / L, 1.5) : t < L + deck + gapLen ? H - (H - landH) * Math.max(0, t - L - deck) / gapLen : landH * (1 - (t - L - deck - gapLen) / landL) }),
   huck: (H, up, ledge, out, grade) => ({ len: up + ledge + out, grade, type: 'built',
     h: t => t < up ? H * (1 - Math.cos(Math.PI * t / up)) / 2 : t < up + ledge ? H : 0 })
 };
@@ -265,11 +265,11 @@ const COURSE = [
   Object.assign(SEG.washboard(14, 0.85, 0.06, -0.09), { name: 'WASHBOARD', noPedal: [0, 99] }),
   Object.assign(SEG.rocks(26, -0.18, 0.14), { name: 'ROCK GARDEN 18%', noPedal: [0, 99] }),
   Object.assign(SEG.flat(6, -0.05), { name: 'RUN-IN' }),
-  Object.assign(SEG.gout(7, 0.42, -0.03), { name: 'G-OUT 1', noPedal: [0, 99] }),
-  Object.assign(SEG.flat(3, -0.03), { name: 'G-OUT', noPedal: [0, 99] }),
-  Object.assign(SEG.gout(7, 0.5, -0.03), { name: 'G-OUT 2', noPedal: [0, 99] }),
-  Object.assign(SEG.flat(16, -0.09), { name: 'JUMP RUN-IN' }),
-  Object.assign(SEG.kicker(0.8, 3.0, 0.8, 4.0, 0.5, 0.65, 6.0, 0.0), { name: 'BIG JUMP', noPedal: [1.5, 13.8] }),
+  Object.assign(SEG.gout(7, 0.42, -0.03), { name: 'G-OUT 1' }),
+  Object.assign(SEG.flat(3, -0.03), { name: 'G-OUT' }),
+  Object.assign(SEG.gout(7, 0.5, -0.03), { name: 'G-OUT 2' }),
+  Object.assign(SEG.flat(20, -0.10), { name: 'JUMP RUN-IN' }),
+  Object.assign(SEG.kicker(0.75, 3.0, 1.0, 4.5, 0, 0.6, 6.0, 0.0), { name: 'BIG JUMP', noPedal: [1.5, 14.5] }),
   Object.assign(SEG.flat(8, -0.02), { name: 'LANDING' }),
   Object.assign(SEG.huck(1.0, 8.0, 2.5, 10, 0.0), { name: 'HUCK TO FLAT', noPedal: [6.0, 12.5] }),
   Object.assign(SEG.flat(8, 0.0), { name: 'FINISH' })
@@ -283,7 +283,32 @@ function segAt(u){
   while (hi - lo > 1){ const m = (lo + hi) >> 1; if (COURSE[m].start <= p) lo = m; else hi = m; }
   return [COURSE[lo], p - COURSE[lo].start];
 }
-function groundAt(u){ const [g, t] = segAt(u); return g.base + g.grade * t + g.h(t); }
+function terrainAt(u){ const [g, t] = segAt(u); return g.base + g.grade * t + g.h(t); }
+/* discrete obstacles laid on the trail: each is both a height profile the tyres roll over and a mesh in the scene */
+const OBST = [];
+function addObst(segName, t, o){ const g = COURSE.find(x => x.name === segName); OBST.push(Object.assign({ u: g.start + t }, o)); }
+addObst('CLIMB 11%', 12, { type: 'log', r: 0.09 });                 // root-log on the climb
+addObst('CLIMB 11%', 26, { type: 'rock', h: 0.22, w: 0.55 });
+addObst('ROLLERS', 9.5, { type: 'log', r: 0.13 });
+addObst('ROCK GARDEN 18%', 4, { type: 'rock', h: 0.26, w: 0.6 });
+addObst('ROCK GARDEN 18%', 9, { type: 'rock', h: 0.33, w: 0.75 });
+addObst('ROCK GARDEN 18%', 13.5, { type: 'shelf', h: 0.38, w: 3.2, ramp: 1.2 });   // rock slab with a sheer step-down off its back
+addObst('ROCK GARDEN 18%', 20, { type: 'rock', h: 0.28, w: 0.6 });
+addObst('ROCK GARDEN 18%', 23.5, { type: 'log', r: 0.15 });
+addObst('RUN-IN', 3, { type: 'log', r: 0.20 });                     // the big log-over
+addObst('LANDING', 5, { type: 'rock', h: 0.2, w: 0.5 });
+function obstH(o, d){                                               // height of obstacle o at distance d from its centre
+  if (o.type === 'log'){ const r = o.r; return Math.abs(d) < r ? r + Math.sqrt(r * r - d * d) : 0; }
+  const half = o.w / 2;
+  if (o.type === 'rock'){ const e = 0.06; const a = Math.abs(d); return a < half ? o.h * smooth((half - a) / e) : 0; }
+  if (o.type === 'shelf'){ const x = d + half; if (x < 0 || x > o.w) return 0; return x < o.ramp ? o.h * smooth(x / o.ramp) : o.h; }
+  return 0;
+}
+function groundAt(u){
+  let h = terrainAt(u);
+  for (const o of OBST){ const d = u - o.u; if (d > -2 && d < 2) h += obstH(o, d); }
+  return h;
+}
 function baseGrade(u){ return segAt(u)[0].grade; }
 function groundType(u){ return segAt(u)[0].type; }
 /* tyre enveloping: the contact patch of a wheel of radius r rolling over g(x) */
@@ -349,8 +374,8 @@ function applyTuning(){
   tune.rLsC = clicks(500, 6.0, g('rLsc'), 16); tune.rHsC = clicks(300, 4.5, g('rHsc'), 8);
   tune.rLsR = clicks(650, 7.0, g('rLsr'), 16); tune.rHsR = clicks(350, 4.5, g('rHsr'), 8);
   tune.fPsi = g('fSpring'); tune.fTok = g('fVol');
-  tune.fLsC = clicks(420, 6.0, g('fLsc'), 16); tune.fHsC = clicks(260, 4.5, g('fHsc'), 8);
-  tune.fLsR = clicks(560, 7.0, g('fLsr'), 16); tune.fHsR = clicks(300, 4.5, g('fHsr'), 8);
+  tune.fLsC = clicks(320, 6.0, g('fLsc'), 16); tune.fHsC = clicks(220, 4.5, g('fHsc'), 8);
+  tune.fLsR = clicks(480, 7.0, g('fLsr'), 16); tune.fHsR = clicks(280, 4.5, g('fHsr'), 8);
   for (const [id, suf] of [['rSpring',''],['rLsc',''],['rHsc',''],['rLsr',''],['rHsr',''],['fSpring',''],['fVol',''],['fLsc',''],['fHsc',''],['fLsr',''],['fHsr','']])
     ui[id + 'Out'].textContent = ui[id].value + suf;
   computeSag();
@@ -358,7 +383,7 @@ function applyTuning(){
 /* static sag: solve each end against its static load with the rider in the attack position */
 function computeSag(){
   const Wtot = (M_SPRUNG + M_RIDER) * G9;
-  const rx = -0.45 + 0.275 * Math.cos(22 * D2R) + 0.10;                               // rider CoM in the attack position
+  const rx = -0.30 + 0.275 * Math.cos(35 * D2R) + 0.10;                               // rider CoM in the balanced attack position
   const xCom = (M_SPRUNG * COM.x + M_RIDER * rx) / (M_SPRUNG + M_RIDER);
   const xF = axleFLocal(0).x, xR = VT.ax[0];
   const Wf = Wtot * (xCom - xR) / (xF - xR), Wr = Wtot - Wf;
@@ -383,16 +408,16 @@ const POSE = {
   pro: {
     seated:  { hx: -0.15, knee: 148, elbow: 130, k: 30000, c: 1500 },
     climb:   { hx: -0.22, knee: 152, elbow: 122, k: 12000, c: 1000 },
-    attack:  { hx: -0.45, knee: 135, elbow: 112, k: 9000,  c: 950  },
-    pop:     { hx: -0.32, knee: 158, elbow: 140, k: 14000, c: 1100 },
-    air:     { hx: -0.38, knee: 118, elbow: 100, k: 7000,  c: 800  },
-    land:    { hx: -0.45, knee: 122, elbow: 98,  k: 8000,  c: 1100 },
-    huck:    { hx: -0.52, knee: 130, elbow: 115, k: 9000,  c: 1000 }
+    attack:  { hx: -0.30, knee: 128, elbow: 105, k: 9000,  c: 950  },
+    pop:     { hx: -0.26, knee: 156, elbow: 138, k: 14000, c: 1100 },
+    air:     { hx: -0.30, knee: 116, elbow: 98,  k: 7000,  c: 800  },
+    land:    { hx: -0.32, knee: 118, elbow: 95,  k: 8000,  c: 1100 },
+    huck:    { hx: -0.42, knee: 128, elbow: 110, k: 9000,  c: 1000 }
   },
   avg: {
     seated:  { hx: -0.14, knee: 152, elbow: 148, k: 34000, c: 1700 },
     climb:   { hx: -0.16, knee: 155, elbow: 148, k: 20000, c: 1300 },
-    attack:  { hx: -0.26, knee: 157, elbow: 145, k: 22000, c: 1400 },
+    attack:  { hx: -0.20, knee: 157, elbow: 145, k: 22000, c: 1400 },
     pop:     { hx: -0.24, knee: 160, elbow: 150, k: 24000, c: 1500 },
     air:     { hx: -0.26, knee: 150, elbow: 140, k: 18000, c: 1200 },
     land:    { hx: -0.26, knee: 148, elbow: 140, k: 22000, c: 1400 },
@@ -435,7 +460,7 @@ function poseController(dt, grade, airborne, u){
   const P = POSE[riderMode][poseState];
   const steep = clamp(-grade, 0, 0.25);
   const att = poseState === 'attack' && riderMode === 'pro';
-  const tgt = solvePose(P, att ? -0.15 * steep : 0, poseState === 'seated' || poseState === 'climb');
+  const tgt = solvePose(P, att ? -0.35 * steep : 0, poseState === 'seated' || poseState === 'climb');
   const tau = poseState === 'pop' ? 0.06 : poseState === 'huck' ? 0.10 : (riderMode === 'pro' ? 0.14 : 0.30);
   const a = 1 - Math.exp(-dt / tau);
   cur.hx += (tgt.hx - cur.hx) * a; cur.hy += (tgt.hy - cur.hy) * a; cur.torso += (tgt.torso - cur.torso) * a; cur.kneeMax = tgt.kneeMax; cur.elbowMax = tgt.elbowMax;
@@ -571,8 +596,9 @@ function step(dt){
   const Mt = M_SPRUNG + M_RIDER + M_UF + M_UR;
   const Fdrag = 0.5 * 1.2 * 0.62 * v * v, Froll = 0.018 * Mt * G9 * (airborne ? 0 : 1);
   // the ground pushes along its own normal: a tilted contact turns tyre load into drive (downhill) or drag (uphill, bump faces)
-  const Ncap = 2.5 * Mt * G9;
-  const Fground = -(Math.min(tF, Ncap) * clamp(slFx, -1.5, 1.5) + Math.min(tR, Ncap) * clamp(slRx, -1.5, 1.5));
+  // a real tyre wraps a log or a rock edge, and the rider unweights over it: cap the tilt and the load that go into the drag term
+  const Ncap = 1.6 * Mt * G9;
+  const Fground = -(Math.min(tF, Ncap) * clamp(slFx, -0.7, 0.7) + Math.min(tR, Ncap) * clamp(slRx, -0.7, 0.7));
   brakeF = (!airborne && v > vCap) ? Math.min(0.55 * Mt * G9, Mt * (v - vCap) * 2.5) : 0;
   accelX = (Fprop - Fdrag - Froll + Fground - brakeF) / Mt;
   v = Math.max(0.5, v + accelX * dt);
@@ -683,6 +709,26 @@ function updateTerrain(){
   for (const t of treeList){ const wx = t.position.x + off; t.position.y = groundAt(scroll + wx) - 0.25; }
 }
 
+/* obstacle meshes */
+const obstMeshes = [];
+for (const o of OBST){
+  let m;
+  if (o.type === 'log'){ m = new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r, 2.6, 10), mat(0x5A4030)); m.rotation.x = Math.PI / 2; }
+  else if (o.type === 'rock'){ m = box(o.w, o.h, 1.6, 0x9A958B); }
+  else { m = box(o.w, o.h, 2.0, 0x66625A); }
+  m.visible = false; scene.add(m); obstMeshes.push(m);
+}
+function updateObstacles(){
+  for (let i = 0; i < OBST.length; i++){
+    const o = OBST[i], m = obstMeshes[i], x = o.u - scroll;
+    if (x < -7 || x > 7){ m.visible = false; continue; }
+    m.visible = true;
+    const base = terrainAt(o.u);
+    if (o.type === 'log') m.position.set(x, base + o.r, 0.1);
+    else if (o.type === 'rock') m.position.set(x, base + o.h / 2 - 0.02, 0.1);
+    else m.position.set(x, base + o.h / 2 - 0.02, -0.1);
+  }
+}
 /* limbs */
 const DOWN = new THREE.Vector3(0, -1, 0), _dir = new THREE.Vector3();
 function limb(len, w, d, color){ const g = new THREE.BoxGeometry(w, len, d); g.translate(0, -len / 2, 0); const m = new THREE.Mesh(g, mat(color)); m.userData.len = len; return m; }
@@ -704,48 +750,54 @@ function ik(a, b, l1, l2, prefer, maxAngleDeg){
 const angleAt = (a, b, c) => { const v1 = a.clone().sub(b), v2 = c.clone().sub(b); return Math.acos(clamp(v1.dot(v2) / (v1.length() * v2.length()), -1, 1)) / D2R; };
 
 /* colours (Bullit: gloss black / yellow) */
-const C = { frame: 0x2A2A2A, decal: 0xE8C33A, forkUp: 0x2E2E2E, forkLow: 0x7FA6C9, sw: 0x2A2A2A, link: 0xD4784E, coil: 0xD4784E, tire: 0x2B2622, rim: 0x3A3A3A, hub: 0x6F675A,
+const C = { frame: 0x8A5A3A, frame2: 0x6E4630, decal: 0x1E1A18, forkUp: 0xC8952A, forkLow: 0x1E1E1E, sw: 0x8A5A3A, link: 0x1E1E1E, coil: 0x1E1E1E, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
   skin: 0xD8AA80, jersey: 0xE9E4DC, pants: 0xE9E4DC, helmet: 0x1E3F8F, shoe: 0x25211E, motor: 0x1B1B1B };
 const P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const frame = new THREE.Group(); scene.add(frame);
 function tube(a, b, t, c, d){ const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; }
-tube(P3(HEAD_TOP.x, HEAD_TOP.y), P3(SEAT_CLUSTER.x - 0.01, SEAT_CLUSTER.y + 0.02), 0.05, C.frame);                     // top tube
-tube(P3(HEAD_BOT.x, HEAD_BOT.y), P3(0.09, 0.12), 0.095, C.frame, 0.075);                                                  // down tube (battery)
-tube(P3(HEAD_BOT.x - 0.01, HEAD_BOT.y + 0.01), P3(0.10, 0.13), 0.03, C.decal, 0.08);                                        // yellow stripe
-tube(P3(0.02, 0.06), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y), 0.045, C.frame);                                                  // seat tube
-tube(P3(HEAD_TOP.x + 0.01, HEAD_TOP.y + 0.02), P3(HEAD_BOT.x - 0.01, HEAD_BOT.y - 0.02), 0.06, C.frame);                   // head tube
-const motor = box(0.24, 0.17, 0.15, C.motor); motor.position.set(-0.03, -0.02, 0); frame.add(motor);
+tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), 0.055, C.frame, 0.06);    // top tube, nearly straight
+tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.115, C.frame, 0.085);                                            // battery down tube
+tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);                                      // SANTA CRUZ decal band
+tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame);                                            // seat tube
+tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);                                                 // shock mount strut off the down tube
+tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);              // head tube
+const motor = box(0.27, 0.19, 0.16, C.motor); motor.position.set(-0.01, -0.03, 0); frame.add(motor);
+const chainring = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12), mat(0x3A3A3A)); chainring.rotation.x = Math.PI / 2; chainring.position.set(0, 0, 0.09); frame.add(chainring);
+const brace = limb(1, 0.03, 0.15, C.sw); frame.add(brace);
 const upperLink = limb(1, 0.03, 0.09, C.link); frame.add(upperLink);
 const lowerLink = limb(1, 0.035, 0.10, C.link); frame.add(lowerLink);
 const lowerLinkArm = limb(1, 0.03, 0.08, C.link); frame.add(lowerLinkArm);
-const shockBody = limb(1, 0.05, 0.05, 0x1B1B1B), shockCoil = limb(1, 0.07, 0.07, C.coil), shockShaft = limb(1, 0.026, 0.026, 0xC9C2B0);
+const shockBody = limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil = limb(1, 0.072, 0.072, C.coil), shockShaft = limb(1, 0.026, 0.026, 0xC9C2B0);
 frame.add(shockBody, shockCoil, shockShaft);
-const chainL = limb(1, 0.04, 0.035, C.sw), chainR = limb(1, 0.04, 0.035, C.sw), seatL = limb(1, 0.032, 0.03, C.sw), seatR = limb(1, 0.032, 0.03, C.sw);
+const chainL = limb(1, 0.05, 0.04, C.sw), chainR = limb(1, 0.05, 0.04, C.sw), seatL = limb(1, 0.038, 0.032, C.sw), seatR = limb(1, 0.038, 0.032, C.sw);
 frame.add(chainL, chainR, seatL, seatR);
 const stanchL = limb(1, 0.042, 0.042, C.forkUp), stanchR = limb(1, 0.042, 0.042, C.forkUp), lowerL = limb(1, 0.058, 0.058, C.forkLow), lowerR = limb(1, 0.058, 0.058, C.forkLow), arch = limb(1, 0.04, 0.04, C.forkLow);
 frame.add(stanchL, stanchR, lowerL, lowerR, arch);
-const post = limb(1, 0.031, 0.031, 0x3A3A3A); frame.add(post);
-const saddle = box(0.26, 0.045, 0.08, 0x25211E); frame.add(saddle);
-const stem = limb(1, 0.035, 0.035, 0x3A3A3A); frame.add(stem); aimLimb(stem, P3(HEAD_TOP.x, HEAD_TOP.y), P3(BAR.x, BAR.y));
-const bar = box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x3A3835); bar.position.set(BAR.x, BAR.y, 0); frame.add(bar);
+const post = limb(1, 0.031, 0.031, 0xC8952A); frame.add(post);
+const saddle = box(0.27, 0.045, 0.09, 0x1E1A18); frame.add(saddle);
+const stem = limb(1, 0.035, 0.035, 0x1E1E1E); frame.add(stem); aimLimb(stem, P3(HEAD_TOP.x, HEAD_TOP.y), P3(BAR.x, BAR.y));
+const bar = box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x1E1E1E); bar.position.set(BAR.x, BAR.y, 0); frame.add(bar);
 const GRIP_L = P3(BAR.x, BAR.y, GRIP_Z), GRIP_R = P3(BAR.x, BAR.y, -GRIP_Z);
 const crankL = limb(CRANK, 0.03, 0.025, 0x25211E), crankR = limb(CRANK, 0.03, 0.025, 0x25211E); frame.add(crankL, crankR);
 const pedL = box(0.1, 0.02, 0.07, 0x6F675A), pedR = box(0.1, 0.02, 0.07, 0x6F675A); frame.add(pedL, pedR);
 /* rider */
-const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.16, 0.16, 0.16, C.skin), helmet = box(0.185, 0.085, 0.185, C.helmet), visor = box(0.09, 0.03, 0.16, C.helmet);
+const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.15, 0.15, 0.15, C.skin), helmet = box(0.22, 0.20, 0.21, C.helmet), visor = box(0.11, 0.025, 0.2, C.helmet);
+const chinBar = box(0.075, 0.07, 0.19, C.helmet), goggle = box(0.02, 0.06, 0.17, 0x1E1A18);
 const hipBox = box(0.17, 0.14, 0.22, C.pants);
 const uArmL = limb(0.31, 0.06, 0.06, C.jersey), lArmL = limb(0.29, 0.05, 0.05, C.jersey), uArmR = limb(0.31, 0.06, 0.06, C.jersey), lArmR = limb(0.29, 0.05, 0.05, C.jersey);
 const thighL = limb(0.44, 0.085, 0.085, C.pants), shinL = limb(0.44, 0.065, 0.065, C.pants), thighR = limb(0.44, 0.085, 0.085, C.pants), shinR = limb(0.44, 0.065, 0.065, C.pants);
 const shoeL = box(0.15, 0.055, 0.08, C.shoe), shoeR = box(0.15, 0.055, 0.08, C.shoe);
 const numberPlate = box(0.01, 0.12, 0.16, 0xffffff);
-frame.add(torso, head, helmet, visor, hipBox, uArmL, lArmL, uArmR, lArmR, thighL, shinL, thighR, shinR, shoeL, shoeR, numberPlate);
+frame.add(torso, head, helmet, visor, chinBar, goggle, hipBox, uArmL, lArmL, uArmR, lArmR, thighL, shinL, thighR, shinR, shoeL, shoeR, numberPlate);
 /* wheels */
 function wheel(r){ const g = new THREE.Group(); const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.066, 12), mat(C.tire)); tire.rotation.x = Math.PI / 2;
   const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.72, 0.07, 12), mat(C.rim)); rim.rotation.x = Math.PI / 2;
   const hub = box(0.09, 0.09, 0.11, C.hub); g.add(tire, rim, hub);
-  for (let i = 0; i < 3; i++){ const s = box(0.03, r * 1.35, 0.028, 0x4a4540); s.rotation.z = i * Math.PI / 3; g.add(s); }
+  const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.008, 12), mat(0xB8B4AC)); rotor.rotation.x = Math.PI / 2; rotor.position.z = -0.07; g.add(rotor);
+  for (let i = 0; i < 3; i++){ const s = box(0.026, r * 1.35, 0.024, 0x4a4540); s.rotation.z = i * Math.PI / 3; g.add(s); }
   scene.add(g); return g; }
 const wF = wheel(GEO.rF), wR = wheel(GEO.rR);
+const cassette = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.04, 12), mat(0x8E8A82)); cassette.rotation.x = Math.PI / 2; cassette.position.z = 0.085; wR.add(cassette);
 const shadF = box(0.55, 0.02, 0.3, 0x3F3226), shadR = box(0.55, 0.02, 0.3, 0x3F3226); scene.add(shadF, shadR);
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
@@ -761,6 +813,7 @@ function pose(dt){
   aimLimb(upperLink, P3(VPP.P3.x, VPP.P3.y), P3(k.P4.x, k.P4.y));
   for (const [cs, ss, zz] of [[chainL, seatL, 0.075], [chainR, seatR, -0.075]]){
     aimLimb(cs, P3(k.P2.x, k.P2.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(k.P4.x, k.P4.y, zz), P3(axR.x, axR.y, zz)); }
+  _a.set(k.P2.x, k.P2.y, 0).lerp(_c.set(axR.x, axR.y, 0), 0.42); _b.set(k.P4.x, k.P4.y, 0).lerp(_c, 0.42); aimLimb(brace, _a, _b);
   _a.set(VPP.F.x, VPP.F.y, 0); _b.set(k.S.x, k.S.y, 0);
   aimLimb(shockBody, _a, _c.copy(_a).lerp(_b, 0.45)); aimLimb(shockShaft, _c.copy(_a).lerp(_b, 0.4), _b); aimLimb(shockCoil, _c.copy(_a).lerp(_b, 0.12), _a.clone().lerp(_b, 0.85));
   /* fork */
@@ -791,7 +844,9 @@ function pose(dt){
   aimLimb(torso, shoulders, hips);
   const neck = tor + 35 * D2R;
   head.position.set(shoulders.x + 0.17 * Math.cos(neck), shoulders.y + 0.17 * Math.sin(neck), 0);
-  helmet.position.set(head.position.x - 0.01, head.position.y + 0.09, 0); visor.position.set(head.position.x + 0.11, head.position.y + 0.07, 0);
+  helmet.position.set(head.position.x - 0.01, head.position.y + 0.02, 0); helmet.rotation.z = neck - 90 * D2R;
+  visor.position.set(head.position.x + 0.10, head.position.y + 0.11, 0); visor.rotation.z = -0.25;
+  chinBar.position.set(head.position.x + 0.12, head.position.y - 0.045, 0); goggle.position.set(head.position.x + 0.10, head.position.y + 0.035, 0);
   numberPlate.position.set(BAR.x + 0.04, BAR.y + 0.02, 0);
   const elbowMax = cur.elbowMax;
   let elbowAng = 0, kneeAng = 0;
@@ -830,7 +885,7 @@ function tick(now){
   requestAnimationFrame(tick);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 60){ step(PDT); acc -= PDT; n++; } parallax(dt); }
-  updateTerrain(); pose(riding ? dt : 0); updateHud(jointsOut); renderer.render(scene, camera);
+  updateTerrain(); updateObstacles(); pose(riding ? dt : 0); updateHud(jointsOut); renderer.render(scene, camera);
 }
 requestAnimationFrame(tick);
 window.SIM = { chassis, wheelF, wheelR, rider, get v(){ return v; }, get scroll(){ return scroll; }, get state(){ return poseState; }, seg: () => segAt(scroll)[0].name, VT, GEO, A2C, joints: jointsOut };
