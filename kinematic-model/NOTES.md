@@ -110,3 +110,36 @@ Wheel layer on two full `RiderFormModel.analyze` runs: both-wheel coverage s1_ch
 is the per-shot temporal tracking mtbkin uses (CoTracker/LK + 3-frame median), not more gating.
 
 Speed on the RTX 3070 with all retries: 10-20 fps at 1080p (three models, up to five passes on a bad frame).
+
+
+### Outputs regenerated with the new tracker (2026-09-04)
+
+All 20 Friday Fails candidate tracks and the 8 clean runs were re-run (`output/`), the previous outputs moved to
+`output/_baseline_cloudtracker/`. Per-run coverage, old -> new (pose / bike / both wheels), form grade in brackets:
+
+| run | pose | bike | both wheels | form |
+|---|---|---|---|---|
+| goldstone/vds_2023 | 0.75 -> 0.84 | 0.36 -> 0.66 | 0.26 -> 0.47 | 43.3 -> 45.2 |
+| goldstone/msa_2023 | 0.82 -> 0.88 | 0.36 -> 0.70 | 0.30 -> 0.64 | 58.2 -> 58.0 |
+| asa_vs_charlie/s1_asa | 0.99 -> 0.99 | 0.65 -> 0.76 | 0.65 -> 0.74 | 33.6 -> 33.6 |
+| asa_vs_charlie/s1_charlie | 1.00 -> 1.00 | 0.44 -> 0.67 | 0.39 -> 0.61 | 31.0 -> 31.0 |
+| asa_vs_charlie/s2_asa | 0.87 -> 0.95 | 0.51 -> 0.85 | 0.50 -> 0.84 | 38.7 -> 41.1 |
+| asa_vs_charlie/s2_charlie | 0.93 -> 0.97 | 0.61 -> 0.90 | 0.49 -> 0.85 | 29.2 -> 30.0 |
+| asa_vs_charlie/s3_asa | 0.85 -> 0.87 | 0.46 -> 0.85 | 0.43 -> 0.71 | 47.8 -> 47.7 |
+| asa_vs_charlie/s3_charlie | 0.96 -> 1.00 | 0.69 -> 0.93 | 0.66 -> 0.89 | 43.0 -> 44.6 |
+
+Full `RiderFormModel.analyze` on the GPU now takes 36-91 s per Asa/Charlie clip, 198 s (vds) and 440 s (msa).
+
+**Crash classifier: the LOO AUC cannot be trusted at this data scale, for either tracker.** Retrained on the new
+tracks: 427 windows, 30 negatives, LOO AUC 0.469 (old tracks: 372 / 23 / 0.625). Ablation showed the AUC is
+averaged over only 1 (old) or 2 (new) held-out videos: a fold counts only if the held-out clip has both classes,
+and most crash clips have too few windows with >=30% pose coverage in the 4 s lead-in to contribute a negative.
+Removing the two coverage features drops the old tracker's number to 0.5; the coverage features alone score below
+0.25 on both. So the earlier 0.72 / 0.63 figures were single-fold noise, not evidence of a working risk model.
+Nothing about the new tracker made the classifier worse; it needs more crash clips with a tracked lead-in (the
+Windrock crashes at 2549 s, 2831 s and 3620 s are the obvious next additions) and a proper grouped CV report
+that states the number of folds. `weights/control_model_v001.joblib` is now the new-tracker fit; the old one is
+`output/_baseline_cloudtracker/control_model_v001.joblib`.
+
+Because the regen script analyses clean runs before training, `output/goldstone/msa_2023/result.json` says
+crash risk unavailable; re-run `analyze` after training when a risk read-out is wanted on that run.
