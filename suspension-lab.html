@@ -4,708 +4,786 @@
   :root{
     --bg:#23261E; --panel:#2F3328; --panel2:#262A20; --line:#484D3C;
     --ink:#EFE8D6; --dim:#A39F88;
-    --accent:#D9A441; --front:#7FA6C9; --rear:#D4784E; --danger:#D9534F;
+    --accent:#D9A441; --front:#7FA6C9; --rear:#D4784E; --danger:#D9534F; --good:#8DBF6A;
     --disp:'Silkscreen',monospace; --mono:'IBM Plex Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font-family:var(--mono); font-size:14px; line-height:1.5;
-  }
-  .wrap{max-width:1060px; margin:0 auto; padding:18px 16px 40px; display:flex; flex-direction:column; gap:14px}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:14px; line-height:1.5}
+  .wrap{max-width:1100px; margin:0 auto; padding:18px 16px 40px; display:flex; flex-direction:column; gap:14px}
 
   header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
   h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--accent); text-shadow:3px 3px 0 #15170f}
-  .sub{color:var(--dim); font-size:12px; margin-top:2px}
-  .hdr-controls{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
-
-  .terrain{display:flex; flex-wrap:wrap; border:2px solid var(--line)}
-  .terrain button{
-    font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:8px 10px;
-    background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer;
-  }
-  .terrain button:last-child{border-right:0}
-  .terrain button.on{background:var(--accent); color:#1d1a10}
-  .terrain button:focus-visible, .btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
-
-  .speedbox{display:flex; align-items:center; gap:8px}
-  .speedbox label{font-family:var(--disp); font-size:10px; letter-spacing:1px; color:var(--dim)}
-  .speedbox output{font-weight:600; min-width:62px; font-variant-numeric:tabular-nums}
-
-  .btn{
-    font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 16px; cursor:pointer;
-    background:var(--front); color:#132030; border:2px solid var(--line);
-  }
+  .sub{color:var(--dim); font-size:12px; margin-top:2px; max-width:70ch}
+  .ctl{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .seg{display:flex; border:2px solid var(--line)}
+  .seg button{font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:8px 10px; background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--accent); color:#1d1a10}
+  .seg button:focus-visible,.btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  .lbl{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--dim)}
+  .hs{display:flex; align-items:center; gap:8px}
+  .hs output{font-weight:600; min-width:60px; font-variant-numeric:tabular-nums}
+  .btn{font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 14px; cursor:pointer; background:var(--front); color:#132030; border:2px solid var(--line)}
+  .btn.alt{background:var(--panel2); color:var(--ink)}
   .btn[data-riding="1"]{background:var(--panel2); color:var(--ink)}
 
   .scene{border:3px solid var(--line); background:#7FAACB; position:relative; overflow:hidden}
   .scene canvas{display:block; width:100%; height:auto; image-rendering:pixelated; touch-action:none; cursor:grab}
-  .scene .hint{
-    position:absolute; right:8px; bottom:6px; font-size:10px; color:#EFE8D6; opacity:.8;
-    background:rgba(20,24,16,.55); padding:2px 6px; pointer-events:none;
-  }
+  .hud{position:absolute; left:8px; top:8px; font-size:11px; color:#EFE8D6; background:rgba(20,24,16,.6); padding:6px 8px; pointer-events:none; line-height:1.45; min-width:150px}
+  .hud b{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--accent); display:block; margin-bottom:2px}
+  .hud .st{font-family:var(--disp); font-size:9px; color:#fff}
+  .joints{position:absolute; right:8px; top:8px; background:rgba(20,24,16,.6); padding:6px 8px; pointer-events:none; width:190px}
+  .joints b{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--accent); display:block; margin-bottom:4px}
+  .jr{display:grid; grid-template-columns:44px 1fr 34px; gap:6px; align-items:center; font-size:11px; margin:2px 0}
+  .jr .n{font-family:var(--disp); font-size:8px; color:var(--dim)}
+  .jr .band{position:relative; height:8px; background:rgba(255,255,255,.12)}
+  .jr .band .ok{position:absolute; top:0; bottom:0; background:rgba(141,191,106,.45)}
+  .jr .band .pt{position:absolute; top:-2px; width:4px; height:12px; background:var(--ink); margin-left:-2px}
+  .jr .band .pt.out{background:var(--danger)}
+  .jr .v{font-variant-numeric:tabular-nums; text-align:right; font-weight:600}
+  .hint{position:absolute; right:8px; bottom:6px; font-size:10px; color:#EFE8D6; opacity:.8; background:rgba(20,24,16,.55); padding:2px 6px; pointer-events:none}
 
   .bench{display:grid; grid-template-columns:1fr 1fr; gap:14px}
   .card{background:var(--panel); border:3px solid var(--line); padding:14px 12px 16px}
-  .card h2{
-    font-family:var(--disp); font-size:14px; letter-spacing:1px; margin:0;
-    display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap;
-  }
+  .card h2{font-family:var(--disp); font-size:14px; letter-spacing:1px; margin:0; display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap}
   .card h2 .spec{font-family:var(--mono); font-weight:400; font-size:11px; color:var(--dim); letter-spacing:0}
   .card.rear h2 .name{color:var(--rear)}
   .card.front h2 .name{color:var(--front)}
-
-  /* mixing-desk channel strips: travel gauge + three vertical faders */
-  .desk{display:flex; justify-content:space-between; gap:6px; margin-top:14px; padding:0 4px}
-  .ch{display:flex; flex-direction:column; align-items:center; gap:8px; width:74px}
+  .desk{display:flex; justify-content:space-between; gap:4px; margin-top:14px; flex-wrap:wrap}
+  .ch{display:flex; flex-direction:column; align-items:center; gap:8px; width:62px}
   .ch .val{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--accent); line-height:1; height:16px}
   .card.front .ch .val{color:var(--front)}
   .card.rear .ch .val{color:var(--rear)}
-  .ch .lbl{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); text-align:center; line-height:1.5}
-  .ch .lbl u{text-decoration:none; color:var(--ink)}
-
+  .ch .lbl2{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); text-align:center; line-height:1.5}
+  .ch .lbl2 u{text-decoration:none; color:var(--ink)}
   .bar{position:relative; width:28px; height:160px; background:var(--panel2); border:2px solid var(--line)}
   .bar .fill{position:absolute; left:0; right:0; top:0; height:0%}
   .card.front .bar .fill{background:var(--front)}
   .card.rear .bar .fill{background:var(--rear)}
   .bar .bo-zone{position:absolute; left:0; right:0; bottom:0; height:8%; background:rgba(217,83,79,.35)}
   .bar .sag{position:absolute; left:-6px; right:-6px; height:0; border-top:2px dashed var(--ink)}
-  .bar .pack{position:absolute; left:-11px; width:0; height:0;
-    border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid var(--accent); margin-top:-5px}
+  .bar .pack{position:absolute; left:-11px; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid var(--accent); margin-top:-5px}
   .bar.bo .fill{background:var(--danger)}
-
   .fader{position:relative; width:44px; height:160px}
-  .fader::before{content:""; position:absolute; left:50%; top:0; bottom:0; width:8px; margin-left:-4px;
-    background:var(--panel2); border:2px solid var(--line)}
-  .fader input{
-    position:absolute; left:50%; top:50%; width:160px; height:24px; margin:0;
-    transform:translate(-50%,-50%) rotate(-90deg);
-  }
+  .fader::before{content:""; position:absolute; left:50%; top:0; bottom:0; width:8px; margin-left:-4px; background:var(--panel2); border:2px solid var(--line)}
+  .fader input{position:absolute; left:50%; top:50%; width:160px; height:24px; margin:0; transform:translate(-50%,-50%) rotate(-90deg)}
   input[type=range]{-webkit-appearance:none; appearance:none; background:transparent; cursor:pointer}
-  #speed{width:110px; height:22px}
+  .hs input{width:100px; height:22px}
   input[type=range]::-webkit-slider-runnable-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
   input[type=range]::-moz-range-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
   .fader input::-webkit-slider-runnable-track{background:transparent; border-color:transparent}
   .fader input::-moz-range-track{background:transparent; border-color:transparent}
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none; width:20px; height:20px; margin-top:-8px;
-    background:var(--accent); border:2px solid #15170f;
-  }
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; margin-top:-8px; background:var(--accent); border:2px solid #15170f}
   input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:0; background:var(--accent); border:2px solid #15170f}
   .card.front input[type=range]::-webkit-slider-thumb{background:var(--front)}
   .card.front input[type=range]::-moz-range-thumb{background:var(--front)}
   .card.rear input[type=range]::-webkit-slider-thumb{background:var(--rear)}
   .card.rear input[type=range]::-moz-range-thumb{background:var(--rear)}
   input[type=range]:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
-
   .reads{display:flex; margin-top:14px; border:2px solid var(--line); background:var(--panel2)}
-  .read{flex:1; padding:7px 10px; border-right:2px solid var(--line); min-width:0}
+  .read{flex:1; padding:7px 8px; border-right:2px solid var(--line); min-width:0}
   .read:last-child{border-right:0}
   .read .k{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); white-space:nowrap}
   .read .v{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
   .read .v.warn{color:var(--danger)}
-
-  .note{color:var(--dim); font-size:12px; max-width:72ch}
+  .note{color:var(--dim); font-size:12px; max-width:78ch}
   .note b{color:var(--ink); font-weight:600}
-
-  @media (max-width:720px){
-    .bench{grid-template-columns:1fr}
-    h1{font-size:20px}
-  }
+  .note code{font-size:11px; color:var(--ink)}
+  @media (max-width:860px){ .bench{grid-template-columns:1fr} h1{font-size:20px} .joints{display:none} }
 </style>
 
 <div class="wrap">
   <header>
     <div>
       <h1>SUSPENSION LAB</h1>
-      <div class="sub">West Chester Cyclery &mdash; full-suspension tuning sim &middot; clicks counted from fully open</div>
+      <div class="sub">West Chester Cyclery &mdash; 2021 Santa Cruz Bullit CC (size L, low), 170 mm lower-link VPP + 170 mm fork &middot; rider posture fitted to Asa Vermette / Jackson Goldstone frames &middot; clicks from fully open</div>
     </div>
-    <div class="hdr-controls">
-      <div class="terrain" role="group" aria-label="Terrain">
-        <button type="button" data-t="trail" class="on">TRAIL</button>
-        <button type="button" data-t="whoops">WHOOPS</button>
-        <button type="button" data-t="rollers">ROLLERS</button>
-        <button type="button" data-t="gout">G-OUT</button>
-        <button type="button" data-t="rocks">ROCKS</button>
-        <button type="button" data-t="jump">JUMP</button>
-        <button type="button" data-t="huck">HUCK</button>
-      </div>
-      <div class="speedbox">
-        <label for="speed">SPEED</label>
-        <input id="speed" type="range" min="5" max="25" step="1" value="13">
-        <output id="speedOut">13 mph</output>
-      </div>
+    <div class="ctl">
+      <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">PRO</button><button type="button" data-v="avg">AVERAGE</button></div></div>
+      <div><div class="lbl">EP8 ASSIST</div><div class="seg" id="assistSeg"><button type="button" data-v="eco">ECO</button><button type="button" data-v="trail" class="on">TRAIL</button><button type="button" data-v="boost">BOOST</button></div></div>
+      <div class="hs"><label class="lbl" for="effort">RIDER W</label><input id="effort" type="range" min="100" max="400" step="10" value="220"><output id="effortOut">220 W</output></div>
+      <div class="hs"><label class="lbl" for="vcap">MAX MPH</label><input id="vcap" type="range" min="12" max="34" step="1" value="26"><output id="vcapOut">26 mph</output></div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
+      <button type="button" class="btn alt" id="restartBtn">RESTART</button>
     </div>
   </header>
 
   <div class="scene">
-    <canvas id="cv" width="416" height="234"></canvas>
+    <canvas id="cv" width="448" height="252"></canvas>
+    <div class="hud"><b id="hudSec">START</b><span id="hudSpd">0 mph</span> &middot; <span id="hudGrade">0%</span> grade<br><span class="st" id="hudState">SEATED</span><br><span id="hudPower"></span></div>
+    <div class="joints"><b>JOINTS vs DH BAND</b>
+      <div class="jr"><span class="n">KNEE</span><span class="band" id="bKnee"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vKnee">0</span></div>
+      <div class="jr"><span class="n">HIP</span><span class="band" id="bHip"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vHip">0</span></div>
+      <div class="jr"><span class="n">ELBOW</span><span class="band" id="bElbow"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vElbow">0</span></div>
+      <div class="jr"><span class="n">TORSO</span><span class="band" id="bTorso"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vTorso">0</span></div>
+    </div>
     <div class="hint">drag to orbit</div>
   </div>
 
   <div class="bench">
     <section class="card rear">
-      <h2><span class="name">REAR SHOCK</span><span class="spec">150 mm &middot; coil &middot; 2.9:1 leverage</span></h2>
+      <h2><span class="name">REAR SHOCK</span><span class="spec">VPP 170 mm &middot; 230&times;65 coil &middot; LR 2.95&rarr;2.40</span></h2>
       <div class="desk">
-        <div class="ch">
-          <div class="val" id="rUsed">44</div>
-          <div class="bar" id="barR">
-            <div class="bo-zone"></div>
-            <div class="fill" id="fillR"></div>
-            <div class="sag" id="sagR"></div>
-            <div class="pack" id="packR" title="dynamic ride height"></div>
-          </div>
-          <div class="lbl"><u>TRAVEL</u><br>mm used</div>
-        </div>
-        <div class="ch">
-          <output class="val" id="rSpringOut" for="rSpring">480</output>
-          <div class="fader"><input id="rSpring" type="range" min="300" max="650" step="25" value="480" aria-label="Rear coil spring, lb/in"></div>
-          <label class="lbl" for="rSpring"><u>COIL</u><br>lb/in</label>
-        </div>
-        <div class="ch">
-          <output class="val" id="rCompOut" for="rComp">7</output>
-          <div class="fader"><input id="rComp" type="range" min="0" max="20" step="1" value="7" aria-label="Rear compression clicks"></div>
-          <label class="lbl" for="rComp"><u>COMP</u><br>clicks</label>
-        </div>
-        <div class="ch">
-          <output class="val" id="rRebOut" for="rReb">9</output>
-          <div class="fader"><input id="rReb" type="range" min="0" max="20" step="1" value="9" aria-label="Rear rebound clicks"></div>
-          <label class="lbl" for="rReb"><u>REBOUND</u><br>clicks</label>
-        </div>
+        <div class="ch"><div class="val" id="rUsed">0</div><div class="bar" id="barR"><div class="bo-zone"></div><div class="fill" id="fillR"></div><div class="sag" id="sagR"></div><div class="pack" id="packR"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
+        <div class="ch"><output class="val" id="rSpringOut">500</output><div class="fader"><input id="rSpring" type="range" min="300" max="650" step="25" value="500" aria-label="Rear coil spring lb/in"></div><label class="lbl2" for="rSpring"><u>COIL</u><br>lb/in</label></div>
+        <div class="ch"><output class="val" id="rLscOut">8</output><div class="fader"><input id="rLsc" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed compression clicks"></div><label class="lbl2" for="rLsc"><u>LSC</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="rHscOut">4</output><div class="fader"><input id="rHsc" type="range" min="0" max="8" step="1" value="4" aria-label="Rear high-speed compression clicks"></div><label class="lbl2" for="rHsc"><u>HSC</u><br>/8</label></div>
+        <div class="ch"><output class="val" id="rLsrOut">8</output><div class="fader"><input id="rLsr" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed rebound clicks"></div><label class="lbl2" for="rLsr"><u>LSR</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="rHsrOut">4</output><div class="fader"><input id="rHsr" type="range" min="0" max="8" step="1" value="4" aria-label="Rear high-speed rebound clicks"></div><label class="lbl2" for="rHsr"><u>HSR</u><br>/8</label></div>
       </div>
       <div class="reads">
-        <div class="read"><div class="k">SAG</div><div class="v" id="rSag">29%</div></div>
-        <div class="read"><div class="k">RIDE HEIGHT</div><div class="v" id="rPack">29%</div></div>
-        <div class="read"><div class="k">BOTTOM-OUTS</div><div class="v" id="rBo">0</div></div>
+        <div class="read"><div class="k">SAG</div><div class="v" id="rSag">–</div></div>
+        <div class="read"><div class="k">RIDE HT</div><div class="v" id="rPack">–</div></div>
+        <div class="read"><div class="k">LEVERAGE</div><div class="v" id="rLR">–</div></div>
+        <div class="read"><div class="k">B.O.</div><div class="v" id="rBo">0</div></div>
       </div>
     </section>
-
     <section class="card front">
-      <h2><span class="name">FRONT FORK</span><span class="spec">160 mm &middot; air spring</span></h2>
+      <h2><span class="name">FRONT FORK</span><span class="spec">170 mm &middot; 64&deg; HTA &middot; 44 mm offset &middot; air + 4-way</span></h2>
       <div class="desk">
-        <div class="ch">
-          <div class="val" id="fUsed">39</div>
-          <div class="bar" id="barF">
-            <div class="bo-zone"></div>
-            <div class="fill" id="fillF"></div>
-            <div class="sag" id="sagF"></div>
-            <div class="pack" id="packF" title="dynamic ride height"></div>
-          </div>
-          <div class="lbl"><u>TRAVEL</u><br>mm used</div>
-        </div>
-        <div class="ch">
-          <output class="val" id="fSpringOut" for="fSpring">92</output>
-          <div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="92" aria-label="Fork air spring, psi"></div>
-          <label class="lbl" for="fSpring"><u>AIR</u><br>psi</label>
-        </div>
-        <div class="ch">
-          <output class="val" id="fCompOut" for="fComp">6</output>
-          <div class="fader"><input id="fComp" type="range" min="0" max="20" step="1" value="6" aria-label="Fork compression clicks"></div>
-          <label class="lbl" for="fComp"><u>COMP</u><br>clicks</label>
-        </div>
-        <div class="ch">
-          <output class="val" id="fRebOut" for="fReb">8</output>
-          <div class="fader"><input id="fReb" type="range" min="0" max="20" step="1" value="8" aria-label="Fork rebound clicks"></div>
-          <label class="lbl" for="fReb"><u>REBOUND</u><br>clicks</label>
-        </div>
+        <div class="ch"><div class="val" id="fUsed">0</div><div class="bar" id="barF"><div class="bo-zone"></div><div class="fill" id="fillF"></div><div class="sag" id="sagF"></div><div class="pack" id="packF"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
+        <div class="ch"><output class="val" id="fSpringOut">84</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="84" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
+        <div class="ch"><output class="val" id="fVolOut">2</output><div class="fader"><input id="fVol" type="range" min="0" max="5" step="1" value="2" aria-label="Fork volume spacers"></div><label class="lbl2" for="fVol"><u>TOKENS</u><br>vol.</label></div>
+        <div class="ch"><output class="val" id="fLscOut">8</output><div class="fader"><input id="fLsc" type="range" min="0" max="16" step="1" value="8" aria-label="Fork low-speed compression clicks"></div><label class="lbl2" for="fLsc"><u>LSC</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="fHscOut">4</output><div class="fader"><input id="fHsc" type="range" min="0" max="8" step="1" value="4" aria-label="Fork high-speed compression clicks"></div><label class="lbl2" for="fHsc"><u>HSC</u><br>/8</label></div>
+        <div class="ch"><output class="val" id="fLsrOut">8</output><div class="fader"><input id="fLsr" type="range" min="0" max="16" step="1" value="8" aria-label="Fork low-speed rebound clicks"></div><label class="lbl2" for="fLsr"><u>LSR</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="fHsrOut">4</output><div class="fader"><input id="fHsr" type="range" min="0" max="8" step="1" value="4" aria-label="Fork high-speed rebound clicks"></div><label class="lbl2" for="fHsr"><u>HSR</u><br>/8</label></div>
       </div>
       <div class="reads">
-        <div class="read"><div class="k">SAG</div><div class="v" id="fSag">24%</div></div>
-        <div class="read"><div class="k">RIDE HEIGHT</div><div class="v" id="fPack">24%</div></div>
-        <div class="read"><div class="k">BOTTOM-OUTS</div><div class="v" id="fBo">0</div></div>
+        <div class="read"><div class="k">SAG</div><div class="v" id="fSag">–</div></div>
+        <div class="read"><div class="k">RIDE HT</div><div class="v" id="fPack">–</div></div>
+        <div class="read"><div class="k">AXLE X</div><div class="v" id="fAx">–</div></div>
+        <div class="read"><div class="k">B.O.</div><div class="v" id="fBo">0</div></div>
       </div>
     </section>
   </div>
 
-  <p class="note"><b>How to read it:</b> the dashed line on each travel bar is static sag; the yellow arrow is
-  dynamic ride height (a rolling average of travel used). TRAIL strings everything together: rollers, a G-out,
-  a rock garden, a tabletop, long undulations, then a huck to flat. Add rebound clicks and the damper returns
-  slower than the whoops arrive &mdash; the arrow sinks and the suspension <b>packs down</b>, riding deep with little
-  travel left. Back the rebound out to 0&ndash;2 clicks and the return velocity spikes: watch it pogo off the
-  huck landing. Compression clicks slow the stroke into the hit instead; spring rate sets where sag sits.</p>
+  <p class="note"><b>What is simulated.</b> A planar rigid chassis (19 kg sprung, pitch inertia), two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping), a 78 kg rider on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 2.95&rarr;2.40 (18.6% progressive), near-vertical axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
+  <br><b>Rider posture.</b> PRO targets come from side-on frames in <code>crash_training/asa_vermette_vs_avg_rider_Y50K3ZZEdVY.mp4</code> (Asa at 185.5 s and 208.7 s: torso near trail-parallel, front knee ~135&ndash;140&deg;, elbows ~120&ndash;150&deg;) and the Goldstone FPV run; AVERAGE mirrors Charlie at 160.5 s and 194.5 s (upright torso, knee ~165&deg;, stiff legs). Joint limits keep knees &le;160&deg; (PRO) and elbows &le;165&deg;; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.
+  <br><b>Course.</b> Flat start &rarr; 11% climb (rider stands) &rarr; crest &rarr; rollers &rarr; braking-bump washboard &rarr; 18% rock garden &rarr; two G-outs &rarr; 0.8 m kicker over a 4 m gap &rarr; 1 m huck to flat. Speed carried into the lip decides whether the gap is cleared.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 'use strict';
-/* ================= physics: quarter-car per wheel ================= */
-const G9 = 9.81;
-const WHEEL_R = 0.35, XF = 0.6, XR = -0.6, WB = XF - XR;
+const D2R = Math.PI / 180, G9 = 9.81;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+function hash(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
-function makeCorner(opts){
-  return Object.assign({
-    y: 0, v: 0, comp: 0, ema: 0, airborne: false,
-    axleY: WHEEL_R, boCount: 0, boFlash: 0, boCooldown: 0,
-    k: 7000, cComp: 150, cReb: 400
-  }, opts);
+/* =============== 2021 Bullit CC, size L, low setting (published geometry) =============== */
+const GEO = { reach: 0.475, stack: 0.636, hta: 64 * D2R, sta: 77.1 * D2R, cs: 0.449, wb: 1.268, bb: 0.348,
+  rF: 0.373, rR: 0.354, forkTravel: 0.170, offset: 0.044, ht: 0.120, stroke: 0.065, e2e: 0.230, travelR: 0.170 };
+const V2 = (x, y) => ({ x, y });
+const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta));          // down the steering axis
+const dFwd  = V2(Math.sin(GEO.hta),  Math.cos(GEO.hta));          // perpendicular, forward
+const HEAD_TOP = V2(GEO.reach, GEO.stack);
+const HEAD_BOT = V2(HEAD_TOP.x + GEO.ht * dDown.x, HEAD_TOP.y + GEO.ht * dDown.y);
+const CROWN = V2(HEAD_BOT.x + 0.022 * dDown.x, HEAD_BOT.y + 0.022 * dDown.y);
+const AXLE_F_TARGET = V2(GEO.wb - GEO.cs, GEO.rF - GEO.bb);
+const A2C = (AXLE_F_TARGET.y - CROWN.y - GEO.offset * dFwd.y) / dDown.y;   // axle-to-crown, full extension
+const axleFLocal = s => V2(CROWN.x + (A2C - s) * dDown.x + GEO.offset * dFwd.x, CROWN.y + (A2C - s) * dDown.y + GEO.offset * dFwd.y);
+const stDir = V2(-Math.cos(GEO.sta), Math.sin(GEO.sta));          // up the (effective) seat tube
+const SEAT_CLUSTER = V2(stDir.x * 0.44, stDir.y * 0.44);
+const dUp = V2(-dDown.x, -dDown.y);
+const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035);
+const GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
+
+/* =============== VPP four-bar (lower-link driven), fitted to 170 mm / 230x65 / LR 2.95->2.40 =============== */
+const VPP = { P1: V2(-0.02096, -0.01309), L1: 0.10569, P3: V2(0.05255, 0.13936), L2: 0.16932, D: 0.28357,
+  AX: V2(0.30755, 0.35749), S: V2(0.01883, -0.08674), F: V2(0.00281, 0.15186), th0: 4.97790 };
+function vppSolve(th, prevP4){
+  const P1 = VPP.P1, P3 = VPP.P3;
+  const P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));
+  const vx = P3.x - P2.x, vy = P3.y - P2.y, d = Math.hypot(vx, vy);
+  const a = (VPP.D * VPP.D - VPP.L2 * VPP.L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, VPP.D * VPP.D - a * a));
+  const mx = P2.x + a * vx / d, my = P2.y + a * vy / d, px = -vy / d, py = vx / d;
+  const c1 = V2(mx + h * px, my + h * py), c2 = V2(mx - h * px, my - h * py);
+  const P4 = prevP4 ? (Math.hypot(c1.x - prevP4.x, c1.y - prevP4.y) < Math.hypot(c2.x - prevP4.x, c2.y - prevP4.y) ? c1 : c2) : c1;
+  const ex = V2((P4.x - P2.x) / VPP.D, (P4.y - P2.y) / VPP.D), ey = V2(-ex.y, ex.x);
+  const axle = V2(P2.x + VPP.AX.x * ex.x + VPP.AX.y * ey.x, P2.y + VPP.AX.x * ex.y + VPP.AX.y * ey.y);
+  const lx = V2((P2.x - P1.x) / VPP.L1, (P2.y - P1.y) / VPP.L1), ly = V2(-lx.y, lx.x);
+  const S = V2(P1.x + VPP.S.x * lx.x + VPP.S.y * ly.x, P1.y + VPP.S.x * lx.y + VPP.S.y * ly.y);
+  const shock = Math.hypot(S.x - VPP.F.x, S.y - VPP.F.y);
+  return { P2, P4, axle, S, shock };
 }
-const front = makeCorner({ m: 30, travel: 0.160, L0: 0.30, x: XF });
-const rear  = makeCorner({ m: 45, travel: 0.150, L0: 0.26, x: XR });
+/* table over wheel travel t: axle, stroke, leverage, link positions */
+const VT = { n: 0, t: [], ax: [], ay: [], st: [], lr: [], P2: [], P4: [], S: [], th: [] };
+(function buildTable(){
+  let prev = null, rows = [];
+  for (let s = 0; s <= 1.3; s += 0.004){
+    const r = vppSolve(VPP.th0 - s, prev); prev = r.P4;
+    rows.push(Object.assign({ th: VPP.th0 - s }, r));
+    if (r.axle.y - rows[0].axle.y > GEO.travelR + 0.012) break;
+  }
+  const y0 = rows[0].axle.y, e0 = rows[0].shock;
+  for (const r of rows){ VT.t.push(r.axle.y - y0); VT.ax.push(r.axle.x); VT.ay.push(r.axle.y); VT.st.push(e0 - r.shock);
+    VT.P2.push(r.P2); VT.P4.push(r.P4); VT.S.push(r.S); VT.th.push(r.th); }
+  VT.n = rows.length;
+  for (let i = 0; i < VT.n; i++){
+    const a = Math.max(0, i - 1), b = Math.min(VT.n - 1, i + 1);
+    VT.lr.push((VT.t[b] - VT.t[a]) / Math.max(1e-6, VT.st[b] - VT.st[a]));
+  }
+})();
+function vtLookup(t){                       // interpolate by travel (clamped to table)
+  const tt = clamp(t, 0, VT.t[VT.n - 1]);
+  let lo = 0, hi = VT.n - 1;
+  while (hi - lo > 1){ const m = (lo + hi) >> 1; if (VT.t[m] <= tt) lo = m; else hi = m; }
+  const f = (tt - VT.t[lo]) / Math.max(1e-9, VT.t[hi] - VT.t[lo]);
+  const L = (arr) => lerp(arr[lo], arr[hi], f);
+  const LP = (arr) => V2(lerp(arr[lo].x, arr[hi].x, f), lerp(arr[lo].y, arr[hi].y, f));
+  return { ax: L(VT.ax), ay: L(VT.ay), st: L(VT.st), lr: L(VT.lr), P2: LP(VT.P2), P4: LP(VT.P4), S: LP(VT.S) };
+}
+
+/* =============== terrain: an elevation-profiled course of trail features =============== */
+const SEG = {
+  flat: (len, grade) => ({ len, grade, type: 'dirt', h: () => 0 }),
+  roots: (len, grade, A) => ({ len, grade, type: 'dirt', h: t => A * Math.max(0, Math.sin(t * 4.1)) * (0.5 + 0.5 * Math.sin(t * 1.3 + 1)) }),
+  rollers: (n, lam, A, grade) => ({ len: n * lam, grade, type: 'dirt', h: t => A * (1 - Math.cos(2 * Math.PI * t / lam)) / 2 }),
+  washboard: (n, lam, A, grade) => ({ len: n * lam, grade, type: 'dirt', h: t => A * Math.pow(Math.max(0, Math.sin(Math.PI * t / lam)), 1.4) }),
+  rocks: (len, grade, hmax) => ({ len, grade, type: 'rock', h: t => {
+    const cw = 0.45, cell = Math.floor(t / cw), f = t / cw - cell;
+    const a = 0.02 + hash(cell) * hmax, b = 0.02 + hash(cell + 1) * hmax;
+    const w = Math.pow(Math.sin(Math.PI * t / len), 0.3);
+    return (a + (b - a) * smooth((f - 0.82) / 0.18)) * w; } }),
+  gout: (len, D, grade) => ({ len, grade, type: 'dirt', h: t => -D * (1 - Math.pow(Math.abs(2 * t / len - 1), 1.5)) }),
+  kicker: (H, L, deck, gapLen, gapDepth, landH, landL, grade) => ({ len: L + deck + gapLen + landL, grade, type: 'built',
+    h: t => t < L ? H * Math.pow(t / L, 1.5) : t < L + deck ? H : t < L + deck + gapLen ? -gapDepth : landH * (1 - (t - L - deck - gapLen) / landL) }),
+  huck: (H, up, ledge, out, grade) => ({ len: up + ledge + out, grade, type: 'built',
+    h: t => t < up ? H * (1 - Math.cos(Math.PI * t / up)) / 2 : t < up + ledge ? H : 0 })
+};
+const COURSE = [
+  Object.assign(SEG.flat(6, 0.0), { name: 'START' }),
+  Object.assign(SEG.roots(36, 0.11, 0.03), { name: 'CLIMB 11%' }),
+  Object.assign(SEG.flat(6, -0.03), { name: 'CREST' }),
+  Object.assign(SEG.rollers(4, 5, 0.25, -0.04), { name: 'ROLLERS' }),
+  Object.assign(SEG.washboard(14, 0.85, 0.06, -0.09), { name: 'WASHBOARD' }),
+  Object.assign(SEG.rocks(26, -0.18, 0.14), { name: 'ROCK GARDEN 18%' }),
+  Object.assign(SEG.flat(6, -0.05), { name: 'RUN-IN' }),
+  Object.assign(SEG.gout(7, 0.42, -0.03), { name: 'G-OUT 1' }),
+  Object.assign(SEG.flat(3, -0.03), { name: 'G-OUT' }),
+  Object.assign(SEG.gout(7, 0.5, -0.03), { name: 'G-OUT 2' }),
+  Object.assign(SEG.flat(16, -0.09), { name: 'JUMP RUN-IN' }),
+  Object.assign(SEG.kicker(0.8, 3.0, 0.8, 4.0, 0.5, 0.65, 6.0, 0.0), { name: 'BIG JUMP', noPedal: [1.5, 13.8] }),
+  Object.assign(SEG.flat(8, -0.02), { name: 'LANDING' }),
+  Object.assign(SEG.huck(1.0, 8.0, 2.5, 10, 0.0), { name: 'HUCK TO FLAT', noPedal: [6.0, 12.5] }),
+  Object.assign(SEG.flat(8, 0.0), { name: 'FINISH' })
+];
+let COURSE_LEN = 0;
+for (const g of COURSE){ g.start = COURSE_LEN; COURSE_LEN += g.len; }
+(function setBase(){ let b = 0; for (const g of COURSE){ g.base = b; b += g.grade * g.len; } })();
+function segAt(u){
+  const p = clamp(u, 0, COURSE_LEN - 1e-6);
+  let lo = 0, hi = COURSE.length - 1;
+  while (hi - lo > 1){ const m = (lo + hi) >> 1; if (COURSE[m].start <= p) lo = m; else hi = m; }
+  return [COURSE[lo], p - COURSE[lo].start];
+}
+function groundAt(u){ const [g, t] = segAt(u); return g.base + g.grade * t + g.h(t); }
+function baseGrade(u){ return segAt(u)[0].grade; }
+function groundType(u){ return segAt(u)[0].type; }
+/* tyre enveloping: the contact patch of a wheel of radius r rolling over g(x) */
+const ENV_OFF = [-0.85, -0.5, 0, 0.5, 0.85];
+function groundEnv(u, r){
+  let best = -1e9;
+  for (const k of ENV_OFF){ const dx = k * r; const y = groundAt(u + dx) - (r - Math.sqrt(r * r - dx * dx)); if (y > best) best = y; }
+  return best;
+}
+
+/* =============== dampers and springs =============== */
+const V_KNEE = 0.5;                                   // wheel-speed knee between low- and high-speed circuits
+function damper(v, lsC, hsC, lsR, hsR, knee = V_KNEE){   // v>0 compressing (wheel toward chassis); returns force resisting motion
+  const av = Math.abs(v), ls = v > 0 ? lsC : lsR, hs = v > 0 ? hsC : hsR;
+  const f = av < knee ? ls * av : ls * knee + hs * (av - knee);
+  return v > 0 ? f : -f;
+}
+const clicks = (base, range, c, n) => base * Math.pow(range, c / n);
+function forkSpring(x, psi, tokens){                   // EVOL-style: positive chamber ramps, negative balances top-out
+  const pA = psi * 6894.76 * 1.02e-3;
+  const L = 0.215 - tokens * 0.009, Ln = 0.085;
+  const pos = Math.pow(L / Math.max(0.004, L - x), 1.3), neg = Math.pow(Ln / (Ln + x), 1.3);
+  let f = pA * (pos - neg);
+  if (x < 0) f = 40000 * x;                            // top-out bumper
+  return Math.min(f, 15000);
+}
+function coilSpring(S, k){                             // S = shaft stroke (m); k in N/m at the shaft
+  let f = k * S + 60;                                  // 60 N of preload
+  if (S > GEO.stroke - 0.006) f += 400000 * (S - (GEO.stroke - 0.006));
+  f = Math.min(f, 40000);
+  if (S < 0) f = 40000 * S;
+  return f;
+}
+
+/* =============== bodies =============== */
+const M_SPRUNG = 19.0, I_SPRUNG = 3.4, M_RIDER = 78, M_UF = 2.4, M_UR = 3.0;
+const COM = V2(0.03, 0.22);                           // sprung-mass CoM (motor + battery low), frame-local
+const chassis = { y: 0, vy: 0, phi: 0, w: 0 };
+const wheelF = { y: 0, vy: 0, x: 0, s: 0, sv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rF, kT: 55000, cT: 350 };
+const wheelR = { y: 0, vy: 0, x: 0, t: 0, tv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rR, kT: 65000, cT: 400, st: 0, lr: 2.95 };
+const rider = { y: 0, vy: 0, u: 0, k: 9000, c: 900, hx: -0.40, hy: 0.62, xTarget: -0.40, yTarget: 0.62, pop: 0 };
+let v = 3.0, scroll = 0, riding = true, lap = 1;
+const tune = {};
+let riderMode = 'pro', assistMode = 'trail', effortW = 220, vCap = 26 * 0.447;
+const ASSIST = { eco: 0.6, trail: 1.5, boost: 3.0 };
+
+/* world transform helpers */
+function toWorld(p){ const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi); return V2(p.x * c - p.y * s, chassis.y + p.x * s + p.y * c); }
+function worldVel(p){ const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi); return chassis.vy + chassis.w * (p.x * c - p.y * s); }
 
 function applyTuning(){
-  const fPsi = +ui.fSpring.value, rLb = +ui.rSpring.value;
-  front.k = fPsi * 82;                       // N/m per psi (this fork's air-spring curve, linearized)
-  rear.k  = rLb * 175.13 / (2.9 * 2.9);      // lb/in -> N/m at the wheel through 2.9:1 leverage
-  front.cComp = 90  * Math.pow(10, +ui.fComp.value / 20);
-  front.cReb  = 140 * Math.pow(16, +ui.fReb.value  / 20);
-  rear.cComp  = 120 * Math.pow(10, +ui.rComp.value / 20);
-  rear.cReb   = 190 * Math.pow(16, +ui.rReb.value  / 20);
-  ui.fSpringOut.textContent = fPsi;
-  ui.rSpringOut.textContent = rLb;
-  ui.fCompOut.textContent = ui.fComp.value;
-  ui.fRebOut.textContent  = ui.fReb.value;
-  ui.rCompOut.textContent = ui.rComp.value;
-  ui.rRebOut.textContent  = ui.rReb.value;
-  for (const [c, el] of [[front, ui.fSag], [rear, ui.rSag]]){
-    c.sag = Math.min(0.9, c.m * G9 / c.k / c.travel);
-    el.textContent = Math.round(c.sag * 100) + '%';
-  }
-  ui.sagF.style.top = (front.sag * 100) + '%';
-  ui.sagR.style.top = (rear.sag  * 100) + '%';
+  const g = id => +ui[id].value;
+  tune.rK = g('rSpring') * 175.13;
+  tune.rLsC = clicks(500, 6.0, g('rLsc'), 16); tune.rHsC = clicks(300, 4.5, g('rHsc'), 8);
+  tune.rLsR = clicks(650, 7.0, g('rLsr'), 16); tune.rHsR = clicks(350, 4.5, g('rHsr'), 8);
+  tune.fPsi = g('fSpring'); tune.fTok = g('fVol');
+  tune.fLsC = clicks(420, 6.0, g('fLsc'), 16); tune.fHsC = clicks(260, 4.5, g('fHsc'), 8);
+  tune.fLsR = clicks(560, 7.0, g('fLsr'), 16); tune.fHsR = clicks(300, 4.5, g('fHsr'), 8);
+  for (const [id, suf] of [['rSpring',''],['rLsc',''],['rHsc',''],['rLsr',''],['rHsr',''],['fSpring',''],['fVol',''],['fLsc',''],['fHsc',''],['fLsr',''],['fHsr','']])
+    ui[id + 'Out'].textContent = ui[id].value + suf;
+  computeSag();
+}
+/* static sag: solve each end against its static load with the rider in the attack position */
+function computeSag(){
+  const Wtot = (M_SPRUNG + M_RIDER) * G9;
+  const rx = -0.40 + 0.275 * Math.cos(24 * D2R) + 0.10;                               // rider CoM in the attack position
+  const xCom = (M_SPRUNG * COM.x + M_RIDER * rx) / (M_SPRUNG + M_RIDER);
+  const xF = axleFLocal(0).x, xR = VT.ax[0];
+  const Wf = Wtot * (xCom - xR) / (xF - xR), Wr = Wtot - Wf;
+  let lo = 0, hi = GEO.forkTravel;
+  for (let i = 0; i < 40; i++){ const m = (lo + hi) / 2; (forkSpring(m, tune.fPsi, tune.fTok) * Math.sin(GEO.hta) < Wf) ? lo = m : hi = m; }
+  wheelF.sag = lo;
+  lo = 0; hi = GEO.travelR;
+  for (let i = 0; i < 40; i++){ const m = (lo + hi) / 2; const k = vtLookup(m); (coilSpring(k.st, tune.rK) / k.lr < Wr) ? lo = m : hi = m; }
+  wheelR.sag = lo;
+  ui.fSag.textContent = Math.round(wheelF.sag / GEO.forkTravel * 100) + '%';
+  ui.rSag.textContent = Math.round(wheelR.sag / GEO.travelR * 100) + '%';
+  ui.sagF.style.top = (wheelF.sag / GEO.forkTravel * 100) + '%';
+  ui.sagR.style.top = (wheelR.sag / GEO.travelR * 100) + '%';
 }
 
-/* ================= terrain: a course built from trail features ================= */
-function hash(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
-const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
-const SEG = {
-  flat: len => ({ len, type: 'dirt', h: () => 0 }),
-  rollers: (n, lam, A) => ({ len: n * lam, type: 'dirt', h: t => A * (1 - Math.cos(2 * Math.PI * t / lam)) / 2 }),
-  whoops: (n, lam, A) => ({ len: n * lam, type: 'dirt', h: t => A * Math.pow(Math.max(0, Math.sin(Math.PI * t / lam)), 1.4) }),
-  gout: (len, D) => ({ len, type: 'dirt', h: t => -D * (1 - Math.pow(Math.abs(2 * t / len - 1), 1.7)) }),
-  jump: H => { const L = 2.4, T = 2.6, D = 3.4;                 // kicker lip, tabletop, landing
-    return { len: L + T + D, type: 'built',
-      h: t => t < L ? H * Math.pow(t / L, 1.8) : t < L + T ? H : H * (1 - (t - L - T) / D) }; },
-  rocks: len => ({ len, type: 'rock', h: t => {                  // square-edged rocks with 8 cm blended edges
-    const cw = 0.42, cell = Math.floor(t / cw), f = t / cw - cell;
-    const a = 0.02 + hash(cell) * 0.10, b = 0.02 + hash(cell + 1) * 0.10;
-    const w = Math.pow(Math.sin(Math.PI * t / len), 0.35);
-    return (a + (b - a) * smooth((f - 0.81) / 0.19)) * w; } }),
-  huck: H => { const U = 3.2, P = 2.2, L = 5;                    // roll-up, ledge, sheer drop to flat
-    return { len: U + P + L, type: 'built',
-      h: t => t < U ? H * (1 - Math.cos(Math.PI * t / U)) / 2 : t < U + P ? H : 0 }; }
+/* =============== rider posture controller =============== */
+const POSE = {
+  pro: {
+    seated:  { hx: -0.15, hy: 0.68, torso: 42, k: 30000, c: 1500, kneeMax: 158 },
+    climb:   { hx: -0.20, hy: 0.66, torso: 44, k: 12000, c: 1000, kneeMax: 160 },
+    attack:  { hx: -0.40, hy: 0.62, torso: 24, k: 9000,  c: 950,  kneeMax: 160 },
+    pop:     { hx: -0.25, hy: 0.76, torso: 34, k: 14000, c: 1100, kneeMax: 165 },
+    air:     { hx: -0.36, hy: 0.58, torso: 30, k: 7000,  c: 800,  kneeMax: 160 },
+    land:    { hx: -0.42, hy: 0.55, torso: 18, k: 8000,  c: 1100, kneeMax: 160 },
+    huck:    { hx: -0.50, hy: 0.58, torso: 16, k: 9000,  c: 1000, kneeMax: 160 }
+  },
+  avg: {
+    seated:  { hx: -0.14, hy: 0.72, torso: 48, k: 34000, c: 1700, kneeMax: 172 },
+    climb:   { hx: -0.18, hy: 0.74, torso: 45, k: 20000, c: 1300, kneeMax: 172 },
+    attack:  { hx: -0.22, hy: 0.78, torso: 40, k: 22000, c: 1400, kneeMax: 172 },
+    pop:     { hx: -0.20, hy: 0.80, torso: 42, k: 24000, c: 1500, kneeMax: 175 },
+    air:     { hx: -0.22, hy: 0.74, torso: 40, k: 18000, c: 1200, kneeMax: 172 },
+    land:    { hx: -0.22, hy: 0.76, torso: 40, k: 22000, c: 1400, kneeMax: 172 },
+    huck:    { hx: -0.24, hy: 0.76, torso: 40, k: 22000, c: 1400, kneeMax: 172 }
+  }
 };
-const COURSES = {
-  trail: [SEG.flat(3), SEG.rollers(3, 3, 0.22), SEG.flat(2), SEG.gout(4.5, 0.5), SEG.flat(2.5), SEG.rocks(6),
-          SEG.flat(2.5), SEG.jump(0.6), SEG.flat(3), SEG.rollers(2, 6, 0.45), SEG.flat(2), SEG.whoops(6, 1.15, 0.1),
-          SEG.flat(2), SEG.huck(0.9), SEG.flat(3)],
-  whoops:  [SEG.whoops(8, 1.15, 0.105)],
-  rollers: [SEG.rollers(3, 3, 0.22), SEG.rollers(1, 6, 0.45)],
-  gout:    [SEG.flat(2), SEG.gout(4.5, 0.5), SEG.flat(2)],
-  rocks:   [SEG.flat(1.5), SEG.rocks(7), SEG.flat(1.5)],
-  jump:    [SEG.flat(2), SEG.jump(0.6), SEG.flat(3)],
-  huck:    [SEG.flat(2), SEG.huck(0.9), SEG.flat(4)]
-};
-let course = COURSES.trail, courseLen = 0;
-function setCourse(name){
-  course = COURSES[name];
-  courseLen = course.reduce((s, g) => s + g.len, 0);
-}
-setCourse('trail');
-function segAt(u){
-  let p = u % courseLen; if (p < 0) p += courseLen;
-  for (const g of course){ if (p < g.len) return [g, p]; p -= g.len; }
-  return [course[0], 0];
-}
-function groundAt(u){ const [g, t] = segAt(u); return g.h(t); }
-function groundType(u){ return segAt(u)[0].type; }
-
-let scroll = 0, speed = 13 * 0.447, riding = true;
-
-function stepCorner(c, dt){
-  const gx = groundAt(scroll + c.x);
-  const eps = 0.01;
-  const gVel = (groundAt(scroll + c.x + eps) - groundAt(scroll + c.x - eps)) / (2 * eps) * speed;
-  const contactY = gx + WHEEL_R;               // axle height if the tire is on the dirt
-  const ext = c.y - contactY;                  // current strut length (vertical)
-  let F = -c.m * G9;
-  if (ext < c.L0){                             // in contact, spring engaged
-    c.airborne = false;
-    const comp = c.L0 - ext;
-    const compVel = gVel - c.v;                // >0 while compressing
-    F += c.k * comp;
-    F += (compVel > 0 ? c.cComp : c.cReb) * compVel;
-    if (comp > c.travel){                      // bottom-out bumper
-      F += (comp - c.travel) * 90000 + Math.max(0, compVel) * 3000;
-      if (comp - c.travel > 0.004 && c.boCooldown <= 0){
-        c.boCount++; c.boFlash = 0.35; c.boCooldown = 0.5;
-      }
-    }
-    c.comp = Math.min(comp, c.travel);
-    c.axleY = contactY;
-  } else {                                     // topped out / airborne
-    c.airborne = true;
-    c.comp = 0;
-    c.axleY = c.y - c.L0;
+let poseState = 'seated', poseT = 0, airT = 0, contactT = 0, pedaling = true, crank = 0, dropper = 1, brakeF = 0;
+const cur = { hx: -0.15, hy: 0.71, torso: 42, kneeMax: 158 };
+function poseController(dt, grade, airborne, u){
+  const seg = segAt(u)[0];
+  const distToLip = (seg.name === 'BIG JUMP') ? (3.0 + 0.8) - segAt(u)[1] : 99;
+  const distToLedge = (seg.name === 'HUCK TO FLAT') ? (8.0 + 2.5) - segAt(u)[1] : 99;
+  let next = poseState;
+  if (airborne){ airT += dt; contactT = 0; next = airT > 0.08 ? 'air' : poseState; }
+  else {
+    contactT += dt; airT = 0;
+    if (poseState === 'air' || (poseState === 'land' && contactT < 0.45)) next = 'land';
+    else if (distToLip > 0 && distToLip < 0.35 + v * 0.12) next = 'pop';
+    else if (distToLedge > 0 && distToLedge < 0.4 + v * 0.2) next = 'huck';
+    else if (pedaling && seg.grade > 0.045) next = 'climb';
+    else if (pedaling && seg.grade > -0.025 && (seg.name === 'START' || seg.name === 'FINISH')) next = 'seated';
+    else next = 'attack';
   }
-  c.v += (F / c.m) * dt;
-  c.y += c.v * dt;
-  const floor = gx + WHEEL_R + c.L0 - c.travel - 0.05;
-  if (c.y < floor){ c.y = floor; c.v = Math.max(0, c.v); }
-  c.boCooldown -= dt;
-  c.ema += (c.comp - c.ema) * Math.min(1, dt * 1.6);
+  if (next !== poseState){ poseState = next; poseT = 0; }
+  poseT += dt;
+  const P = POSE[riderMode][poseState];
+  const steep = clamp(-grade, 0, 0.25);
+  const att = poseState === 'attack' && riderMode === 'pro';
+  const tgt = { hx: P.hx - (att ? 0.25 * steep : 0), hy: P.hy - (att ? 0.12 * steep : 0), torso: P.torso - (att ? 30 * steep : 0), kneeMax: P.kneeMax };
+  const tau = poseState === 'pop' ? 0.06 : poseState === 'huck' ? 0.10 : (riderMode === 'pro' ? 0.14 : 0.30);
+  const a = 1 - Math.exp(-dt / tau);
+  cur.hx += (tgt.hx - cur.hx) * a; cur.hy += (tgt.hy - cur.hy) * a; cur.torso += (tgt.torso - cur.torso) * a; cur.kneeMax = tgt.kneeMax;
+  rider.xTarget = cur.hx; rider.yTarget = cur.hy;
+  rider.k += (P.k - rider.k) * a; rider.c += (P.c - rider.c) * a;
+  dropper += (((poseState === 'seated' || poseState === 'climb') ? 1 : 0) - dropper) * (1 - Math.exp(-dt / 0.5));
 }
 
-function resetCorners(){
-  for (const c of [front, rear]){
-    const gx = groundAt(scroll + c.x);
-    c.y = gx + WHEEL_R + c.L0 - c.sag * c.travel;
-    c.v = 0; c.ema = c.sag * c.travel; c.boCount = 0;
+/* =============== physics step =============== */
+const PDT = 1 / 600;
+let gradeS = 0, hudPower = 0, accelX = 0;
+function reset(){
+  scroll = 0; v = 2.5; lap = 1;
+  const g0 = groundAt(0);
+  chassis.phi = 0; chassis.w = 0; chassis.vy = 0;
+  wheelF.s = wheelF.sag; wheelR.t = wheelR.sag;
+  const af = axleFLocal(wheelF.s), ar = vtLookup(wheelR.t);
+  chassis.y = g0 + Math.max(wheelF.r - af.y, wheelR.r - ar.ay) + 0.0;
+  wheelF.y = g0 + wheelF.r; wheelR.y = g0 + wheelR.r; wheelF.vy = wheelR.vy = 0;
+  wheelF.x = af.x; wheelR.x = ar.ax;
+  wheelF.bo = wheelR.bo = 0; wheelF.ema = wheelF.sag; wheelR.ema = wheelR.sag;
+  poseState = 'seated'; cur.hx = -0.15; cur.hy = 0.68; cur.torso = 42;
+  rider.u = 0; rider.vy = 0; rider.y = toWorld(V2(cur.hx, cur.hy)).y;
+  rider.xTarget = cur.hx; rider.yTarget = cur.hy;
+}
+function step(dt){
+  /* --- kinematic positions of the wheels on the chassis --- */
+  const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi);
+  const crownW = toWorld(CROWN);
+  const axisDown = V2(dDown.x * c - dDown.y * s, dDown.x * s + dDown.y * c);      // rotated steering axis
+  const fwdR = V2(dFwd.x * c - dFwd.y * s, dFwd.x * s + dFwd.y * c);
+  // front: stroke from the vertical separation crown -> axle along the (rotated) axis
+  wheelF.s = A2C - (wheelF.y - crownW.y - GEO.offset * fwdR.y) / axisDown.y;
+  const axleFl = axleFLocal(wheelF.s); wheelF.x = (axleFl.x * c - axleFl.y * s);
+  const vCrown = worldVel(CROWN);
+  wheelF.sv = -(wheelF.vy - vCrown) / axisDown.y;                                    // >0 compressing
+  // rear: invert the VPP table for the travel whose (rotated) axle height equals the wheel height
+  {
+    let lo = -0.02, hi = GEO.travelR + 0.02;
+    for (let i = 0; i < 22; i++){ const m = (lo + hi) / 2; const k = vtLookup(m); const ay = chassis.y + (k.ax * s + (k.ay + (m - clamp(m, 0, VT.t[VT.n - 1]))) * c); (ay < wheelR.y) ? lo = m : hi = m; }
+    wheelR.t = (lo + hi) / 2;
+    const k = vtLookup(wheelR.t);
+    wheelR.x = k.ax * c - k.ay * s; wheelR.st = k.st; wheelR.lr = k.lr;
+    const vAxle = worldVel(V2(k.ax, k.ay));
+    wheelR.tv = (wheelR.vy - vAxle) / c;                                            // >0 compressing (axle rising in frame)
   }
+  /* --- terrain under each wheel --- */
+  const gF = groundEnv(scroll + wheelF.x, wheelF.r), gR = groundEnv(scroll + wheelR.x, wheelR.r);
+  const slF = (groundEnv(scroll + wheelF.x + 0.02, wheelF.r) - groundEnv(scroll + wheelF.x - 0.02, wheelF.r)) / 0.04;
+  const slR = (groundEnv(scroll + wheelR.x + 0.02, wheelR.r) - groundEnv(scroll + wheelR.x - 0.02, wheelR.r)) / 0.04;
+  const slFx = (groundEnv(scroll + wheelF.x + 0.12, wheelF.r) - groundEnv(scroll + wheelF.x - 0.12, wheelF.r)) / 0.24;   // longer baseline for the drive/drag force
+  const slRx = (groundEnv(scroll + wheelR.x + 0.12, wheelR.r) - groundEnv(scroll + wheelR.x - 0.12, wheelR.r)) / 0.24;
+  const gradeNow = (groundAt(scroll + wheelF.x) - groundAt(scroll + wheelR.x)) / (wheelF.x - wheelR.x);
+  gradeS += (gradeNow - gradeS) * Math.min(1, dt * 6);
+  /* --- tyre forces --- */
+  function tyre(w, g, sl){
+    const d = g + w.r - w.y;
+    if (d <= 0){ w.tire = 0; return 0; }
+    const vg = sl * v;
+    let f = w.kT * d + w.cT * (vg - w.vy);
+    f = clamp(f, 0, 20000); w.tire = f; return f;
+  }
+  const tF = tyre(wheelF, gF, slF), tR = tyre(wheelR, gR, slR);
+  /* --- suspension forces (positive = pushing wheel down / chassis up) --- */
+  const fAxis = forkSpring(wheelF.s, tune.fPsi, tune.fTok) + damper(wheelF.sv, tune.fLsC, tune.fHsC, tune.fLsR, tune.fHsR);
+  const Ff = fAxis * (-axisDown.y);
+  const LR0 = VT.lr[0], lr2 = LR0 * LR0;                                              // damper coefficients are wheel-rate at top-out, converted to the shaft
+  const Fshock = coilSpring(wheelR.st, tune.rK) + damper(wheelR.tv / wheelR.lr, tune.rLsC * lr2, tune.rHsC * lr2, tune.rLsR * lr2, tune.rHsR * lr2, V_KNEE / LR0);
+  const Fr = Fshock / wheelR.lr;
+  /* bottom-out counters */
+  for (const [w, comp, trav] of [[wheelF, wheelF.s, GEO.forkTravel], [wheelR, wheelR.t, GEO.travelR]]){
+    if (comp > trav - 0.003 && w.boCd <= 0){ w.bo++; w.boFlash = 0.35; w.boCd = 0.6; }
+    w.boCd -= dt; w.ema += (Math.max(0, comp) - w.ema) * Math.min(1, dt * 1.6);
+  }
+  /* --- rider on legs --- */
+  const comX = rider.xTarget + 0.275 * Math.cos(cur.torso * D2R) + 0.10;             // torso, arms and head sit forward of the hips
+  const hipsW = toWorld(V2(rider.xTarget, rider.yTarget)), hipsV = worldVel(V2(rider.xTarget, rider.yTarget));
+  rider.u = rider.y - hipsW.y;
+  let Frider = -rider.k * rider.u - rider.c * (rider.vy - hipsV) + M_RIDER * G9;    // legs hold body weight at u = 0
+  if (rider.u < -0.30) Frider += -60000 * (rider.u + 0.30);
+  if (rider.u > 0.22) Frider += -60000 * (rider.u - 0.22);
+  if (poseState === 'pop' && poseT < 0.18) Frider += (riderMode === 'pro' ? 600 : 200);     // the push off the lip
+  const airborne = tF <= 0 && tR <= 0;
+  /* --- chassis --- */
+  const armF = V2(axleFl.x * c - axleFl.y * s, 0), armR = V2(wheelR.x, 0), armH = V2(comX * c - rider.yTarget * s, 0);
+  const comW = V2(COM.x * c - COM.y * s, 0);
+  let Fy = Ff + Fr - Frider - M_SPRUNG * G9;
+  let Tz = (armF.x - comW.x) * Ff + (armR.x - comW.x) * Fr - (armH.x - comW.x) * Frider;
+  const inAir = tF <= 0 && tR <= 0;
+  const phiRef = inAir ? -0.10 : clamp(Math.atan(gradeS), -0.35, 0.35);
+  const kp = inAir ? 900 : 350, cp = inAir ? 220 : 150;
+  Tz += -kp * (chassis.phi - phiRef) - cp * chassis.w;
+  if (tF <= 0 && tR > 0 && v > 2) Tz += riderMode === 'pro' ? 320 : 120;              // front wheel off the ledge: the rider pushes the bars forward and shifts back                               // the rider's arms hold the bars level with the trail; in the air they set the bike up for the landing
+  Tz += (M_SPRUNG + M_RIDER) * accelX * 0.75;                                        // braking dives the nose, accel lifts it
+  chassis.vy += (Fy / M_SPRUNG) * dt; chassis.y += chassis.vy * dt;
+  chassis.w += (Tz / I_SPRUNG) * dt; chassis.phi += chassis.w * dt;
+  chassis.phi = clamp(chassis.phi, -0.9, 0.9);
+  /* --- wheels --- */
+  wheelF.vy += ((tF - Ff) / M_UF - G9) * dt; wheelF.y += wheelF.vy * dt;
+  wheelR.vy += ((tR - Fr) / M_UR - G9) * dt; wheelR.y += wheelR.vy * dt;
+  /* hard stops: an inelastic catch at the end of travel so nothing tunnels */
+  {
+    const crown2 = toWorld(CROWN), vCr = worldVel(CROWN);
+    const sMax = GEO.forkTravel + 0.004;
+    const sNow = A2C - (wheelF.y - crown2.y - GEO.offset * fwdR.y) / axisDown.y;
+    if (sNow > sMax){ wheelF.y = crown2.y + GEO.offset * fwdR.y + (A2C - sMax) * axisDown.y; const rel = wheelF.vy - vCr; if (rel > 0){ chassis.vy += rel * M_UF / M_SPRUNG; wheelF.vy = vCr; } }
+    const tMax = GEO.travelR + 0.004, k2 = vtLookup(tMax);
+    const yMax = chassis.y + k2.ax * s + k2.ay * c, vAx = worldVel(V2(k2.ax, k2.ay));
+    if (wheelR.y > yMax){ wheelR.y = yMax; const rel = wheelR.vy - vAx; if (rel > 0){ chassis.vy += rel * M_UR / M_SPRUNG; wheelR.vy = vAx; } }
+  }
+  /* --- rider mass --- */
+  rider.vy += (Frider / M_RIDER - G9) * dt; rider.y += rider.vy * dt;
+  /* --- longitudinal: power, assist, drag, grade, bump drag, braking --- */
+  const grade = gradeS;
+  const seg = segAt(scroll)[0];
+  const segT = segAt(scroll)[1];
+  const noPedal = seg.noPedal ? (segT > seg.noPedal[0] && segT < seg.noPedal[1]) : false;
+  pedaling = !airborne && v < vCap * 0.97 && grade > -0.07 && !noPedal && poseState !== 'land';
+  const Prider = pedaling ? effortW * (poseState === 'climb' ? 1.25 : 1) : 0;
+  const Pmotor = (pedaling && v < 8.9) ? Math.min(500, Prider * ASSIST[assistMode]) * clamp((8.9 - v) / 1.5, 0, 1) : 0;
+  hudPower = Prider + Pmotor;
+  const Fprop = Math.min((Prider + Pmotor) / Math.max(v, 1.2), 900);
+  const Mt = M_SPRUNG + M_RIDER + M_UF + M_UR;
+  const Fdrag = 0.5 * 1.2 * 0.62 * v * v, Froll = 0.018 * Mt * G9 * (airborne ? 0 : 1);
+  // the ground pushes along its own normal: a tilted contact turns tyre load into drive (downhill) or drag (uphill, bump faces)
+  const Ncap = 2.5 * Mt * G9;
+  const Fground = -(Math.min(tF, Ncap) * clamp(slFx, -1.5, 1.5) + Math.min(tR, Ncap) * clamp(slRx, -1.5, 1.5));
+  brakeF = (!airborne && v > vCap) ? Math.min(0.55 * Mt * G9, Mt * (v - vCap) * 2.5) : 0;
+  accelX = (Fprop - Fdrag - Froll + Fground - brakeF) / Mt;
+  v = Math.max(0.5, v + accelX * dt);
+  scroll += v * dt;
+  crank += (pedaling ? 82 / 60 * 2 * Math.PI : 0) * dt;
+  if (!pedaling){ const level = Math.PI / 2; let d = ((level - crank) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; crank += d * Math.min(1, dt * 6); }
+  poseController(dt, grade, airborne, scroll);
+  if (scroll >= COURSE_LEN - 0.5){ lap++; const keepLap = lap; reset(); lap = keepLap; }
 }
 
-/* ================= ui ================= */
+/* =============== ui =============== */
 const $ = id => document.getElementById(id);
-const ui = {
-  fSpring:$('fSpring'), fComp:$('fComp'), fReb:$('fReb'),
-  rSpring:$('rSpring'), rComp:$('rComp'), rReb:$('rReb'),
-  fSpringOut:$('fSpringOut'), fCompOut:$('fCompOut'), fRebOut:$('fRebOut'),
-  rSpringOut:$('rSpringOut'), rCompOut:$('rCompOut'), rRebOut:$('rRebOut'),
-  fSag:$('fSag'), rSag:$('rSag'), sagF:$('sagF'), sagR:$('sagR'),
-  fillF:$('fillF'), fillR:$('fillR'), packF:$('packF'), packR:$('packR'),
-  barF:$('barF'), barR:$('barR'),
-  fPack:$('fPack'), rPack:$('rPack'), fUsed:$('fUsed'), rUsed:$('rUsed'),
-  fBo:$('fBo'), rBo:$('rBo'), speed:$('speed'), speedOut:$('speedOut'), rideBtn:$('rideBtn')
-};
-for (const id of ['fSpring','fComp','fReb','rSpring','rComp','rReb'])
-  ui[id].addEventListener('input', applyTuning);
-ui.speed.addEventListener('input', () => {
-  speed = +ui.speed.value * 0.447;
-  ui.speedOut.textContent = ui.speed.value + ' mph';
-});
-ui.rideBtn.addEventListener('click', () => {
-  riding = !riding;
-  ui.rideBtn.textContent = riding ? 'PAUSE' : 'RIDE';
-  ui.rideBtn.dataset.riding = riding ? '' : '1';
-});
-document.querySelectorAll('.terrain button').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.terrain button').forEach(x => x.classList.toggle('on', x === b));
-    setCourse(b.dataset.t);
-    scroll = 0; resetCorners();
-  });
-});
+const ui = {};
+for (const id of ['rSpring','rLsc','rHsc','rLsr','rHsr','fSpring','fVol','fLsc','fHsc','fLsr','fHsr'])
+  { ui[id] = $(id); ui[id + 'Out'] = $(id + 'Out'); ui[id].addEventListener('input', applyTuning); }
+for (const id of ['fSag','rSag','sagF','sagR','fillF','fillR','packF','packR','barF','barR','fPack','rPack','fUsed','rUsed','fBo','rBo','rLR','fAx',
+  'effort','effortOut','vcap','vcapOut','rideBtn','restartBtn','hudSec','hudSpd','hudGrade','hudState','hudPower','vKnee','vHip','vElbow','vTorso','bKnee','bHip','bElbow','bTorso']) ui[id] = $(id);
+ui.effort.addEventListener('input', () => { effortW = +ui.effort.value; ui.effortOut.textContent = effortW + ' W'; });
+ui.vcap.addEventListener('input', () => { vCap = +ui.vcap.value * 0.447; ui.vcapOut.textContent = ui.vcap.value + ' mph'; });
+ui.rideBtn.addEventListener('click', () => { riding = !riding; ui.rideBtn.textContent = riding ? 'PAUSE' : 'RIDE'; ui.rideBtn.dataset.riding = riding ? '' : '1'; });
+ui.restartBtn.addEventListener('click', () => reset());
+function segButtons(id, cb){ const el = $(id); el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(b.dataset.v); })); }
+segButtons('riderSeg', vv => { riderMode = vv; });
+segButtons('assistSeg', vv => { assistMode = vv; });
+/* DH envelope bands from kinematic-model/src/disciplines.py */
+const BANDS = { knee: [100, 155, 60, 180], hip: [55, 115, 30, 150], elbow: [90, 160, 60, 180], torso: [15, 55, 0, 90] };
+for (const [k, b] of Object.entries(BANDS)){ const el = ui['b' + k[0].toUpperCase() + k.slice(1)].querySelector('.ok'); el.style.left = ((b[0] - b[2]) / (b[3] - b[2]) * 100) + '%'; el.style.width = ((b[1] - b[0]) / (b[3] - b[2]) * 100) + '%'; }
+function setJoint(k, val){
+  const b = BANDS[k], name = k[0].toUpperCase() + k.slice(1);
+  ui['v' + name].textContent = Math.round(val) + '°';
+  const pt = ui['b' + name].querySelector('.pt');
+  pt.style.left = clamp((val - b[2]) / (b[3] - b[2]) * 100, 0, 100) + '%';
+  pt.classList.toggle('out', val < b[0] || val > b[1]);
+}
 applyTuning();
-resetCorners();
-if (matchMedia('(prefers-reduced-motion: reduce)').matches){
-  riding = false; ui.rideBtn.textContent = 'RIDE'; ui.rideBtn.dataset.riding = '1';
-}
+reset();
+if (matchMedia('(prefers-reduced-motion: reduce)').matches){ riding = false; ui.rideBtn.textContent = 'RIDE'; ui.rideBtn.dataset.riding = '1'; }
 
-function updateHud(){
-  for (const [c, fill, pack, packV, used, bo, bar] of [
-    [front, ui.fillF, ui.packF, ui.fPack, ui.fUsed, ui.fBo, ui.barF],
-    [rear,  ui.fillR, ui.packR, ui.rPack, ui.rUsed, ui.rBo, ui.barR]
+function updateHud(joints){
+  for (const [w, comp, trav, fill, pack, packV, used, bo, bar] of [
+    [wheelF, wheelF.s, GEO.forkTravel, ui.fillF, ui.packF, ui.fPack, ui.fUsed, ui.fBo, ui.barF],
+    [wheelR, wheelR.t, GEO.travelR, ui.fillR, ui.packR, ui.rPack, ui.rUsed, ui.rBo, ui.barR]
   ]){
-    const pct = c.comp / c.travel * 100, ema = c.ema / c.travel * 100;
-    fill.style.height = pct.toFixed(1) + '%';
-    pack.style.top = ema.toFixed(1) + '%';
-    packV.textContent = Math.round(ema) + '%';
-    packV.classList.toggle('warn', ema > c.sag * 100 + 18);
-    used.textContent = Math.round(c.comp * 1000);
-    bo.textContent = c.boCount;
-    bar.classList.toggle('bo', c.boFlash > 0);
-    c.boFlash -= 1 / 60;
+    const pct = clamp(comp / trav * 100, 0, 100), ema = w.ema / trav * 100;
+    fill.style.height = pct.toFixed(1) + '%'; pack.style.top = clamp(ema, 0, 100).toFixed(1) + '%';
+    packV.textContent = Math.round(ema) + '%'; packV.classList.toggle('warn', ema > w.sag / trav * 100 + 18);
+    used.textContent = Math.round(clamp(comp, 0, trav) * 1000); bo.textContent = w.bo;
+    bar.classList.toggle('bo', w.boFlash > 0); w.boFlash -= 1 / 60;
   }
+  ui.rLR.textContent = wheelR.lr.toFixed(2); ui.fAx.textContent = Math.round((axleFLocal(wheelF.s).x - axleFLocal(0).x) * 1000) + ' mm';
+  const seg = segAt(scroll)[0];
+  ui.hudSec.textContent = seg.name + '  ·  LAP ' + lap;
+  ui.hudSpd.textContent = (v / 0.447).toFixed(0) + ' mph';
+  ui.hudGrade.textContent = (gradeS * 100).toFixed(0) + '%';
+  ui.hudState.textContent = { seated: 'SEATED PEDAL', climb: 'STANDING CLIMB', attack: 'ATTACK', pop: 'PRELOAD / POP', air: 'AIRBORNE', land: 'ABSORB LANDING', huck: 'HUCK: WEIGHT BACK' }[poseState];
+  ui.hudPower.textContent = hudPower > 0 ? Math.round(hudPower) + ' W (rider+motor)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
+  for (const k of ['knee', 'hip', 'elbow', 'torso']) setJoint(k, joints[k]);
 }
 
-/* ================= 3d scene ================= */
+/* =============== 3d scene =============== */
 const canvas = $('cv');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-renderer.setSize(416, 234, false);
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x7FAACB);
-const camera = new THREE.PerspectiveCamera(38, 416 / 234, 0.1, 60);
-const camTarget = new THREE.Vector3(0, 0.66, 0);
-let camAz = 0.32, camEl = 0.19;
+renderer.setSize(448, 252, false);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x7FAACB);
+const camera = new THREE.PerspectiveCamera(36, 448 / 252, 0.1, 80);
+const camTarget = new THREE.Vector3(0.1, 0.9, 0);
+let camAz = 0.30, camEl = 0.17;
 function placeCamera(){
-  const r = 4.1;
-  camera.position.set(
-    camTarget.x + r * Math.sin(camAz) * Math.cos(camEl),
-    camTarget.y + r * Math.sin(camEl),
-    camTarget.z + r * Math.cos(camAz) * Math.cos(camEl)
-  );
+  const r = 4.6;
+  camera.position.set(camTarget.x + r * Math.sin(camAz) * Math.cos(camEl), camTarget.y + r * Math.sin(camEl), camTarget.z + r * Math.cos(camAz) * Math.cos(camEl));
   camera.lookAt(camTarget);
 }
-placeCamera();
 let dragging = false, px = 0, py = 0;
 canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; canvas.setPointerCapture(e.pointerId); });
-canvas.addEventListener('pointermove', e => {
-  if (!dragging) return;
-  camAz = Math.max(-1.15, Math.min(1.15, camAz + (e.clientX - px) * 0.006));
-  camEl = Math.max(0.04, Math.min(0.6,  camEl + (e.clientY - py) * 0.004));
-  px = e.clientX; py = e.clientY;
-});
+canvas.addEventListener('pointermove', e => { if (!dragging) return; camAz = clamp(camAz + (e.clientX - px) * 0.006, -1.2, 1.2); camEl = clamp(camEl + (e.clientY - py) * 0.004, 0.03, 0.7); px = e.clientX; py = e.clientY; });
 canvas.addEventListener('pointerup', () => dragging = false);
-
 scene.add(new THREE.AmbientLight(0xdfe8f0, 0.9));
-const sun = new THREE.DirectionalLight(0xfff2d6, 0.75);
-sun.position.set(2, 4, 3);
-scene.add(sun);
-
+const sun = new THREE.DirectionalLight(0xfff2d6, 0.75); sun.position.set(2, 4, 3); scene.add(sun);
 const mat = c => new THREE.MeshLambertMaterial({ color: c });
 const box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
 
-/* sky bands, sun, parallax hills and a tree line */
-const skyCols = [0x7FAACB, 0x9BC0D8, 0xB7D2E0, 0xD3DCD3];
-skyCols.forEach((c, i) => {
-  const b = new THREE.Mesh(new THREE.PlaneGeometry(60, 1.6), new THREE.MeshBasicMaterial({ color: c }));
-  b.position.set(0, 4.0 - i * 1.6, -12); scene.add(b);
-});
-const sunSq = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshBasicMaterial({ color: 0xF6EDC2 }));
-sunSq.position.set(-6.5, 3.4, -11.6); scene.add(sunSq);
-function hillLayer(z, col, h, n, step){
-  const g = new THREE.Group();
-  for (let i = 0; i < n; i++){
-    const m = box(h * 1.5, h * 1.5, 0.1, col);
-    m.rotation.z = Math.PI / 4;
-    m.position.set(-9 + i * step + (i % 3) * 0.7, -0.4 + (i % 2) * 0.25 * h, z);
-    g.add(m);
-  }
-  scene.add(g); return g;
-}
-const hillsFar  = hillLayer(-8, 0x8AA3AE, 1.9, 9, 2.4);   // period 7.2
-const hillsNear = hillLayer(-5, 0x5F7F62, 1.3, 11, 2.0);  // period 6.0
-const trees = new THREE.Group();
-for (let i = 0; i < 11; i++){
-  const x = -8 + i * 1.6, s = 0.8 + hash(i + 40) * 0.5;
-  const trunk = box(0.12, 0.7, 0.12, 0x5C4633); trunk.position.set(x, 0.05, -2.6);
-  const crown = box(0.6 * s, 0.6 * s, 0.25, i % 2 ? 0x3E6644 : 0x35573B);
-  crown.rotation.z = Math.PI / 4; crown.position.set(x, 0.55 + 0.3 * s, -2.6);
-  const crown2 = box(0.45 * s, 0.45 * s, 0.25, i % 2 ? 0x3E6644 : 0x35573B);
-  crown2.rotation.z = Math.PI / 4; crown2.position.set(x, 0.85 + 0.45 * s, -2.6);
-  trees.add(trunk, crown, crown2);
-}
-scene.add(trees);
+/* backdrop that follows the camera height */
+const backdrop = new THREE.Group(); scene.add(backdrop);
+[0x7FAACB, 0x9BC0D8, 0xB7D2E0, 0xD3DCD3].forEach((c, i) => { const b = new THREE.Mesh(new THREE.PlaneGeometry(80, 2.0), new THREE.MeshBasicMaterial({ color: c })); b.position.set(0, 4.6 - i * 2.0, -16); backdrop.add(b); });
+const sunSq = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ color: 0xF6EDC2 })); sunSq.position.set(-8, 4.2, -15.5); backdrop.add(sunSq);
+function hillLayer(z, col, h, n, stepX){ const g = new THREE.Group(); for (let i = 0; i < n; i++){ const m = box(h * 1.5, h * 1.5, 0.1, col); m.rotation.z = Math.PI / 4; m.position.set(-12 + i * stepX + (i % 3) * 0.7, -0.6 + (i % 2) * 0.25 * h, z); g.add(m); } backdrop.add(g); return g; }
+const hillsFar = hillLayer(-11, 0x8AA3AE, 2.6, 11, 2.4), hillsNear = hillLayer(-7, 0x5F7F62, 1.8, 13, 2.0);
+const trees = new THREE.Group(); scene.add(trees); const treeList = [];
+for (let i = 0; i < 13; i++){ const x = -9.6 + i * 1.6, sc = 0.8 + hash(i + 40) * 0.5; const g = new THREE.Group();
+  const trunk = box(0.12, 0.8, 0.12, 0x5C4633); trunk.position.y = 0.4;
+  const c1 = box(0.6 * sc, 0.6 * sc, 0.25, i % 2 ? 0x3E6644 : 0x35573B); c1.rotation.z = Math.PI / 4; c1.position.y = 0.55 + 0.3 * sc;
+  const c2 = box(0.45 * sc, 0.45 * sc, 0.25, i % 2 ? 0x3E6644 : 0x35573B); c2.rotation.z = Math.PI / 4; c2.position.y = 0.85 + 0.45 * sc;
+  g.add(trunk, c1, c2); g.position.set(x, 0, -2.8); trees.add(g); treeList.push(g); }
 
 /* terrain columns */
-const NCOL = 50, COLW = 0.18;
-const GROUND_COLS = { dirt: [0x8B6A4A, 0x7C5D40], rock: [0x8A857B, 0x7A756C], built: [0x6F5236, 0x644928] };
+const NCOL = 64, COLW = 0.16, GROUND_COLS = { dirt: [0x8B6A4A, 0x7C5D40], rock: [0x8A857B, 0x7A756C], built: [0x6F5236, 0x644928] };
 const cols = [];
-for (let i = 0; i < NCOL; i++){
-  const b = box(COLW, 2.4, 2.4, 0x8B6A4A);
-  b.position.set((i - NCOL / 2) * COLW + COLW / 2, -1.2, -0.2);
-  scene.add(b); cols.push(b);
-}
+for (let i = 0; i < NCOL; i++){ const b = box(COLW, 6, 2.4, 0x8B6A4A); b.position.set((i - NCOL / 2) * COLW + COLW / 2, -3, -0.2); scene.add(b); cols.push(b); }
 function updateTerrain(){
-  for (let i = 0; i < NCOL; i++){
-    const x = (i - NCOL / 2) * COLW + COLW / 2, u = scroll + x;
-    const h = Math.round(groundAt(u) / 0.02) * 0.02;
-    cols[i].position.y = h - 1.2;
-    cols[i].material.color.setHex(GROUND_COLS[groundType(u)][i % 2]);
-  }
+  for (let i = 0; i < NCOL; i++){ const x = (i - NCOL / 2) * COLW + COLW / 2, u = scroll + x; const h = Math.round(groundAt(u) / 0.02) * 0.02; cols[i].position.y = h - 3; cols[i].material.color.setHex(GROUND_COLS[groundType(u)][i % 2]); }
+  const off = trees.position.x;
+  for (const t of treeList){ const wx = t.position.x + off; t.position.y = groundAt(scroll + wx) - 0.25; }
 }
 
-/* limb helper: box hinged at its top end, aimed at a point */
+/* limbs */
 const DOWN = new THREE.Vector3(0, -1, 0), _dir = new THREE.Vector3();
-function limb(len, w, d, color){
-  const g = new THREE.BoxGeometry(w, len, d);
-  g.translate(0, -len / 2, 0);
-  const m = new THREE.Mesh(g, mat(color));
-  m.userData.len = len;
-  return m;
-}
-function aimLimb(m, a, b){
-  m.position.copy(a);
-  _dir.subVectors(b, a);
-  const L = _dir.length() || 0.001;
-  m.scale.y = L / m.userData.len;
-  m.quaternion.setFromUnitVectors(DOWN, _dir.divideScalar(L));
-}
-function ik(a, b, l1, l2, poleZ, kneeSign){        // 2-bone solve, elbow/knee pushed along plane normal
-  const d = a.distanceTo(b);
-  const mid = a.clone().lerp(b, 0.5);
-  const h2 = l1 * l1 - Math.min(l1 * l1, (d / 2) * (d / 2));
-  const h = Math.sqrt(Math.max(0.0004, h2));
-  _dir.subVectors(b, a).normalize();
+function limb(len, w, d, color){ const g = new THREE.BoxGeometry(w, len, d); g.translate(0, -len / 2, 0); const m = new THREE.Mesh(g, mat(color)); m.userData.len = len; return m; }
+function aimLimb(m, a, b){ m.position.copy(a); _dir.subVectors(b, a); const L = _dir.length() || 0.001; m.scale.y = L / m.userData.len; m.quaternion.setFromUnitVectors(DOWN, _dir.divideScalar(L)); }
+function ik(a, b, l1, l2, poleZ, sign, maxAngleDeg){
+  let d = a.distanceTo(b);
+  const dMax = Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(maxAngleDeg * D2R));
+  const bb = b.clone();
+  if (d > dMax){ bb.copy(a).addScaledVector(_dir.subVectors(b, a).normalize(), dMax); d = dMax; }   // never past the joint limit: the end drifts short instead
+  const mid = a.clone().lerp(bb, 0.5);
+  const h = Math.sqrt(Math.max(0.0004, l1 * l1 - (d / 2) * (d / 2)));
+  _dir.subVectors(bb, a).normalize();
   const perp = new THREE.Vector3().crossVectors(_dir, new THREE.Vector3(0, 0, poleZ)).normalize();
-  if (perp.lengthSq() < 0.5) perp.set(kneeSign, 0, 0);
-  return mid.addScaledVector(perp, h * kneeSign);
+  if (perp.lengthSq() < 0.5) perp.set(sign, 0, 0);
+  const joint = mid.addScaledVector(perp, h * sign);
+  return { joint, end: bb };
 }
+const angleAt = (a, b, c) => { const v1 = a.clone().sub(b), v2 = c.clone().sub(b); return Math.acos(clamp(v1.dot(v2) / (v1.length() * v2.length()), -1, 1)) / D2R; };
 
-/* colors */
-const C = { frame:0xC8892E, forkUp:0xD9D2C0, forkLow:0x5F8FB5, sw:0xC96B45, tire:0x2B2622,
-  rim:0xB7AE9A, hub:0x6F675A, skin:0xD8AA80, jersey:0x4E7A4F, pants:0x3A3835, helmet:0x9E3B32, shoe:0x25211E };
-
-/* frame group (sprung mass) — local origin at the bottom bracket */
+/* colours (Bullit: gloss black / yellow) */
+const C = { frame: 0x2A2A2A, decal: 0xE8C33A, forkUp: 0x2E2E2E, forkLow: 0x7FA6C9, sw: 0x2A2A2A, link: 0xD4784E, coil: 0xD4784E, tire: 0x2B2622, rim: 0x3A3A3A, hub: 0x6F675A,
+  skin: 0xD8AA80, jersey: 0xE9E4DC, pants: 0xE9E4DC, helmet: 0x1E3F8F, shoe: 0x25211E, motor: 0x1B1B1B };
+const P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const frame = new THREE.Group(); scene.add(frame);
-const P = (x, y, z = 0) => new THREE.Vector3(x, y, z);
-const NFl = P(0.60, 0.28), NRl = P(-0.60, 0.236);   // frame nodes over the axles
-const THETA_L = Math.atan2(NFl.y - NRl.y, WB);
-function tube(a, b, t, c){ const m = limb(1, t, t, c); frame.add(m); aimLimb(m, a, b); return m; }
-tube(P(0.52, 0.38), P(-0.28, 0.30), 0.045, C.frame);          // top tube
-tube(P(0.56, 0.30), P(0.02, -0.01), 0.05, C.frame);           // down tube
-tube(P(0, 0), P(-0.28, 0.30), 0.042, C.frame);                // seat tube
-tube(P(-0.28, 0.30), P(-0.35, 0.45), 0.03, C.hub);            // seatpost
-tube(P(0.60, 0.30), P(0.53, 0.42), 0.035, C.frame);           // head tube / steerer
-const saddle = box(0.25, 0.045, 0.07, C.pants); saddle.position.set(-0.36, 0.47, 0); frame.add(saddle);
-const bar = box(0.04, 0.04, 0.56, 0x3A3835); bar.position.set(0.55, 0.43, 0); frame.add(bar);
-tube(P(0.53, 0.42), P(0.55, 0.43), 0.03, C.hub);              // stem
-const GRIP_L = P(0.55, 0.43, 0.25), GRIP_Rt = P(0.55, 0.43, -0.25);
-const bb = box(0.09, 0.09, 0.12, C.hub); frame.add(bb);
-/* cranks + pedals */
-const crankL = limb(0.17, 0.03, 0.025, 0x25211E), crankR = limb(0.17, 0.03, 0.025, 0x25211E);
-frame.add(crankL, crankR);
-const pedL = box(0.09, 0.02, 0.06, C.hub), pedR = box(0.09, 0.02, 0.06, C.hub);
-frame.add(pedL, pedR);
-/* rider (children of frame; limbs re-aimed per tick) */
-const hipsL = P(-0.22, 0.62);
-const torso = limb(0.42, 0.14, 0.20, C.jersey); frame.add(torso);
-const head = box(0.15, 0.15, 0.15, C.skin); frame.add(head);
-const helmet = box(0.175, 0.075, 0.175, C.helmet); frame.add(helmet);
-const visor = box(0.08, 0.028, 0.15, C.helmet); frame.add(visor);
-const hipBox = box(0.16, 0.13, 0.19, C.pants); frame.add(hipBox);
-const uArmL = limb(0.28, 0.055, 0.055, C.jersey), lArmL = limb(0.28, 0.05, 0.05, C.skin);
-const uArmR = limb(0.28, 0.055, 0.055, C.jersey), lArmR = limb(0.28, 0.05, 0.05, C.skin);
-const thighL = limb(0.40, 0.075, 0.075, C.pants), shinL = limb(0.40, 0.06, 0.06, C.pants);
-const thighR = limb(0.40, 0.075, 0.075, C.pants), shinR = limb(0.40, 0.06, 0.06, C.pants);
-const shoeL = box(0.13, 0.05, 0.07, C.shoe), shoeR = box(0.13, 0.05, 0.07, C.shoe);
-frame.add(uArmL, lArmL, uArmR, lArmR, thighL, shinL, thighR, shinR, shoeL, shoeR);
-
-/* world-space linkage pieces */
-function wsLimb(len, w, d, c){ const m = limb(len, w, d, c); scene.add(m); return m; }
-const stanchL = wsLimb(0.2, 0.045, 0.045, C.forkUp), stanchR = wsLimb(0.2, 0.045, 0.045, C.forkUp);
-const lowerL = wsLimb(0.2, 0.06, 0.06, C.forkLow),  lowerR = wsLimb(0.2, 0.06, 0.06, C.forkLow);
-const chainstL = wsLimb(0.2, 0.045, 0.04, C.sw), chainstR = wsLimb(0.2, 0.045, 0.04, C.sw);
-const seatstL = wsLimb(0.2, 0.035, 0.03, C.sw), seatstR = wsLimb(0.2, 0.035, 0.03, C.sw);
-const shockBody = wsLimb(0.2, 0.06, 0.06, 0x25211E), shockShaft = wsLimb(0.2, 0.03, 0.03, 0xB7AE9A);
-const shockCoil = wsLimb(0.2, 0.075, 0.075, C.sw);
-
+function tube(a, b, t, c, d){ const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; }
+tube(P3(HEAD_TOP.x, HEAD_TOP.y), P3(SEAT_CLUSTER.x - 0.01, SEAT_CLUSTER.y + 0.02), 0.05, C.frame);                     // top tube
+tube(P3(HEAD_BOT.x, HEAD_BOT.y), P3(0.09, 0.12), 0.095, C.frame, 0.075);                                                  // down tube (battery)
+tube(P3(HEAD_BOT.x - 0.01, HEAD_BOT.y + 0.01), P3(0.10, 0.13), 0.03, C.decal, 0.08);                                        // yellow stripe
+tube(P3(0.02, 0.06), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y), 0.045, C.frame);                                                  // seat tube
+tube(P3(HEAD_TOP.x + 0.01, HEAD_TOP.y + 0.02), P3(HEAD_BOT.x - 0.01, HEAD_BOT.y - 0.02), 0.06, C.frame);                   // head tube
+const motor = box(0.24, 0.17, 0.15, C.motor); motor.position.set(-0.03, -0.02, 0); frame.add(motor);
+const upperLink = limb(1, 0.03, 0.09, C.link); frame.add(upperLink);
+const lowerLink = limb(1, 0.035, 0.10, C.link); frame.add(lowerLink);
+const lowerLinkArm = limb(1, 0.03, 0.08, C.link); frame.add(lowerLinkArm);
+const shockBody = limb(1, 0.05, 0.05, 0x1B1B1B), shockCoil = limb(1, 0.07, 0.07, C.coil), shockShaft = limb(1, 0.026, 0.026, 0xC9C2B0);
+frame.add(shockBody, shockCoil, shockShaft);
+const chainL = limb(1, 0.04, 0.035, C.sw), chainR = limb(1, 0.04, 0.035, C.sw), seatL = limb(1, 0.032, 0.03, C.sw), seatR = limb(1, 0.032, 0.03, C.sw);
+frame.add(chainL, chainR, seatL, seatR);
+const stanchL = limb(1, 0.042, 0.042, C.forkUp), stanchR = limb(1, 0.042, 0.042, C.forkUp), lowerL = limb(1, 0.058, 0.058, C.forkLow), lowerR = limb(1, 0.058, 0.058, C.forkLow), arch = limb(1, 0.04, 0.04, C.forkLow);
+frame.add(stanchL, stanchR, lowerL, lowerR, arch);
+const post = limb(1, 0.031, 0.031, 0x3A3A3A); frame.add(post);
+const saddle = box(0.26, 0.045, 0.08, 0x25211E); frame.add(saddle);
+const stem = limb(1, 0.035, 0.035, 0x3A3A3A); frame.add(stem); aimLimb(stem, P3(HEAD_TOP.x, HEAD_TOP.y), P3(BAR.x, BAR.y));
+const bar = box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x3A3835); bar.position.set(BAR.x, BAR.y, 0); frame.add(bar);
+const GRIP_L = P3(BAR.x, BAR.y, GRIP_Z), GRIP_R = P3(BAR.x, BAR.y, -GRIP_Z);
+const crankL = limb(CRANK, 0.03, 0.025, 0x25211E), crankR = limb(CRANK, 0.03, 0.025, 0x25211E); frame.add(crankL, crankR);
+const pedL = box(0.1, 0.02, 0.07, 0x6F675A), pedR = box(0.1, 0.02, 0.07, 0x6F675A); frame.add(pedL, pedR);
+/* rider */
+const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.16, 0.16, 0.16, C.skin), helmet = box(0.185, 0.085, 0.185, C.helmet), visor = box(0.09, 0.03, 0.16, C.helmet);
+const hipBox = box(0.17, 0.14, 0.22, C.pants);
+const uArmL = limb(0.31, 0.06, 0.06, C.jersey), lArmL = limb(0.29, 0.05, 0.05, C.jersey), uArmR = limb(0.31, 0.06, 0.06, C.jersey), lArmR = limb(0.29, 0.05, 0.05, C.jersey);
+const thighL = limb(0.44, 0.085, 0.085, C.pants), shinL = limb(0.44, 0.065, 0.065, C.pants), thighR = limb(0.44, 0.085, 0.085, C.pants), shinR = limb(0.44, 0.065, 0.065, C.pants);
+const shoeL = box(0.15, 0.055, 0.08, C.shoe), shoeR = box(0.15, 0.055, 0.08, C.shoe);
+const numberPlate = box(0.01, 0.12, 0.16, 0xffffff);
+frame.add(torso, head, helmet, visor, hipBox, uArmL, lArmL, uArmR, lArmR, thighL, shinL, thighR, shinR, shoeL, shoeR, numberPlate);
 /* wheels */
-function wheel(){
-  const g = new THREE.Group();
-  const tire = new THREE.Mesh(new THREE.CylinderGeometry(WHEEL_R, WHEEL_R, 0.065, 10), mat(C.tire));
-  tire.rotation.x = Math.PI / 2;
-  const rim = new THREE.Mesh(new THREE.CylinderGeometry(WHEEL_R * 0.72, WHEEL_R * 0.72, 0.07, 10), mat(C.rim));
-  rim.rotation.x = Math.PI / 2;
-  const hub = box(0.09, 0.09, 0.1, C.hub);
-  g.add(tire, rim, hub);
-  for (let i = 0; i < 3; i++){
-    const s = box(0.035, WHEEL_R * 1.35, 0.03, 0x4a4540);
-    s.rotation.z = i * Math.PI / 3;
-    g.add(s);
-  }
-  scene.add(g);
-  return g;
-}
-const wF = wheel(), wR = wheel();
-const shadF = box(0.5, 0.02, 0.3, 0x3F3226), shadR = box(0.5, 0.02, 0.3, 0x3F3226);
-scene.add(shadF, shadR);
+function wheel(r){ const g = new THREE.Group(); const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.066, 12), mat(C.tire)); tire.rotation.x = Math.PI / 2;
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.72, r * 0.72, 0.07, 12), mat(C.rim)); rim.rotation.x = Math.PI / 2;
+  const hub = box(0.09, 0.09, 0.11, C.hub); g.add(tire, rim, hub);
+  for (let i = 0; i < 3; i++){ const s = box(0.03, r * 1.35, 0.028, 0x4a4540); s.rotation.z = i * Math.PI / 3; g.add(s); }
+  scene.add(g); return g; }
+const wF = wheel(GEO.rF), wR = wheel(GEO.rR);
+const shadF = box(0.55, 0.02, 0.3, 0x3F3226), shadR = box(0.55, 0.02, 0.3, 0x3F3226); scene.add(shadF, shadR);
 
-/* per-tick pose */
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
-const ZAXIS = new THREE.Vector3(0, 0, 1);
-function toWorld(v){ return frame.localToWorld(v.clone()); }
-let crank = 0;
+const jointsOut = { knee: 130, hip: 90, elbow: 120, torso: 25 };
 function pose(dt){
-  const hF = front.axleY + (front.L0 - front.comp);
-  const hR = rear.axleY  + (rear.L0  - rear.comp);
-  const theta = Math.atan2(hF - hR, WB) - THETA_L;
-  frame.rotation.z = theta;
-  const midT = P((XF + XR) / 2, (hF + hR) / 2);
-  const midL = P((NFl.x + NRl.x) / 2, (NFl.y + NRl.y) / 2).applyAxisAngle(ZAXIS, theta);
-  frame.position.set(midT.x - midL.x, midT.y - midL.y, 0);
-  frame.updateMatrixWorld(true);
-
-  /* wheels (rolling forward = clockwise seen from the camera side) */
-  wF.position.set(XF, front.axleY, 0);
-  wR.position.set(XR, rear.axleY, 0);
-  const spin = speed / WHEEL_R * dt;
-  wF.rotation.z -= spin; wR.rotation.z -= spin;
-  const gF = groundAt(scroll + XF), gR = groundAt(scroll + XR);
-  shadF.position.set(XF, gF + 0.012, 0);
-  shadR.position.set(XR, gR + 0.012, 0);
-  shadF.scale.x = Math.max(0.3, 1 - (front.axleY - gF - WHEEL_R) * 1.5);
-  shadR.scale.x = Math.max(0.3, 1 - (rear.axleY - gR - WHEEL_R) * 1.5);
-
-  /* fork: crown node -> front axle, telescoping */
-  const crown = toWorld(NFl);
-  for (const [st, lo, zz] of [[stanchL, lowerL, 0.09], [stanchR, lowerR, -0.09]]){
-    _a.set(crown.x, crown.y, zz);
-    _b.set(XF, front.axleY, zz);
-    _c.copy(_a).lerp(_b, 0.5);
-    aimLimb(st, _a, _c);
-    _c.copy(_a).lerp(_b, 0.32);
-    aimLimb(lo, _c, _b);
-  }
-  /* swingarm */
-  const pivot = toWorld(P(-0.02, 0.05));
-  const clusterW = toWorld(P(-0.26, 0.27));
-  for (const [cs, ss, zz] of [[chainstL, seatstL, 0.075], [chainstR, seatstR, -0.075]]){
-    _a.set(pivot.x, pivot.y, zz); _b.set(XR, rear.axleY, zz);
-    aimLimb(cs, _a, _b);
-    _a.set(clusterW.x, clusterW.y, zz);
-    aimLimb(ss, _a, _b);
-  }
-  /* shock: frame mount -> point on the seatstay */
-  const mnt = toWorld(P(0.06, 0.31));
-  _b.set(clusterW.x, clusterW.y, 0).lerp(_c.set(XR, rear.axleY, 0), 0.35);
-  _a.copy(mnt).lerp(_b, 0.5); aimLimb(shockBody, mnt, _a);
-  aimLimb(shockShaft, _a.copy(mnt).lerp(_b, 0.45), _b);
-  aimLimb(shockCoil, _a.copy(mnt).lerp(_b, 0.1), _c.copy(mnt).lerp(_b, 0.9));
-
-  /* cranks: pedal goes top -> forward -> bottom (forward pedaling) */
-  crank += speed * 1.15 * dt;
-  const pl = P(Math.sin(crank) * 0.17, Math.cos(crank) * 0.17, 0.13);
-  const pr = P(-Math.sin(crank) * 0.17, -Math.cos(crank) * 0.17, -0.13);
-  aimLimb(crankL, P(0, 0, 0.09), _a.set(pl.x, pl.y, 0.09));
-  aimLimb(crankR, P(0, 0, -0.09), _a.set(pr.x, pr.y, -0.09));
+  frame.position.set(0, chassis.y, 0); frame.rotation.z = chassis.phi; frame.updateMatrixWorld(true);
+  const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi);
+  /* rear linkage from the table */
+  const k = vtLookup(wheelR.t);
+  const axR = P3(k.ax, k.ay);
+  aimLimb(lowerLink, P3(VPP.P1.x, VPP.P1.y), P3(k.P2.x, k.P2.y));
+  aimLimb(lowerLinkArm, P3(VPP.P1.x, VPP.P1.y), P3(k.S.x, k.S.y));
+  aimLimb(upperLink, P3(VPP.P3.x, VPP.P3.y), P3(k.P4.x, k.P4.y));
+  for (const [cs, ss, zz] of [[chainL, seatL, 0.075], [chainR, seatR, -0.075]]){
+    aimLimb(cs, P3(k.P2.x, k.P2.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(k.P4.x, k.P4.y, zz), P3(axR.x, axR.y, zz)); }
+  _a.set(VPP.F.x, VPP.F.y, 0); _b.set(k.S.x, k.S.y, 0);
+  aimLimb(shockBody, _a, _c.copy(_a).lerp(_b, 0.45)); aimLimb(shockShaft, _c.copy(_a).lerp(_b, 0.4), _b); aimLimb(shockCoil, _c.copy(_a).lerp(_b, 0.12), _a.clone().lerp(_b, 0.85));
+  /* fork */
+  const axF = axleFLocal(wheelF.s);
+  for (const [st, lo, zz] of [[stanchL, lowerL, 0.085], [stanchR, lowerR, -0.085]]){
+    _a.set(CROWN.x, CROWN.y, zz); _b.set(axF.x, axF.y, zz);
+    aimLimb(st, _a, _c.copy(_a).lerp(_b, 0.55)); aimLimb(lo, _c.copy(_a).lerp(_b, 0.38), _b); }
+  aimLimb(arch, _a.set(axF.x - 0.05 * dDown.x * 3, axF.y - 0.05 * dDown.y * 3, 0.085), _b.set(axF.x - 0.05 * dDown.x * 3, axF.y - 0.05 * dDown.y * 3, -0.085));
+  /* wheels in world */
+  wF.position.set(axF.x * c - axF.y * s, chassis.y + axF.x * s + axF.y * c, 0);
+  wR.position.set(axR.x * c - axR.y * s, chassis.y + axR.x * s + axR.y * c, 0);
+  const spin = v / GEO.rR * dt; wF.rotation.z -= spin * GEO.rR / GEO.rF; wR.rotation.z -= spin;
+  const gFv = groundAt(scroll + wF.position.x), gRv = groundAt(scroll + wR.position.x);
+  shadF.position.set(wF.position.x, gFv + 0.012, 0); shadR.position.set(wR.position.x, gRv + 0.012, 0);
+  shadF.scale.x = clamp(1 - (wF.position.y - gFv - GEO.rF) * 1.2, 0.25, 1); shadR.scale.x = clamp(1 - (wR.position.y - gRv - GEO.rR) * 1.2, 0.25, 1);
+  /* dropper + saddle */
+  const sh = 0.46 + 0.18 * dropper;
+  const sad = P3(stDir.x * sh, stDir.y * sh); aimLimb(post, P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y), sad); saddle.position.set(sad.x - 0.03, sad.y + 0.02, 0);
+  /* cranks (forward pedaling: top -> forward -> bottom) */
+  const pl = P3(Math.sin(crank) * CRANK, Math.cos(crank) * CRANK, PEDAL_Z), pr = P3(-Math.sin(crank) * CRANK, -Math.cos(crank) * CRANK, -PEDAL_Z);
+  aimLimb(crankL, P3(0, 0, 0.1), _a.set(pl.x, pl.y, 0.1)); aimLimb(crankR, P3(0, 0, -0.1), _a.set(pr.x, pr.y, -0.1));
   pedL.position.copy(pl); pedR.position.copy(pr);
-  shoeL.position.set(pl.x - 0.02, pl.y + 0.035, pl.z); shoeR.position.set(pr.x - 0.02, pr.y + 0.035, pr.z);
-
-  /* rider */
-  const bob = Math.sin(crank * 2) * 0.008;
-  const shC = P(0.10, 0.88 + bob);
-  hipBox.position.set(hipsL.x, hipsL.y + 0.02, 0);
-  aimLimb(torso, shC, _a.set(hipsL.x, hipsL.y, 0));
-  head.position.set(shC.x + 0.09, shC.y + 0.075, 0);
-  helmet.position.set(shC.x + 0.085, shC.y + 0.16, 0);
-  visor.position.set(shC.x + 0.20, shC.y + 0.14, 0);
-  for (const [ua, la, grip, zz] of [[uArmL, lArmL, GRIP_L, 0.12], [uArmR, lArmR, GRIP_Rt, -0.12]]){
-    _a.set(shC.x, shC.y - 0.03, zz);
-    const elbow = ik(_a, grip, 0.28, 0.28, zz > 0 ? 1 : -1, -1);
-    aimLimb(ua, _a, elbow); aimLimb(la, elbow, grip);
+  /* rider: hips follow the rider mass on its legs */
+  const hips = P3(cur.hx, cur.hy + rider.u, 0);
+  const tor = cur.torso * D2R;
+  const shoulders = P3(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor), 0);
+  hipBox.position.set(hips.x, hips.y + 0.02, 0); hipBox.rotation.z = tor * 0.5;
+  aimLimb(torso, shoulders, hips);
+  const neck = tor + 35 * D2R;
+  head.position.set(shoulders.x + 0.17 * Math.cos(neck), shoulders.y + 0.17 * Math.sin(neck), 0);
+  helmet.position.set(head.position.x - 0.01, head.position.y + 0.09, 0); visor.position.set(head.position.x + 0.11, head.position.y + 0.07, 0);
+  numberPlate.position.set(BAR.x + 0.04, BAR.y + 0.02, 0);
+  const elbowMax = riderMode === 'pro' ? 160 : 168;
+  let elbowAng = 0, kneeAng = 0;
+  for (const [ua, la, grip, zz] of [[uArmL, lArmL, GRIP_L, 0.13], [uArmR, lArmR, GRIP_R, -0.13]]){
+    _a.set(shoulders.x, shoulders.y - 0.02, zz);
+    const r = ik(_a, grip, 0.31, 0.29, zz > 0 ? 1 : -1, -1, elbowMax);
+    aimLimb(ua, _a, r.joint); aimLimb(la, r.joint, r.end);
+    if (zz > 0) elbowAng = angleAt(_a, r.joint, r.end);
   }
-  for (const [th, sh, ped, zz] of [[thighL, shinL, pl, 0.09], [thighR, shinR, pr, -0.09]]){
-    _a.set(hipsL.x, hipsL.y, zz);
-    _b.set(ped.x, ped.y + 0.03, ped.z);
-    const knee = ik(_a, _b, 0.40, 0.40, zz > 0 ? 1 : -1, 1);
-    aimLimb(th, _a, knee); aimLimb(sh, knee, _b);
+  for (const [th, sh, ped, zz, shoe] of [[thighL, shinL, pl, 0.10, shoeL], [thighR, shinR, pr, -0.10, shoeR]]){
+    _a.set(hips.x, hips.y, zz); _b.set(ped.x, ped.y + 0.04, ped.z);
+    const r = ik(_a, _b, 0.44, 0.44, zz > 0 ? 1 : -1, 1, cur.kneeMax);
+    aimLimb(th, _a, r.joint); aimLimb(sh, r.joint, r.end);
+    shoe.position.set(ped.x + (pedaling ? 0 : -0.02), ped.y + 0.045, ped.z); shoe.rotation.z = pedaling ? 0 : (riderMode === 'pro' ? -0.25 : 0.05);   // heels dropped
+    if (zz > 0) kneeAng = angleAt(_a, r.joint, r.end);
   }
-
-  /* camera follows the chassis up the roll-ins and off the drops */
-  camTarget.y += ((frame.position.y + 0.36) - camTarget.y) * Math.min(1, dt * 2.5);
+  const kneePt = P3(0, 0, 0); // hip angle uses the leading (left) leg
+  {
+    _a.set(hips.x, hips.y, 0.10); _b.set(pl.x, pl.y + 0.04, PEDAL_Z);
+    const r = ik(_a, _b, 0.44, 0.44, 1, 1, cur.kneeMax);
+    jointsOut.hip = angleAt(shoulders, _a, r.joint);
+  }
+  jointsOut.knee = kneeAng; jointsOut.elbow = elbowAng; jointsOut.torso = cur.torso - Math.atan(gradeS) / D2R + chassis.phi / D2R;
+  /* camera & backdrop follow */
+  camTarget.y += ((chassis.y + 0.55) - camTarget.y) * Math.min(1, dt * 2.5);
+  backdrop.position.y = camTarget.y - 0.9;
   placeCamera();
 }
-
-/* parallax */
 function parallax(dt){
-  for (const [g, f, period] of [[hillsFar, 0.06, 7.2], [hillsNear, 0.14, 6.0], [trees, 0.4, 1.6]]){
-    g.position.x -= speed * f * dt;
-    if (g.position.x < -period) g.position.x += period;
-  }
+  for (const [g, f, period] of [[hillsFar, 0.06, 7.2], [hillsNear, 0.14, 6.0], [trees, 0.42, 1.6]]){ g.position.x -= v * f * dt; if (g.position.x < -period) g.position.x += period; }
 }
 
-/* ================= main loop ================= */
-const PDT = 1 / 360;
+/* =============== main loop =============== */
 let last = performance.now(), acc = 0;
 function tick(now){
   requestAnimationFrame(tick);
-  const dt = Math.min(0.05, (now - last) / 1000);
-  last = now;
-  if (riding){
-    acc += dt;
-    while (acc >= PDT){
-      scroll += speed * PDT;
-      stepCorner(front, PDT);
-      stepCorner(rear, PDT);
-      acc -= PDT;
-    }
-    parallax(dt);
-  }
-  updateTerrain();
-  pose(riding ? dt : 0);
-  updateHud();
-  renderer.render(scene, camera);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 60){ step(PDT); acc -= PDT; n++; } parallax(dt); }
+  updateTerrain(); pose(riding ? dt : 0); updateHud(jointsOut); renderer.render(scene, camera);
 }
 requestAnimationFrame(tick);
+window.SIM = { chassis, wheelF, wheelR, rider, get v(){ return v; }, get scroll(){ return scroll; }, get state(){ return poseState; }, seg: () => segAt(scroll)[0].name, VT, GEO, A2C, joints: jointsOut };
 </script>
