@@ -1,0 +1,180 @@
+{
+ "video_id": "Y50K3ZZEdVY",
+ "title": "Asa Vermette vs. An Average Rider - How Much Faster is a DH Pro?",
+ "rider_ids": {
+  "A": "Asa Vermette (pro) - black Fox gloves",
+  "B": "host / average rider - no gloves, wrist watch, rental bike"
+ },
+ "track": "Australian national DH track, dry and dusty (captions say 'Medina' bike park, likely Maydena, Tasmania)",
+ "timestamps_source": "narration in YouTube auto-captions; refine cut points against harvester shot list in data/harvest/shots/",
+ "segments": [
+  {
+   "start_s": 0.0,
+   "end_s": 64.84,
+   "rider": "both",
+   "type": "intro",
+   "notes": "Host narration/intro. Some riding b-roll of host (avg rider) likely. Asa introduced at 0:34.",
+   "orig_start_s": 0,
+   "orig_end_s": 63,
+   "start_frame": 0,
+   "end_frame": 1621,
+   "changed": true,
+   "note": "end snapped 63.0->64.84 (cut 1621). Rider label corrected B->both by frame inspection: shots 0-2 (0-31.72) host intro to camera (Charlie Coquillard) only; shot 3 (31.72-43.08) host+Asa standing together (frame 32.4: both in frame, 'ASA VERMETTE' lower-third); shots 4-10 (43.08-64.84) World Cup podium/race b-roll of Asa (frame 63.8: podium champagne). Interview begins at cut 1621."
+  },
+  {
+   "start_s": 64.84,
+   "end_s": 125.36,
+   "rider": "A",
+   "type": "interview",
+   "notes": "Asa interview, standing. Not riding footage. Asa mentions gaining time in fast off-camber and quick rock gardens.",
+   "orig_start_s": 63,
+   "orig_end_s": 124,
+   "start_frame": 1621,
+   "end_frame": 3134,
+   "changed": true,
+   "note": "start 63->64.84 (cut 1621), end 124->125.36 (cut 3134). Interview both standing 64.84-79.4 and 94.64-112.48; riding b-roll of Asa (grey/white Fox kit, race tape) 79.4-94.64 (frames 1985-2366) and 112.48-122.36 (2812-3059); crowd-on-track shot 122.36-125.36 (3059-3134). Alternate end candidate 3059 if the crowd shot is treated as setup."
+  },
+  {
+   "start_s": 125.36,
+   "end_s": 147.56,
+   "rider": "both",
+   "type": "setup",
+   "notes": "Setup: Asa rides top lines, host follows to copy lines.",
+   "orig_start_s": 124,
+   "orig_end_s": 145,
+   "start_frame": 3134,
+   "end_frame": 3689,
+   "changed": true,
+   "note": "start 124->125.36 (cut 3134), end 145->147.56 (cut 3689). Shot 26 both walking/talking, shot 27 host closeup, shot 28 (130.04-136.24) Asa riding + host POV following, shot 29 (136.24-147.56) both pushing bikes up the section ('Footage by Sleeper Collective'). First riding of section 1 at cut 3689."
+  },
+  {
+   "start_s": 147.56,
+   "end_s": 181.6,
+   "rider": "both",
+   "type": "comparison_1",
+   "notes": "Section 1: rock section, dusty corners, off-camber corner, step entry. Asa 3 s faster, narrated as 21% faster. PAIRED A/B footage.",
+   "delta_s": 3,
+   "delta_pct": 21,
+   "orig_start_s": 145,
+   "orig_end_s": 175,
+   "start_frame": 3689,
+   "end_frame": 4540,
+   "changed": true,
+   "note": "start 145->147.56 (cut 3689), end 175->181.6 (cut 4540). Third-person paired A/B footage 3689-4280 (147.56-171.2): Asa grey/white Fox kit, host black kit. Asa helmet-POV with on-screen 'Section 1 Asa 10.18S Charlie 13.08S Faster by 21%' 4280-4540 (171.2-181.6). Section 2 third-person footage begins at 4540. Original end 175 clipped the POV part; original 175-182 gap is section-1 content.",
+   "onscreen_times_s": {
+    "A": 10.18,
+    "B": 13.08
+   }
+  },
+  {
+   "start_s": 181.6,
+   "end_s": 204.76,
+   "rider": "both",
+   "type": "comparison_2",
+   "notes": "Section 2: Asa gaps into rut; host rolls the rock. Asa 3 s faster on ~9 s run. PAIRED A/B footage.",
+   "delta_s": 3,
+   "run_s": 9,
+   "orig_start_s": 182,
+   "orig_end_s": 203,
+   "start_frame": 4540,
+   "end_frame": 5119,
+   "changed": true,
+   "note": "start 182->181.6 (cut 4540), end 203->204.76 (cut 5119). Third-person paired footage 4540-4962 (181.6-198.48), Asa POV with overlay 'Section 2 Asa 06.07S Charlie 09.00S Faster by 48%' 4962-5119 (198.48-204.76). Section 3 third-person begins at 5119.",
+   "delta_pct_onscreen": 48,
+   "onscreen_times_s": {
+    "A": 6.07,
+    "B": 9.0
+   }
+  },
+  {
+   "start_s": 204.76,
+   "end_s": 238.64,
+   "rider": "both",
+   "type": "comparison_3",
+   "notes": "Section 3: G-out compression. Asa full speed, no brakes, holds compression. Host brakes harder -> bigger compression at lower speed. Host ~30% slower. BEST SECTION FOR SUSPENSION KINEMATICS A/B.",
+   "delta_pct": 30,
+   "orig_start_s": 204,
+   "orig_end_s": 232,
+   "start_frame": 5119,
+   "end_frame": 5966,
+   "changed": true,
+   "note": "start 204->204.76 (cut 5119), end 232->238.64 (cut 5966). Third-person paired footage 5119-5591 (204.76-223.64), Asa POV with overlay 'Section 3 Asa 10.28S Charlie 13.19S Faster by 28%' 5591-5859 (223.64-234.36), then third-person Asa riding 5859-5966 (234.36-238.64). Original end 232 clipped POV + final riding shot. Camera-crew 'Thanks to Sleeper Co' footage begins at 5966.",
+   "delta_pct_onscreen": 28,
+   "onscreen_times_s": {
+    "A": 10.28,
+    "B": 13.19
+   }
+  },
+  {
+   "start_s": 238.64,
+   "end_s": 245.08,
+   "rider": "none",
+   "type": "gear",
+   "notes": "Camera gear shot, no comparison.",
+   "orig_start_s": 237,
+   "orig_end_s": 245,
+   "start_frame": 5966,
+   "end_frame": 6127,
+   "changed": true,
+   "note": "start 237->238.64 (cut 5966), end 245->245.08 (cut 6127). Shots 57-59: camera operators with backpacks riding the trail, caption 'Thanks to Sleeper Co for this section'. No A/B riders."
+  },
+  {
+   "start_s": 245.08,
+   "end_s": 262.0,
+   "rider": "both",
+   "type": "race_setup",
+   "notes": "Race setup: ~2 min track, host gets 40 s head start.",
+   "orig_start_s": 245,
+   "orig_end_s": 260,
+   "start_frame": 6127,
+   "end_frame": 6550,
+   "changed": true,
+   "note": "start 245->245.08 (cut 6127), end 260->262.0 (frame 6550, MID-SHOT 6464-6628). Corrected by frame inspection: frames 259.0-261.5 still show Asa POV with host stationary on bike and phone timer 00:00.00; host launches and timer starts at ~262.0 (00:00.56 at 262.5, 00:01.04 at 263.0, 00:02.03 at 264.0). No shot cut coincides with the launch (nearest cuts 258.56 and 265.12 both misplace it by >3 s), so boundary set mid-shot at the launch instant. Asa helmet POV (black Fox gloves, phone timer on bars) throughout, shots 60-65."
+  },
+  {
+   "start_s": 262.0,
+   "end_s": 582.28,
+   "rider": "both",
+   "type": "race_pov",
+   "notes": "Race, mostly host POV/chase cam on a rental bike. Asa catches host ~9:03 (543 s). Low value for side-on bike keypoints; possible Asa appearance near end.",
+   "orig_start_s": 260,
+   "orig_end_s": 580,
+   "start_frame": 6550,
+   "end_frame": 14557,
+   "changed": true,
+   "note": "start 260->262.0 (frame 6550, MID-SHOT 6464-6628; host launch / timer start seen at 262.0, timer 00:02.03 at 264.0), end 580->582.28 (cut 14557). Corrected by frame inspection: previous start 258.56 was the shot cut but frames 258.9-261.5 are still race setup (host stationary, timer 00:00.00). Rider label corrected B->both by frame inspection: segment start (262-270 s: black Fox gloves, phone timer on bars, rectilinear helmet cam) and end (581.28: Asa riding up to host at finish) are Asa (A) POV; host chest-cam fisheye (no hands, black jersey chest, e.g. 266 s, 300 s, 545 s, 570-580 s) is intercut; Asa helmet POV also at 264 s, 540 s, 550 s, 560 s chasing host."
+  },
+  {
+   "start_s": 582.28,
+   "end_s": 607.56,
+   "rider": "both",
+   "type": "outro",
+   "notes": "Post-race chat, standing.",
+   "orig_start_s": 582,
+   "orig_end_s": 608,
+   "start_frame": 14557,
+   "end_frame": 15189,
+   "changed": true,
+   "note": "start 582->582.28 (cut 14557), end 608->607.56 (video end, 15189 frames). Asa POV at finish area, host sitting on bike chatting (not standing); 'Total time Asa 02:43:08 Charlie 03:27:18 Faster by 27%' overlay from 594.36 (cut 14859) to end."
+  }
+ ],
+ "shot_aligned": true,
+ "source_shots": "data/harvest/shots/Pinkbike - Asa Vermette vs. An Average Rider - How Much Faster is a DH Pro？ [Y50K3ZZEdVY].shots.json",
+ "fps": 25,
+ "duration_s": 607.58,
+ "rider_cues": {
+  "A": "Asa Vermette: black Fox gloves in every shot (confirmed 172s, 179s, 199s, 224s, 230s, 259s, 560s, 585s). Section footage: grey/white Fox long-sleeve jersey + white pants, blue/white Red Bull full-face helmet, silver/grey frame with gold Fox fork/shock hardware. Race + finish: black long-sleeve top, same bike. Asa POV = helmet-mounted rectilinear camera, both gloved hands on bars visible; timed 'Section N' overlays are on Asa's POV.",
+  "B": "Host Charlie Coquillard: no gloves, black watch + red wristband on left wrist (confirmed 191s, 217s, 585s, 598s). Black Pinkbike t-shirt, black pants, black full-face helmet with top-mounted GoPro, dark maroon/black rental bike. Host POV = chest-mounted fisheye, bottom of frame shows black jersey chest, no hands visible."
+ },
+ "warnings": [
+  "Original comparison_1 (145-175) clipped the Asa POV timed run (171.2-181.6) and left an unlabeled 175-182 gap that is section-1 content; aligned to 147.56-181.6.",
+  "Original comparison_3 end 232 clipped the POV run (to 234.36) and a final third-person Asa shot (234.36-238.64); aligned to 238.64.",
+  "On-screen section 3 result is 28% (10.28 vs 13.19 s), narration/caption said ~30%. Section 2 on-screen 48% (6.07 vs 9.00 s) not in caption map.",
+  "Interview segment (64.84-125.36) contains two riding b-roll cutaways of Asa in grey/white Fox kit (79.4-94.64, 112.48-122.36) and a crowd shot (122.36-125.36).",
+  "race_pov is typed rider B but is intercut with Asa helmet-POV (black gloves) throughout, and Asa wears all-black kit in the race, so kit colour is not a reliable A/B cue there; gloves/watch and POV camera style (rectilinear helmet vs fisheye chest) are.",
+  "Timed 'Section N' POV overlays are Asa POV only; host runs appear only in third-person intercut footage within each comparison segment (checked at every shot boundary, not every frame).",
+  "Outro (582.28-607.56) is Asa POV at the finish with host sitting on bike, not a standing chat; total-time overlay 594.36-607.56.",
+  "Video length is 607.58 s (15189 frames); caption outro end 608 clamped to 15189.",
+  "race_setup/race_pov boundary (262.0, frame 6550) is mid-shot: the host launch and timer start happen inside shot 6464-6628 and no shot cut coincides with it (verified frames 259.0-265.0)."
+ ]
+}

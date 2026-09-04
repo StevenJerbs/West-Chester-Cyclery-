@@ -1,0 +1,106 @@
+{
+ "video_id": "iWW26z6MqSQ",
+ "title": "2026 Red Bull Tennessee National Downhill Race - Windrock Bikepark",
+ "uploader": "Windrock Bike Park",
+ "content": "Full race broadcast, pro women and pro men finals, with commentary. Positive examples: many pro riders on identical features. Negative examples: crash list below.",
+ "timestamps_source": "commentary in YouTube auto-captions; refine cut points against harvester shot list in data/harvest/shots/",
+ "segments": [
+  {
+   "start_s": 0,
+   "end_s": 553.85,
+   "type": "preshow",
+   "notes": "Broadcast intro, track walk and course preview (Windrock Bike Park, Tennessee; hard-pack dirt, whoops, rock sections, Red Bull drop near the finish). Rider profiles, seeding recap.",
+   "orig_start_s": 0,
+   "orig_end_s": 550,
+   "start_frame": 0,
+   "end_frame": 13279,
+   "changed": true,
+   "note": "Start kept at frame 0. End snapped to cut 553.85 s (frame 13279): pro-women seeding-results graphic ends and hosts hand off to women's racing. Seeding graphic stays in preshow per notes."
+  },
+  {
+   "start_s": 553.85,
+   "end_s": 1694.07,
+   "type": "pro_women_final",
+   "notes": "Pro women finals, run order from ~9:21 (first rider Anna Newkirk). Zana Logar sets benchmark 2:53.54 at 11:50. Kailey Skelton (reigning US champ) ~18:24. Eleonora Ostgaard wins, back-to-back, ~25:54. Winner interview ~27:29. Broadcast + trackside angles, multiple riders on the same features.",
+   "orig_start_s": 550,
+   "orig_end_s": 1660,
+   "start_frame": 13279,
+   "end_frame": 40617,
+   "changed": true,
+   "note": "Start snapped to cut 553.85 s (graphic -> hosts, first rider Newkirk from ~559.6 s). End moved from 1660 to cut 1694.07 s (frame 40617): podium shot ends at 1661.33 s and the Ostgaard winner interview runs 1661.33-1694.07 s, so the segment now includes it. Hosts 1694-1700 s and men's seeding graphic 1700-1736 s left unassigned."
+  },
+  {
+   "start_s": 1736.03,
+   "end_s": 3711.34,
+   "type": "pro_men_final",
+   "notes": "Pro men finals from ~29:10 (Luca Shaw opens). Dooley into hot seat ~34:02. Pinkerton crashes ~42:29 (2 s up, clipped a tree on an off-camber, elbow tucked). Dante Silva ~46:59, crashed at top of his run. Dylan Maples ~55:06. Aaron Gwin crashes ~60:21-60:24 while 2.2 s up (came in too fast on a diagonal route behind a rock). Austin Dooley wins ~61:26.",
+   "orig_start_s": 1740,
+   "orig_end_s": 3690,
+   "start_frame": 41623,
+   "end_frame": 88983,
+   "changed": true,
+   "note": "Start snapped to cut 1736.03 s (frame 41623): pro-men seeding graphic ends, hosts intro the men's final; race graphic/Shaw start at 1751.79 s. End snapped to cut 3691.23 s (frame 88501): Dooley finish celebration close-up ends. Corrected by frame inspection: end moved from cut 3691.23 s to cut 3711.34 s (frame 88983); frames 3708.3-3710.8 s still show Dooley (Red Bull helmet, plate 7) hugging/handshakes at the finish, and the 3711.34 s cut goes to trackside marshals/spectators B-roll with no Dooley."
+  },
+  {
+   "start_s": 3711.34,
+   "end_s": 3939.5,
+   "type": "wrapup",
+   "notes": "Post-race analysis and podiums. Commentary: number one and two seeds (Gwin, Shaw) both crashed; nobody had a smooth run.",
+   "orig_start_s": 3690,
+   "orig_end_s": 3953,
+   "start_frame": 88983,
+   "end_frame": 94453,
+   "changed": true,
+   "note": "Start snapped to cut 3711.34 s (frame 88983), corrected by frame inspection to follow the Dooley finish-celebration shot (previously 3691.23 s). End corrected by frame inspection from last frame 3953.45 s to 3939.5 s (frame 94453): Red Bull Tennessee National outro card is on screen through 3938.0 s, fades 3938.5-3939.0 s (ffmpeg blackdetect black_start 3938.81 s), fully black from 3939.5 s to the end. No shot cut exists in the cache for the fade (last shot 3930.97-3953.45 s), so the end is set at the first fully black half-second sample rather than a cut."
+  }
+ ],
+ "crashes": [
+  {
+   "t_s": 2549.0,
+   "rider": "Pinkerton",
+   "notes": "Off-camber, pinched against tree, body position upset. Was 2 s up.",
+   "orig_t_s": 1549,
+   "frame": 61115,
+   "shot_start_frame": 61066,
+   "note": "Original t_s 1549 is wrong (that is Aletha Ostgaard's winning women's finish at 25:49); notes say 42:29. Frames: Pinkerton (blue kit) leaves line toward trees at 2548.5-2549.0 s, gone by 2550 s; shot 2546.96-2552.01 s (frame 61066) contains the fall."
+  },
+  {
+   "t_s": 3620.0,
+   "rider": "Aaron Gwin",
+   "notes": "Came in too fast on diagonal route behind a rock. Was 2.2 s up.",
+   "orig_t_s": 3621,
+   "frame": 86793,
+   "shot_start_frame": 86605,
+   "note": "Gwin (orange/black kit) drifts wide left at 3618.8-3619.2 s and disappears behind rock/bushes ~3619.5-3620.2 s; track empty from 3620.5 s; he walks/remounts 3627-3634 s. Fall is partly off-camera; shot 3612.15-3625.58 s (frame 86605)."
+  },
+  {
+   "t_s": null,
+   "rider": "Luca Shaw",
+   "notes": "Crashed in his run (opened men's final ~29:12); exact moment not narrated in captions.",
+   "orig_t_s": null,
+   "frame": null,
+   "shot_start_frame": null,
+   "note": "Scanned 1750-1908 s every 2 s plus 1838-1850 s at 0.6 s and 1859-1869 s at 0.5 s: rider visible riding throughout, no fall found. Finish time 2:30.37 vs 2:27.70 qualifying suggests time loss but crash not located on camera."
+  },
+  {
+   "t_s": 2831.4,
+   "rider": "Dante Silva",
+   "notes": "Crashed at top of his run (~46:59 start); referenced at 49:28, +13.6 s.",
+   "orig_t_s": null,
+   "frame": 67894,
+   "shot_start_frame": 67827,
+   "note": "Silva (white/red kit, red bike) pitches sideways into the rock at 2831.1-2831.6 s, down by 2831.7 s, spectators help ~2835 s. Shot 2828.95-2842.47 s (frame 67827)."
+  }
+ ],
+ "shot_aligned": true,
+ "source_shots": "data/harvest/shots/Windrock Bike Park - 2026 Red Bull Tennessee National Downhill Race - Windrock Bikepark [iWW26z6MqSQ].shots.json",
+ "fps": 23.976,
+ "warnings": [
+  "Crash list t_s=1549 for Pinkerton contradicts segment notes (42:29 = 2549 s); frames at 1549 show Ostgaard's winning women's finish, corrected to 2549.",
+  "Women's winner interview is at 1661-1694 s (after the podium), not ~27:29 (1649 s) as narrated; original women's end 1660 clipped it.",
+  "Original pro_men_final start 1740 fell in the middle of the hosts' intro; men's seeding graphic runs 1700-1736 s and was left unassigned between segments.",
+  "Gwin crash happens partly off-camera behind a rock; only the run-in and empty track are visible.",
+  "Luca Shaw crash not located on camera within budget; left null.",
+  "No comparison_* segments and no A/B rider cues apply to this broadcast."
+ ]
+}

@@ -1,0 +1,182 @@
+{
+ "video_id": "JQXt8o4FMys",
+ "title": "Loic Bruni vs Average Rider: This is Why Pros Are Faster",
+ "rider_ids": {
+  "A": "Loic Bruni (pro) - Red Bull helmet, black long-sleeve kit, white gloves, red grips/levers on gold bar (POV overlay 'LOIC')",
+  "B": "Charlie Coquillard (host / average rider) - black full-face helmet, black Pinkbike tee, no gloves, wrist watch, rental bike with blue-anodised bar hardware (POV overlay 'CHARLIE')"
+ },
+ "track": "Andorra World Cup DH track (Bruni's home track), long, rough; ~3:40 for Bruni",
+ "stated_gaps": {
+  "section_1_s": "4-5",
+  "section_2_pct": 50,
+  "head_start_s": 60,
+  "pro_run_s": 220,
+  "earlier_episodes_pct": 23
+ },
+ "timestamps_source": "narration in YouTube auto-captions; refine cut points against harvester shot list in data/harvest/shots/",
+ "segments": [
+  {
+   "start_s": 0.0,
+   "end_s": 115.44,
+   "rider": "B",
+   "type": "intro",
+   "notes": "Host intro narration. Series context: earlier episodes with Amaury Pierron and Loris Vergier were not on World Cup tracks. Host on a rented DH bike. Loic arrives ~1:23.",
+   "orig_start_s": 0,
+   "orig_end_s": 115,
+   "start_frame": 0,
+   "end_frame": 2886,
+   "changed": true,
+   "note": "start kept at 0; end snapped to cut f2886 (115.44s): crowd b-roll -> seated interview with name cards (Loic Bruni / Charlie Coquillard)."
+  },
+  {
+   "start_s": 115.44,
+   "end_s": 413.2,
+   "rider": "both",
+   "type": "interview",
+   "notes": "Standing interview in Andorra (Bruni's home World Cup track). Loic's timed run: 3:40. Host gets a 1 min head start. Host gym: none since 2010; Loic 3x/week.",
+   "orig_start_s": 115,
+   "orig_end_s": 407,
+   "start_frame": 2886,
+   "end_frame": 10330,
+   "changed": true,
+   "note": "start snapped to cut f2886; end snapped to cut f10330 (413.20s) where the interview ends and Loic-on-bike POV begins. Original 407 end was ~6 s early (frames 407-413 still interview)."
+  },
+  {
+   "start_s": 413.2,
+   "end_s": 431.68,
+   "rider": "both",
+   "type": "setup",
+   "notes": "Loic tows host over the big jumps; they agree a shared race line.",
+   "orig_start_s": 412,
+   "orig_end_s": 426,
+   "start_frame": 10330,
+   "end_frame": 10792,
+   "changed": true,
+   "note": "start snapped to cut f10330 (413.20s); end snapped to cut f10792 (431.68s). Frames 413-431.7 = Loic towing host over the jump line (host POV following Loic + third-person jump shots). Original 426 end was mid-towing."
+  },
+  {
+   "start_s": 431.68,
+   "end_s": 471.48,
+   "rider": "both",
+   "type": "comparison_1",
+   "notes": "Section 1: fast opener into nasty rock garden. Loic jumps into the flat of the rock garden and out again, touching ground once, lined up for the jump. Host gets bucked, loses speed holding the high line. GoPro split shown. Loic barely brakes. ~4-5 s gained over first four corners. PAIRED A/B footage, includes POV.",
+   "delta_s": 4.5,
+   "orig_start_s": 426,
+   "orig_end_s": 475,
+   "start_frame": 10792,
+   "end_frame": 11787,
+   "changed": true,
+   "note": "start snapped to cut f10792 (431.68s): fixed camera on empty rock-garden trail, riders enter ~433-436s. Original 426 start included ~5.7 s of towing/jump footage that is not section-1 paired footage. End snapped to cut f11787 (471.48s) = end of split-screen result card (LOIC 09.06S / CHARLIE 13.02S / FASTER BY 43.71%). 471.48-476.24 is host piece-to-camera (no riding), excluded."
+  },
+  {
+   "start_s": 476.24,
+   "end_s": 517.2,
+   "rider": "both",
+   "type": "comparison_2",
+   "notes": "Section 2: roots. Both start similarly; host brakes before a massive root, Loic accelerates and gaps the whole section, then accelerates on landing. Loic peaks at 50% faster (1.5x speed). PAIRED A/B footage.",
+   "delta_pct": 50,
+   "orig_start_s": 476,
+   "orig_end_s": 515,
+   "start_frame": 11906,
+   "end_frame": 12930,
+   "changed": true,
+   "note": "start snapped to cut f11906 (476.24s): fixed camera on roots trail, riders enter ~478.7s (host) then Loic ~479.7s. End snapped to cut f12930 (517.20s) = end of split-screen result card (LOIC 08.00S / CHARLIE 12.00S / FASTER BY 50%). Original 515 end clipped ~2 s of the result card."
+  },
+  {
+   "start_s": 517.2,
+   "end_s": 527.4,
+   "rider": "A",
+   "type": "broll",
+   "notes": "Walking up the track.",
+   "orig_start_s": 518,
+   "orig_end_s": 527,
+   "start_frame": 12930,
+   "end_frame": 13185,
+   "changed": true,
+   "note": "corrected by frame inspection: rider label 'none' -> 'A'. Frames 517.5-527.0 show Loic (Red Bull helmet, black long-sleeve kit) walking up the trail with his bike on his shoulder; no riding. Boundaries unchanged (f12930-f13185)."
+  },
+  {
+   "start_s": 527.4,
+   "end_s": 571.12,
+   "rider": "both",
+   "type": "comparison_3",
+   "notes": "Section 3: rock garden into root garden. Loic holds the high line, skims a tree, then jumps the entire root section (~2 s). Host brakes to avoid being bucked on first root as it steepens. Narration on braking: Loic pulls the lever only when strictly necessary, never from lack of control. PAIRED A/B footage.",
+   "orig_start_s": 527,
+   "orig_end_s": 569,
+   "start_frame": 13185,
+   "end_frame": 14278,
+   "changed": true,
+   "note": "start snapped to cut f13185 (527.40s): fixed camera on empty rock trail, Loic enters ~531s (close side-on at 532s). End snapped to cut f14278 (571.12s) = end of split-screen result card (LOIC 07.00S / CHARLIE 12.00S / FASTER BY 71%). Original 569 end clipped ~2 s of result card."
+  },
+  {
+   "start_s": 571.12,
+   "end_s": 622.0,
+   "rider": "both",
+   "type": "race_setup",
+   "notes": "Race rules: host gets 1 min head start on a ~3:40 track, no pedalling for either.",
+   "orig_start_s": 569,
+   "orig_end_s": 625,
+   "start_frame": 14278,
+   "end_frame": 15550,
+   "changed": true,
+   "note": "start snapped to cut f14278 (571.12s): Loic at the start gate / start hut. End snapped to cut f15550 (622.00s) where the 'CHARLIE' POV overlay first appears (host selfie-cam at start). Original 625 was mid-shot."
+  },
+  {
+   "start_s": 622.0,
+   "end_s": 716.04,
+   "rider": "B",
+   "type": "race_pov",
+   "notes": "Host starts (10:25). Intercut with Loic waiting at the gate; Loic starts ~12:00.",
+   "orig_start_s": 625,
+   "orig_end_s": 725,
+   "start_frame": 15550,
+   "end_frame": 17901,
+   "changed": true,
+   "note": "corrected by frame inspection: end moved from cut f18151 (726.04s) to cut f17901 (716.04s). 'CHARLIE' POV/selfie-cam runs to 716.04; from 716.04 the 'LOIC' overlay POV of Loic waiting at the gate (phone stopwatch 00:51-00:56, red levers, white gloves) runs continuously until his drop-in at 726.04, so those 10 s belong with the Loic race footage rather than the B-only segment. Start unchanged at f15550 (622.00s)."
+  },
+  {
+   "start_s": 716.04,
+   "end_s": 1108.2,
+   "rider": "both",
+   "type": "race_pov",
+   "notes": "Race, mostly host POV on rental bike with brake fade. Loic catches and passes host ~17:16-17:34 (1036-1054 s). Some cuts to Loic. Low value for side-on bike keypoints.",
+   "orig_start_s": 725,
+   "orig_end_s": 1099,
+   "start_frame": 17901,
+   "end_frame": 27705,
+   "changed": true,
+   "note": "corrected by frame inspection: rider label 'B' -> 'both' (footage alternates between 'LOIC' POV at ~727, 760, 800, 917, 1080 and 'CHARLIE' POV at ~840, 880, 960, 1000, 1040, 1107). Start moved from cut f18151 (726.04s) to cut f17901 (716.04s) so the Loic-at-gate 'LOIC' POV (716.04-726.04, stopwatch then drop-in) sits in this segment. End unchanged at f27705 (1108.20s)."
+  },
+  {
+   "start_s": 1108.2,
+   "end_s": 1136.0,
+   "rider": "both",
+   "type": "outro",
+   "notes": "Finish, post-race.",
+   "orig_start_s": 1099,
+   "orig_end_s": 1136,
+   "start_frame": 27705,
+   "end_frame": 28400,
+   "changed": true,
+   "note": "start snapped to cut f27705 (1108.20s): post-race trailside chat, both riders stopped. End = last frame of video (28400). 1122-1136 is a teaser for another episode (different footage, burned-in subtitle) plus end card."
+  }
+ ],
+ "shot_aligned": true,
+ "source_shots": "data/harvest/shots/Pinkbike - Loïc Bruni vs Average Rider： This is Why Pros Are Faster [JQXt8o4FMys].shots.json",
+ "fps": 25,
+ "rider_cues": {
+  "A": "Loic Bruni (pro): Red Bull helmet (white/red/blue livery, Red Bull logo), black long-sleeve Specialized/Alpinestars jersey, black pants with white side stripe, white gloves. Black Specialized Demo DH bike with red grips and red brake levers on a gold/bronze handlebar. His POV clips carry a 'LOIC' overlay; his onboard shows red grips/red levers + white gloves.",
+  "B": "Charlie Coquillard (host): matte black full-face helmet with GoPro mount on top, goggles, black short-sleeve PINKBIKE t-shirt, black pants, NO gloves (bare hands), wrist watch on left wrist. Rented DH bike with black handlebar and blue-anodised grip collars/levers. His POV clips carry a 'CHARLIE' overlay; his onboard shows black bar with blue bits and bare hands."
+ },
+ "warnings": [
+  "Original interview end (407) / setup start (412) both early: the interview actually runs to the cut at 413.20 s (f10330).",
+  "Original comparison_1 start (426) included ~5.7 s of Loic-towing-host jump footage; paired section-1 footage begins at 431.68 s (f10792).",
+  "Original comparison_1 end (475) included a host piece-to-camera (471.48-476.24 s) with no riding; comparison_1 now ends at the result card cut 471.48 s and comparison_2 starts 476.24 s.",
+  "Original comparison_2 and comparison_3 ends (515, 569) clipped the last ~2 s of the split-screen result cards.",
+  "Original race_pov start (625) was mid-shot; 'CHARLIE' POV overlay begins at 622.00 s (f15550), rolling start ~633 s.",
+  "Race result overlay appears at 1096.12 s (f27403) while Loic's POV riding continues until 1108.20 s (f27705); original outro start 1099 would have clipped ~9 s of riding POV. race_pov now ends at 1108.20.",
+  "Displayed race result is LOIC 3:51.13 vs CHARLIE 5:02.23 (31% faster); interview claim of ~3:40 for Loic's run does not match the on-screen time.",
+  "Outro tail 1122-1136 s is a teaser for a different episode (unrelated riding footage with burned-in subtitle); do not treat as this track/riders.",
+  "No candidate cut existed for interview start other than f2886 (115.44 s), 0.44 s after the caption time; snapped."
+ ]
+}

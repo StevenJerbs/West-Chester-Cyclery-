@@ -26,6 +26,17 @@ Each video ships with its YouTube closed captions (`<id>.captions.vtt`), a clean
   shows a red frame/fork under the bars and white gloves; Charlie's POV shows a dark cockpit. The host
   is on camera at 7:56 in a black Pinkbike t-shirt.
 
+## Shot-aligned segment maps
+
+`<id>.segments.aligned.json` (Y50K3ZZEdVY, JQXt8o4FMys, iWW26z6MqSQ) are the caption-derived maps re-cut against real
+shot boundaries (PySceneDetect ContentDetector, threshold 27, caches in the mtbkin project under `data/harvest/shots/`),
+with every boundary and rider label checked against extracted frames by an independent verifier. Each segment carries
+`start_frame`/`end_frame`, `orig_start_s`/`orig_end_s`, `changed` and a `note` explaining the evidence. Use these, not the
+caption-only maps, when slicing. Highlights: the Asa comparison segments now include the timed POV runs with on-screen
+section times (10.18/13.08 s, 6.07/9.00 s, 10.28/13.19 s); the Bruni comparison segments start at the fixed-camera
+shots and end at the result cards (9.06/13.02 s, 8.00/12.00 s, 7.00/12.00 s); Windrock crash frames are pinned for
+Pinkerton (2549.0 s), Silva (2831.4 s) and Gwin (3620.0 s, partly off-camera); Luca Shaw's crash is not on camera.
+
 ## Segment maps
 
 `*.segments.json` list time ranges with the rider on screen, section type, and the time gaps stated in the narration.
