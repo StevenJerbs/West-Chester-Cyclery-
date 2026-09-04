@@ -415,17 +415,36 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9FC3DC); scene.fog = new THREE.Fog(0xB9D0DC, 30, 160);
 scene.add(new THREE.AmbientLight(0xdfe8f0, 0.85)); const sun = new THREE.DirectionalLight(0xfff2d6, 0.8); sun.position.set(40, 70, 30); scene.add(sun);
 const mat = c => new THREE.MeshLambertMaterial({ color: c }), box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
-/* ground and ribbon */
+/* ground bench-cut to the trail, a wide defined ribbon with tyre grooves, course tape on stakes */
+function trailDist(x, z){ let bd = 1e9, bi = 0; for (let k = 0; k < PATH.n; k += 4){ const d = Math.hypot(PATH.x[k] - x, PATH.z[k] - z); if (d < bd){ bd = d; bi = k; } } return { d: bd, s: bi * PATH.ds }; }
 {
-  const g = new THREE.PlaneGeometry(400, 400, 60, 60); g.rotateX(-Math.PI / 2);
+  const g = new THREE.PlaneGeometry(420, 420, 84, 84); g.rotateX(-Math.PI / 2);
   const pos = g.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
-  for (let i = 0; i < pos.count; i++){ const x = pos.getX(i), z = pos.getZ(i); pos.setY(i, -0.04 + 0.4 * Math.sin(x * 0.07) * Math.cos(z * 0.05)); const n = 0.5 + 0.5 * Math.sin(x * 0.7) * Math.cos(z * 0.9); c.setHSL(0.27 + 0.03 * n, 0.38, 0.30 + 0.10 * n); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals(); const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })); m.position.set(30, 0, 12); scene.add(m);
-  const RL = [-1.4, -0.7, 0, 0.7, 1.4], n = Math.floor(LOOP / 0.5), nv = n * RL.length, p2 = new Float32Array(nv * 3), c2 = new Float32Array(nv * 3), idx = [];
-  for (let i = 0; i < n; i++){ const P = pathAt(i * 0.5), rx = -Math.sin(P.theta), rz = Math.cos(P.theta); for (let j = 0; j < RL.length; j++){ const l = RL[j], k = (i * RL.length + j) * 3; p2[k] = P.x + rx * l; p2[k + 1] = 0.02 - 0.05 * l * l; p2[k + 2] = P.z + rz * l; c.setHex(0x8B6A4A); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.03 : 0.02) - 0.05 * Math.abs(l)); c2[k] = c.r; c2[k + 1] = c.g; c2[k + 2] = c.b; }
-    const i2 = (i + 1) % n; for (let j = 0; j + 1 < RL.length; j++){ const a = i * RL.length + j, b = i2 * RL.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
+  for (let i = 0; i < pos.count; i++){ const x = pos.getX(i) + 30, z = pos.getZ(i) + 12, td = trailDist(x, z), w = smooth((td.d - 3.5) / 9);
+    pos.setXYZ(i, x, -0.06 + w * (0.9 * Math.sin(x * 0.07) * Math.cos(z * 0.05) + 0.4 * Math.sin(x * 0.19 + z * 0.11)), z);
+    const n = 0.5 + 0.5 * Math.sin(x * 0.7) * Math.cos(z * 0.9);
+    if (td.d < 2.4) c.setHex(0x7C5D40); else c.setHSL(0.27 + 0.03 * n, 0.38, 0.30 + 0.10 * n);
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals(); scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
+  const RL = [-1.9, -1.5, -0.9, -0.4, 0, 0.4, 0.9, 1.5, 1.9], DS = 0.5, n = Math.floor(LOOP / DS), nv = n * RL.length, p2 = new Float32Array(nv * 3), c2 = new Float32Array(nv * 3), idx = [];
+  for (let i = 0; i < n; i++){ const s0 = i * DS, P = pathAt(s0), rx = -Math.sin(P.theta), rz = Math.cos(P.theta), [seg, t] = segAt(s0), kap = kappaAt(s0);
+    const brakeZone = seg.k === 0 && (seg.len - t) < 16;
+    for (let j = 0; j < RL.length; j++){ const l = RL[j], k = (i * RL.length + j) * 3, al = Math.abs(l);
+      let h = 0.03 - 0.04 * l * l;                                                   // crown
+      if (al > 1.4) h -= 0.10 * (al - 1.4) / 0.5;                                    // worn edge drops away
+      if (kap > 0 && l < 0) h += 0.12 * (-l) * (kap / (1 / R_TURN));                 // the outside of the right-hander builds a small lip
+      if (al > 0.25 && al < 0.5) h -= 0.02;                                          // tyre grooves
+      if (brakeZone && (i % 2 === 0)) h -= 0.015;                                    // braking bumps
+      p2[k] = P.x + rx * l; p2[k + 1] = h; p2[k + 2] = P.z + rz * l;
+      c.setHex(brakeZone ? 0x7A5637 : 0x8B6A4A); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.025 : 0.02) - 0.06 * al + ((al > 0.25 && al < 0.5) ? -0.06 : 0) + (al > 1.4 ? -0.08 : 0));
+      c2[k] = c.r; c2[k + 1] = c.g; c2[k + 2] = c.b; }
+    const i2 = (i + 1) % n; for (let j = 0; j + 1 < RL.length; j++){ const a2 = i * RL.length + j, b2 = i2 * RL.length + j; idx.push(a2, b2, a2 + 1, a2 + 1, b2, b2 + 1); } }
   const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.BufferAttribute(p2, 3)); rg.setAttribute('color', new THREE.BufferAttribute(c2, 3)); rg.setIndex(idx); rg.computeVertexNormals();
   scene.add(new THREE.Mesh(rg, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
+  // course tape on stakes, both sides, all the way round
+  for (const side of [-2.6, 2.6]){ const pts = []; for (let s0 = 0; s0 < LOOP; s0 += 3){ const P = pathAt(s0), rx = -Math.sin(P.theta), rz = Math.cos(P.theta), sx = P.x + rx * side, sz = P.z + rz * side;
+      const st = box(0.06, 1.0, 0.06, 0xC9C2B0); st.position.set(sx, 0.45, sz); scene.add(st); pts.push(new THREE.Vector3(sx, 0.9, sz)); }
+    pts.push(pts[0].clone()); scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xE8452C }))); }
   // apex markers and braking-zone cones
   for (const g2 of SEGS) if (g2.k > 0){ const P = pathAt(g2.start + g2.len / 2), rx = -Math.sin(P.theta), rz = Math.cos(P.theta); const m2 = box(0.3, 0.6, 0.3, 0xD9A441); m2.position.set(P.x + rx * 1.7, 0.3, P.z + rz * 1.7); scene.add(m2);
     for (const d of [-25, -15, -5]){ const Q = pathAt(g2.start + d), qx = -Math.sin(Q.theta), qz = Math.cos(Q.theta); const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 6), mat(0xD4784E)); cone.position.set(Q.x + qx * -1.8, 0.25, Q.z + qz * -1.8); scene.add(cone); } }
