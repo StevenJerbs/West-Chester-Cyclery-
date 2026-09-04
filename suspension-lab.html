@@ -14,6 +14,7 @@
   header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
   h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--accent); text-shadow:3px 3px 0 #15170f}
   .sub{color:var(--dim); font-size:12px; margin-top:2px; max-width:70ch}
+  .sub a{color:var(--front)} .sub b{color:var(--ink); font-weight:600}
   .ctl{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
   .seg{display:flex; border:2px solid var(--line)}
   .seg button{font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:8px 10px; background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer}
@@ -99,7 +100,7 @@
   <header>
     <div>
       <h1>SUSPENSION LAB</h1>
-      <div class="sub">West Chester Cyclery &mdash; 2021 Santa Cruz Bullit CC (size L, low), 170 mm lower-link VPP + 170 mm fork &middot; rider posture fitted to Asa Vermette / Jackson Goldstone frames &middot; clicks from fully open</div>
+      <div class="sub">West Chester Cyclery &mdash; 2021 Santa Cruz Bullit CC (size L, low), 170 mm lower-link VPP + 170 mm fork &middot; rider posture fitted to Asa Vermette / Jackson Goldstone frames &middot; clicks from fully open<br><b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">PRO</button><button type="button" data-v="avg">AVERAGE</button></div></div>

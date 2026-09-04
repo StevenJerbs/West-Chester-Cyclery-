@@ -1,0 +1,531 @@
+<title>Corner Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --bg:#23261E; --panel:#2F3328; --panel2:#262A20; --line:#484D3C; --ink:#EFE8D6; --dim:#A39F88;
+    --accent:#D9A441; --a:#D4784E; --b:#7FA6C9; --danger:#D9534F; --good:#8DBF6A;
+    --disp:'Silkscreen',monospace; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:14px; line-height:1.5}
+  .wrap{max-width:1160px; margin:0 auto; padding:18px 16px 40px; display:flex; flex-direction:column; gap:14px}
+  header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--accent); text-shadow:3px 3px 0 #15170f}
+  .sub{color:var(--dim); font-size:12px; margin-top:2px; max-width:78ch}
+  .sub a{color:var(--b)}
+  .ctl{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .lbl{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--dim)}
+  .hs{display:flex; align-items:center; gap:8px}
+  .hs output{font-weight:600; min-width:60px; font-variant-numeric:tabular-nums}
+  .hs input{width:110px; height:22px}
+  .btn{font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 14px; cursor:pointer; background:var(--b); color:#132030; border:2px solid var(--line)}
+  .btn.alt{background:var(--panel2); color:var(--ink)}
+  .seg{display:flex; border:2px solid var(--line)}
+  .seg button{font-family:var(--disp); font-size:9px; letter-spacing:1px; padding:7px 9px; background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--accent); color:#1d1a10}
+  .btn:focus-visible,input:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  input[type=range]{-webkit-appearance:none; appearance:none; background:transparent; cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  input[type=range]::-moz-range-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; margin-top:-8px; background:var(--accent); border:2px solid #15170f}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:0; background:var(--accent); border:2px solid #15170f}
+
+  .views{border:3px solid var(--line); background:#9FC3DC; position:relative; overflow:hidden}
+  .views canvas.gl{display:block; width:100%; height:auto; image-rendering:pixelated}
+  .tag{position:absolute; top:8px; font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:5px 8px; background:rgba(20,24,16,.7); pointer-events:none}
+  .tag.a{left:8px; color:var(--a)} .tag.b{left:calc(50% + 8px); color:var(--b)}
+  .phase{position:absolute; bottom:8px; font-size:11px; padding:4px 8px; background:rgba(20,24,16,.7); color:var(--ink); pointer-events:none; line-height:1.4}
+  .phase.a{left:8px} .phase.b{left:calc(50% + 8px)}
+  .phase b{font-family:var(--disp); font-size:9px; letter-spacing:1px; display:block}
+  .divider{position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--line); pointer-events:none}
+
+  .panels{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .card{background:var(--panel); border:3px solid var(--line); padding:12px 12px 14px}
+  .card h2{font-family:var(--disp); font-size:13px; letter-spacing:1px; margin:0 0 6px}
+  .card.a h2{color:var(--a)} .card.b h2{color:var(--b)}
+  .card .desc{color:var(--dim); font-size:12px; margin:0 0 10px; min-height:3.2em}
+  .row{display:grid; grid-template-columns:150px 1fr; gap:12px; align-items:start}
+  .fc{width:150px; height:150px; image-rendering:pixelated; border:2px solid var(--line); background:var(--panel2)}
+  .reads{display:grid; grid-template-columns:1fr 1fr; gap:6px 10px}
+  .read .k{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); white-space:nowrap}
+  .read .v{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .read .v.warn{color:var(--danger)} .read .v.good{color:var(--good)}
+  .bars{margin-top:8px; display:grid; grid-template-columns:auto 1fr; gap:4px 8px; align-items:center; font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim)}
+  .bar{height:12px; background:var(--panel2); border:2px solid var(--line); position:relative}
+  .bar i{position:absolute; left:0; top:0; bottom:0; width:0}
+  .bar.f i{background:var(--accent)} .bar.r i{background:var(--dim)} .bar.t i{background:var(--good)}
+  .chart{border:3px solid var(--line); background:var(--panel)}
+  .chart canvas{display:block; width:100%; height:auto; image-rendering:pixelated}
+  .note{color:var(--dim); font-size:12px; max-width:80ch}
+  .note b{color:var(--ink)}
+  @media (max-width:860px){ .panels{grid-template-columns:1fr} h1{font-size:20px} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>CORNER LAB</h1>
+      <div class="sub">Two identical Bullits, one fast right-hander (R 10 m), two ways to use the brakes. Left brakes <i>in</i> the turn; right rides <i>slow in, fast out</i>: brake in a straight line, trail off into the entry while the bias moves rearward, off by the apex, on the power out. Same bike, rider and physics as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>.</div>
+    </div>
+    <div class="ctl">
+      <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
+      <div class="hs"><label class="lbl" for="vin">STRAIGHT MPH</label><input id="vin" type="range" min="22" max="32" step="1" value="28"><output id="vinOut">28 mph</output></div>
+      <div class="hs"><label class="lbl" for="mu">GRIP &mu;</label><input id="mu" type="range" min="0.55" max="0.95" step="0.05" value="0.8"><output id="muOut">0.80</output></div>
+      <button type="button" class="btn" id="rideBtn">PAUSE</button>
+      <button type="button" class="btn alt" id="restartBtn">RESTART</button>
+    </div>
+  </header>
+
+  <div class="views">
+    <canvas id="gl" class="gl" width="896" height="300"></canvas>
+    <div class="divider"></div>
+    <div class="tag a" id="tagA">A</div>
+    <div class="tag b" id="tagB">B</div>
+    <div class="phase a" id="phA"><b>PHASE</b>–</div>
+    <div class="phase b" id="phB"><b>PHASE</b>–</div>
+  </div>
+
+  <div class="panels">
+    <section class="card a">
+      <h2 id="hA">A</h2>
+      <p class="desc" id="dA"></p>
+      <div class="row">
+        <canvas class="fc" id="fcA" width="150" height="150"></canvas>
+        <div>
+          <div class="reads">
+            <div class="read"><div class="k">SPEED</div><div class="v" id="spA">–</div></div>
+            <div class="read"><div class="k">LEAN</div><div class="v" id="lnA">–</div></div>
+            <div class="read"><div class="k">GRIP USED</div><div class="v" id="gpA">–</div></div>
+            <div class="read"><div class="k">OFF LINE</div><div class="v" id="ofA">–</div></div>
+            <div class="read"><div class="k">STAND-UP (BRAKE)</div><div class="v" id="suA">–</div></div>
+            <div class="read"><div class="k">GYRO RIGHTING</div><div class="v" id="gyA">–</div></div>
+            <div class="read"><div class="k">RIDER BAR INPUT</div><div class="v" id="rbA">–</div></div>
+            <div class="read"><div class="k">MIN CORNER · EXIT</div><div class="v" id="exA">–</div></div>
+            <div class="read"><div class="k">LAP TIME</div><div class="v" id="lpA">–</div></div>
+            <div class="read"><div class="k">WIDEST</div><div class="v" id="wdA">–</div></div>
+          </div>
+          <div class="bars"><span>FRONT BRAKE</span><div class="bar f"><i id="bfA"></i></div><span>REAR BRAKE</span><div class="bar r"><i id="brA"></i></div><span>THROTTLE</span><div class="bar t"><i id="thA"></i></div></div>
+        </div>
+      </div>
+    </section>
+    <section class="card b">
+      <h2 id="hB">B</h2>
+      <p class="desc" id="dB"></p>
+      <div class="row">
+        <canvas class="fc" id="fcB" width="150" height="150"></canvas>
+        <div>
+          <div class="reads">
+            <div class="read"><div class="k">SPEED</div><div class="v" id="spB">–</div></div>
+            <div class="read"><div class="k">LEAN</div><div class="v" id="lnB">–</div></div>
+            <div class="read"><div class="k">GRIP USED</div><div class="v" id="gpB">–</div></div>
+            <div class="read"><div class="k">OFF LINE</div><div class="v" id="ofB">–</div></div>
+            <div class="read"><div class="k">STAND-UP (BRAKE)</div><div class="v" id="suB">–</div></div>
+            <div class="read"><div class="k">GYRO RIGHTING</div><div class="v" id="gyB">–</div></div>
+            <div class="read"><div class="k">RIDER BAR INPUT</div><div class="v" id="rbB">–</div></div>
+            <div class="read"><div class="k">MIN CORNER · EXIT</div><div class="v" id="exB">–</div></div>
+            <div class="read"><div class="k">LAP TIME</div><div class="v" id="lpB">–</div></div>
+            <div class="read"><div class="k">WIDEST</div><div class="v" id="wdB">–</div></div>
+          </div>
+          <div class="bars"><span>FRONT BRAKE</span><div class="bar f"><i id="bfB"></i></div><span>REAR BRAKE</span><div class="bar r"><i id="brB"></i></div><span>THROTTLE</span><div class="bar t"><i id="thB"></i></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="chart"><canvas id="chart" width="1120" height="260"></canvas></div>
+
+  <p class="note"><b>What the friction circle shows.</b> The dot is the tyres' total demand: sideways for cornering (from the lean), fore-aft for braking or drive. The ring is what the surface can give (&mu;&middot;load). Every newton spent braking is a newton not available for cornering, so braking while leaned pushes the dot to the edge, the tyres slide, and the bike runs wide.
+  <br><b>What fights the lean.</b> A leaned front wheel's contact patch sits behind and to the side of the steering axis (trail), so front brake force twists the bars into the turn; through counter-steering that rolls the bike upright: the <i>stand-up</i> moment, proportional to front brake force &times; sin(lean). The spinning wheels add a gyroscopic righting moment (wheel angular momentum &times; yaw rate) that also lifts a turning bike, and gyroscopic damping that slows every roll change; braking spins the wheels down and so <i>reduces</i> that righting help while adding stand-up. The rider's counter-steer authority is finite, so when stand-up plus grip loss exceed it the lean collapses and the line opens.
+  <br><b>Slow in, fast out.</b> Brake in a straight line where the whole circle is available and the front tyre is loaded by weight transfer; bleed pressure off as lean comes on (trail braking) so the dot tracks the ring instead of crossing it; shift bias to the rear as the front's cornering load grows; be off the brakes at the apex so the lean can be at maximum where the corner is tightest; open the throttle as the bike stands up. Exit speed carries down the whole next straight.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+const D2R = Math.PI / 180, G9 = 9.81;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
+const V2 = (x, y) => ({ x, y });
+
+/* =============== the Bullit (same numbers as the Suspension Lab) =============== */
+const GEO = { reach: 0.475, stack: 0.636, hta: 64 * D2R, sta: 77.1 * D2R, cs: 0.449, wb: 1.268, bb: 0.348, rF: 0.373, rR: 0.354, forkTravel: 0.170, offset: 0.044, ht: 0.120, stroke: 0.065, travelR: 0.170 };
+const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta)), dFwd = V2(Math.sin(GEO.hta), Math.cos(GEO.hta)), dUp = V2(-dDown.x, -dDown.y);
+const HEAD_TOP = V2(GEO.reach, GEO.stack), HEAD_BOT = V2(HEAD_TOP.x + GEO.ht * dDown.x, HEAD_TOP.y + GEO.ht * dDown.y);
+const CROWN = V2(HEAD_BOT.x + 0.022 * dDown.x, HEAD_BOT.y + 0.022 * dDown.y);
+const A2C = ((GEO.rF - GEO.bb) - CROWN.y - GEO.offset * dFwd.y) / dDown.y;
+const axleFLocal = s => V2(CROWN.x + (A2C - s) * dDown.x + GEO.offset * dFwd.x, CROWN.y + (A2C - s) * dDown.y + GEO.offset * dFwd.y);
+const stDir = V2(-Math.cos(GEO.sta), Math.sin(GEO.sta)), SEAT_CLUSTER = V2(stDir.x * 0.44, stDir.y * 0.44);
+const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035), GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
+const TRAIL = (GEO.rF * Math.cos(GEO.hta) - GEO.offset) / Math.sin(GEO.hta);       // mechanical trail from the head angle, offset and wheel radius (~0.13 m)
+const VPP = { P1: V2(-0.02241, 0.07347), L1: 0.04607, P3: V2(-0.11195, 0.32914), L2: 0.14507, D: 0.17165, AX: V2(0.35125, 0.32061), S: V2(-0.07583, 0.00725), F: V2(0.08155, 0.19481), th0: 0.47391 };
+function vppSolve(th, prevP4){
+  const P1 = VPP.P1, P3 = VPP.P3, P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));
+  const vx = P3.x - P2.x, vy = P3.y - P2.y, d = Math.hypot(vx, vy), a = (VPP.D * VPP.D - VPP.L2 * VPP.L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, VPP.D * VPP.D - a * a));
+  const mx = P2.x + a * vx / d, my = P2.y + a * vy / d, px = -vy / d, py = vx / d, c1 = V2(mx + h * px, my + h * py), c2 = V2(mx - h * px, my - h * py);
+  const P4 = prevP4 ? (Math.hypot(c1.x - prevP4.x, c1.y - prevP4.y) < Math.hypot(c2.x - prevP4.x, c2.y - prevP4.y) ? c1 : c2) : c1;
+  const ex = V2((P4.x - P2.x) / VPP.D, (P4.y - P2.y) / VPP.D), ey = V2(-ex.y, ex.x);
+  const axle = V2(P2.x + VPP.AX.x * ex.x + VPP.AX.y * ey.x, P2.y + VPP.AX.x * ex.y + VPP.AX.y * ey.y);
+  const lx = V2((P2.x - P1.x) / VPP.L1, (P2.y - P1.y) / VPP.L1), ly = V2(-lx.y, lx.x), S = V2(P1.x + VPP.S.x * lx.x + VPP.S.y * ly.x, P1.y + VPP.S.x * lx.y + VPP.S.y * ly.y);
+  return { P2, P4, axle, S, shock: Math.hypot(S.x - VPP.F.x, S.y - VPP.F.y) };
+}
+const VT = { n: 0, t: [], ax: [], ay: [], st: [], lr: [], P2: [], P4: [], S: [] };
+(function(){ let prev = null; const rows = [];
+  for (let s = 0; s <= 1.3; s += 0.004){ const r = vppSolve(VPP.th0 - s, prev); prev = r.P4; rows.push(r); if (r.axle.y - rows[0].axle.y > GEO.travelR + 0.012) break; }
+  const y0 = rows[0].axle.y, e0 = rows[0].shock;
+  for (const r of rows){ VT.t.push(r.axle.y - y0); VT.ax.push(r.axle.x); VT.ay.push(r.axle.y); VT.st.push(e0 - r.shock); VT.P2.push(r.P2); VT.P4.push(r.P4); VT.S.push(r.S); }
+  VT.n = rows.length; for (let i = 0; i < VT.n; i++){ const a = Math.max(0, i - 1), b = Math.min(VT.n - 1, i + 1); VT.lr.push((VT.t[b] - VT.t[a]) / Math.max(1e-6, VT.st[b] - VT.st[a])); } })();
+function vtLookup(t){ const tt = clamp(t, 0, VT.t[VT.n - 1]); let lo = 0, hi = VT.n - 1; while (hi - lo > 1){ const m = (lo + hi) >> 1; if (VT.t[m] <= tt) lo = m; else hi = m; }
+  const f = (tt - VT.t[lo]) / Math.max(1e-9, VT.t[hi] - VT.t[lo]), L = a => lerp(a[lo], a[hi], f), LP = a => V2(lerp(a[lo].x, a[hi].x, f), lerp(a[lo].y, a[hi].y, f));
+  return { ax: L(VT.ax), ay: L(VT.ay), st: L(VT.st), lr: L(VT.lr), P2: LP(VT.P2), P4: LP(VT.P4), S: LP(VT.S) }; }
+function forkSpring(x, psi, tokens){ const pA = psi * 6894.76 * 1.02e-3, L = 0.215 - tokens * 0.009, Ln = 0.085; let f = pA * (Math.pow(L / Math.max(0.004, L - x), 1.3) - Math.pow(Ln / (Ln + x), 1.3)); if (x < 0) f = 40000 * x; return Math.min(f, 15000); }
+function coilSpring(S, k){ let f = k * S + 60; if (S > GEO.stroke - 0.006) f += 400000 * (S - (GEO.stroke - 0.006)); if (S < 0) f = 40000 * S; return Math.min(f, 40000); }
+const FORK_PSI = 104, FORK_TOK = 3, COIL_K = 625 * 175.13;
+function forkTravelFor(load){ let lo = 0, hi = GEO.forkTravel; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; (forkSpring(m, FORK_PSI, FORK_TOK) * Math.sin(GEO.hta) < load) ? lo = m : hi = m; } return lo; }
+function rearTravelFor(load){ let lo = 0, hi = GEO.travelR; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; const k = vtLookup(m); (coilSpring(k.st, COIL_K) / k.lr < load) ? lo = m : hi = m; } return lo; }
+
+/* =============== masses (50 lb bike, 200 lb rider) =============== */
+const M_BIKE = 22.7, M_RIDER = 90.7, M = M_BIKE + M_RIDER;
+const IW_F = 0.72 * 2.6 * GEO.rF * GEO.rF, IW_R = 0.70 * 3.6 * GEO.rR * GEO.rR;
+const H_CG = 1.02, B_REAR = 0.62;                                                  // combined CoM height; distance from rear axle to CoM (attack position)
+const I_ROLL = M * H_CG * H_CG * 0.7;                                             // roll inertia the rider steers against
+
+/* =============== the loop: two straights and two fast right-handers =============== */
+const R_TURN = 10, L_STR = 60, CLOTH = 7;                                          // curvature ramps in and out over 7 m, like a real turn-in
+const SEGS = [{ name: 'STRAIGHT', len: L_STR, k: 0 }, { name: 'RIGHT-HANDER', len: Math.PI * R_TURN + CLOTH, k: 1 / R_TURN }, { name: 'STRAIGHT', len: L_STR, k: 0 }, { name: 'RIGHT-HANDER', len: Math.PI * R_TURN + CLOTH, k: 1 / R_TURN }];
+let LOOP = 0; for (const g of SEGS){ g.start = LOOP; LOOP += g.len; }
+function segAt(s){ let p = s % LOOP; if (p < 0) p += LOOP; for (let i = SEGS.length - 1; i >= 0; i--) if (SEGS[i].start <= p) return [SEGS[i], p - SEGS[i].start]; return [SEGS[0], p]; }
+function kappaAt(s){ const [g, t] = segAt(s); if (g.k === 0) return 0; return g.k * clamp(Math.min(t, g.len - t) / CLOTH, 0, 1); }
+const PATH = { ds: 0.25, x: [], z: [], th: [], n: 0 };
+(function(){ let x = 0, z = 0, th = 0; const n = Math.round(LOOP / PATH.ds); for (let i = 0; i < n; i++){ PATH.x.push(x); PATH.z.push(z); PATH.th.push(th); const k = kappaAt(i * PATH.ds); x += Math.cos(th) * PATH.ds; z += Math.sin(th) * PATH.ds; th += k * PATH.ds; } PATH.n = PATH.x.length; })();
+function pathAt(s){ let sp = s % LOOP; if (sp < 0) sp += LOOP; const f = sp / PATH.ds, i = Math.min(PATH.n - 1, Math.floor(f)), j = (i + 1) % PATH.n, t = f - i;
+  let th1 = PATH.th[j]; const th0 = PATH.th[i]; while (th1 - th0 > Math.PI) th1 -= 2 * Math.PI; while (th1 - th0 < -Math.PI) th1 += 2 * Math.PI;
+  return { x: lerp(PATH.x[i], PATH.x[j], t), z: lerp(PATH.z[i], PATH.z[j], t), theta: lerp(th0, th1, t) }; }
+
+/* =============== rider strategies =============== */
+let vStraight = 28 * 0.447, MU = 0.80, riding = true;
+function cornerLimit(){ return Math.sqrt(MU * G9 * R_TURN); }
+/* Each strategy returns { pF, pR (0..1 of max brake force), thr (0..1), phase }.
+   A scenario pairs a "not that" (A) with a "do this" (B); add more to SCENARIOS to build the series. */
+function strategyA(b){                                  // brake in the turn
+  const [seg, t] = segAt(b.s), inTurn = seg.k > 0;
+  let pF = 0, pR = 0, thr = 0, phase = 'STRAIGHT · full power';
+  if (!inTurn){ thr = 1; b.panic = false; }
+  else {
+    const u = t / seg.len;
+    const demand = b.v * b.v / R_TURN / (MU * G9);
+    if (demand > 0.92 || b.panic){ b.panic = true; pF = 0.48; pR = 0.20; phase = 'IN THE TURN · braking, front-biased'; }
+    else phase = 'IN THE TURN · leaning';
+    if (b.panic && b.v < cornerLimit() * 0.86){ pF = 0; pR = 0; phase = 'IN THE TURN · over-slowed, rolling'; if (u > 0.6){ thr = 1; phase = 'EXIT · back on the power late'; } }
+    if (b.slide) phase = 'IN THE TURN · SLIDING wide';
+  }
+  return { pF, pR, thr, phase };
+}
+function strategyB(b){                                  // slow in, fast out
+  const [seg, t] = segAt(b.s), inTurn = seg.k > 0;
+  const vE = cornerLimit() * 0.98;
+  let pF = 0, pR = 0, thr = 0, phase = 'STRAIGHT · full power';
+  if (!inTurn){
+    const dToTurn = seg.len - t, dBrake = Math.max(0, (b.v * b.v - vE * vE) / (2 * 0.72 * G9)) + 1.0;
+    if (b.v > vE * 1.02 && dToTurn < dBrake){ pF = 0.78; pR = 0.32; phase = 'BRAKING ZONE · hard, upright, 70/30'; }
+    else if (dToTurn < 6 && b.v <= vE * 1.02){ pF = 0.10; pR = 0.06; phase = 'TURN-IN · light trail brake'; }
+    else thr = 1;
+  } else {
+    const u = t / seg.len;
+    if (u < 0.28){ const w = 1 - u / 0.28; pF = 0.12 * w * (0.4 + 0.6 * w); pR = 0.09 * w; phase = 'ENTRY · trailing off, bias to the rear'; }
+    else if (u < 0.42){ phase = 'APEX · brakes off, max lean'; }
+    else { thr = smooth((u - 0.42) / 0.22); phase = 'EXIT · standing up, on the power'; }
+    if (b.slide) phase += ' (sliding)';
+  }
+  return { pF, pR, thr, phase };
+}
+
+function strategyRearOnly(b){                           // brake for the corner with the rear brake only
+  const [seg, t] = segAt(b.s), inTurn = seg.k > 0, vE = cornerLimit() * 0.99;
+  let pF = 0, pR = 0, thr = 0, phase = 'STRAIGHT · full power';
+  if (!inTurn){
+    const dToTurn = seg.len - t, dBrake = Math.max(0, (b.v * b.v - vE * vE) / (2 * 0.72 * G9)) + 1.0;   // plans on a 0.7 g stop the rear tyre cannot deliver
+    if (b.v > vE * 1.02 && dToTurn < dBrake){ pR = 1.0; phase = 'BRAKING ZONE · rear only, lever pinned' + (b.omR * GEO.rR < 0.4 * b.v ? ' · REAR LOCKED' : ''); }
+    else if (dToTurn < 6) phase = 'TURN-IN · still too fast';
+    else thr = 1;
+  } else {
+    const u = t / seg.len;
+    if (u < 0.45) phase = b.v > vE * 1.04 ? 'IN THE TURN · arrived too fast, nothing left' : 'IN THE TURN · leaning';
+    else { thr = smooth((u - 0.45) / 0.2); phase = 'EXIT · on the power'; }
+    if (b.slide) phase += ' (sliding wide)';
+  }
+  return { pF, pR, thr, phase };
+}
+function strategyFrontBiased(b){                        // same slow-in-fast-out, but the point is the braking zone: 70/30 and modulated
+  const r = strategyB(b);
+  if (r.pF > 0.5) r.phase = 'BRAKING ZONE · 70/30, front loaded by weight transfer';
+  return r;
+}
+const SCENARIOS = [
+  { title: 'BRAKING IN THE TURN vs SLOW IN, FAST OUT',
+    a: { name: 'A · BRAKING IN THE TURN', desc: 'Arrives at straight-line speed, turns in, and only brakes once the corner is already asking for more grip than the tyres have. Front-biased braking while leaned.', strategy: strategyA },
+    b: { name: 'B · SLOW IN, FAST OUT', desc: 'Brakes hard while the bike is upright, then trails the brakes off through turn-in as lean builds, shifting bias to the rear. Off the brakes at the apex, on the power out.', strategy: strategyB } },
+  { title: 'REAR BRAKE ONLY vs FRONT-BIASED, MODULATED',
+    a: { name: 'A · REAR BRAKE ONLY', desc: 'Plans a normal braking zone but uses only the rear lever. The rear tyre carries under half the weight and unloads further as the bike pitches, so it locks, the bike arrives too fast, and there is nothing left to do but ride it out wide.', strategy: strategyRearOnly },
+    b: { name: 'B · 70/30, FRONT LOADED', desc: 'Front-biased braking in a straight line. Weight transfer loads the front tyre exactly when the front brake needs it; the rider modulates before either wheel locks, then trails off into the turn.', strategy: strategyFrontBiased } }
+];
+let scenario = 0;
+/* =============== bike physics instance =============== */
+function makeBike(strategy, color){
+  return { strategy, color, lapT: 0, lastLap: null, minCorner: null, maxWide: 0, s: 0, v: vStraight, lean: 0, leanVel: 0, e: 0, ev: 0, omF: 0, omR: 0, fx: 0, fy: 0, pF: 0, pR: 0, thr: 0, phase: '', slide: false,
+    standUp: 0, gyroRight: 0, barTq: 0, use: 0, NF: 0, NR: 0, travF: 0.04, travR: 0.05, panic: false, lastExit: null, lap: 0, log: [], off: false };
+}
+const BRAKE_MAX = 0.85 * M * G9;                                                    // total brake force at full lever
+function step(b, dt){
+  const ctl = b.strategy(b);
+  b.pF += (ctl.pF - b.pF) * Math.min(1, dt * 12); b.pR += (ctl.pR - b.pR) * Math.min(1, dt * 12); b.thr += (ctl.thr - b.thr) * Math.min(1, dt * 6); b.phase = ctl.phase;
+  const kap = kappaAt(b.s);
+  const mu = b.off ? MU * 0.6 : MU;
+  /* loads: static split, weight transfer from last step's longitudinal force, cornering g */
+  const gLoad = Math.sqrt(1 + Math.pow(Math.tan(b.lean), 2));                      // the resultant of gravity and cornering: what the legs and suspension carry
+  const Wf = M * G9 * (B_REAR / GEO.wb), Wr = M * G9 - Wf;                         // tyre vertical loads on flat ground
+  const dW = b.fx * H_CG / GEO.wb;                                                 // braking (fx<0) moves load forward
+  b.NF = Math.max(0, Wf - dW); b.NR = Math.max(0, Wr + dW); b.gLoad = gLoad;
+  /* wheel spin, brake and drive torques, slip curve, friction circle */
+  const muX = sl => Math.sin(1.6 * Math.atan(9 * sl));
+  const slipF = (b.omF * GEO.rF - b.v) / Math.max(b.v, 1), slipR = (b.omR * GEO.rR - b.v) / Math.max(b.v, 1);
+  const latDemand = M * G9 * Math.tan(Math.abs(b.lean));                          // lateral force the lean requires
+  const capTot = mu * (b.NF + b.NR);
+  const latFrac = clamp(latDemand / Math.max(1, capTot), 0, 1), fCirc = Math.sqrt(Math.max(0, 1 - latFrac * latFrac));
+  let fxF = mu * muX(slipF) * b.NF * fCirc, fxR = mu * muX(slipR) * b.NR * fCirc;
+  const TbF = b.pF * BRAKE_MAX * 0.7 * GEO.rF * (b.NF > 0 ? 1 : 0) * 1.0, TbR = b.pR * BRAKE_MAX * 0.7 * GEO.rR;
+  const P = b.thr * 950;                                                            // rider + EP8 in Boost
+  const Td = b.thr > 0 ? Math.min(P / Math.max(b.omR, 2), 165) : 0;
+  b.omF = Math.max(0, b.omF + ((-TbF - fxF * GEO.rF) / IW_F) * dt);
+  b.omR = Math.max(0, b.omR + ((Td - TbR - fxR * GEO.rR) / IW_R) * dt);
+  b.fx = fxF + fxR;
+  /* lateral: what the tyres can still give sideways after the fore-aft use */
+  const longFrac = clamp(Math.abs(b.fx) / Math.max(1, capTot), 0, 1);
+  const latAvail = capTot * Math.sqrt(Math.max(0, 1 - longFrac * longFrac));
+  b.fy = Math.min(latDemand, latAvail); b.slide = latDemand > latAvail * 1.02;
+  b.use = Math.hypot(b.fx, latDemand) / Math.max(1, capTot);
+  const ayAct = b.fy / M * Math.sign(b.lean === 0 ? 1 : -b.lean);                  // right turn: lean negative, acceleration to the right (+)
+  /* line: drift outward when the achieved curvature is short of the path's */
+  const kapAhead = kappaAt(b.s + b.v * 0.35);                                       // the rider sets up for the curvature a third of a second ahead
+  const ayNeed = b.v * b.v * kap;
+  const eAcc = ayNeed - Math.max(0, ayAct);                                       // m/s^2 outward (left of a right turn)
+  b.ev += eAcc * dt; b.ev *= Math.exp(-dt * 0.8); b.e += b.ev * dt;
+  if (b.e < 0){ b.e = 0; b.ev = Math.max(0, b.ev); }
+  b.off = b.e > 1.3;
+  /* roll: rider counter-steer toward the lean the line needs; stand-up from front braking; gyroscopic righting and damping */
+  const leanNeed = -Math.atan2(b.v * b.v * kapAhead + 0.5 * b.e + 0.8 * b.ev, G9);
+  const leanMax = -Math.atan(Math.max(0.05, latAvail / (M * G9)));
+  const target = Math.max(leanNeed, leanMax);                                       // both negative for a right turn
+  const Fbf = Math.abs(fxF) * (b.pF > 0.02 ? 1 : 0);
+  b.standUp = Fbf * TRAIL * Math.sin(Math.abs(b.lean)) * 9.0;                       // N·m equivalent roll moment, always toward upright (steer torque -> counter-steer)
+  const yawRate = b.v * kap;
+  const Lw = IW_F * b.omF + IW_R * b.omR;
+  b.gyroRight = Lw * yawRate * 1.0;                                                 // N·m, toward upright
+  const gyroDamp = 0.9 * Lw;
+  const rider = clamp(I_ROLL * (16 * (target - b.lean) - 7 * b.leanVel), -260, 260);  // finite counter-steer authority (~3.1 rad/s²)
+  b.barTq = rider;
+  const upright = -Math.sign(b.lean);
+  const acc = (rider + upright * (b.standUp + b.gyroRight) - gyroDamp * b.leanVel) / I_ROLL;
+  b.leanVel += acc * dt; b.lean += b.leanVel * dt; b.lean = clamp(b.lean, -0.9, 0.9);
+  /* speed */
+  const Fdrag = 0.5 * 1.2 * 0.62 * b.v * b.v, Froll = 0.018 * M * G9 + (b.off ? 0.06 * M * G9 : 0);
+  let a = (b.fx - Fdrag - Froll) / (M + IW_F / (GEO.rF * GEO.rF) + IW_R / (GEO.rR * GEO.rR));
+  if (b.slide) a -= 1.2 * (b.use - 1) * 2;
+  b.v = Math.max(1.5, b.v + a * dt);
+  const sPrev = b.s; b.s += b.v * dt;
+  /* suspension travel follows the loads (quasi-static with a lag) */
+  const tF = forkTravelFor(b.NF * b.gLoad), tR = rearTravelFor(b.NR * b.gLoad);
+  b.travF += (tF - b.travF) * Math.min(1, dt * 9); b.travR += (tR - b.travR) * Math.min(1, dt * 9);
+  /* bookkeeping: exit speed is read at the end of each turn; the log feeds the chart */
+  const [seg, t] = segAt(b.s);
+  b.lapT += dt; b.maxWide = Math.max(b.maxWide, b.e);
+  if (seg.k > 0) b.minCorner = b.minCorner === null ? b.v : Math.min(b.minCorner, b.v);
+  if (seg.k === 0 && segAt(sPrev)[0].k > 0) b.lastExit = b.v;
+  if (b.s >= LOOP){ b.s -= LOOP; b.lap++; b.log.length = 0; b.lastLap = b.lapT; b.lapT = 0; }
+  if (b.log.length === 0 || b.s - b.log[b.log.length - 1].s > 0.5) b.log.push({ s: b.s, v: b.v, pF: b.pF, pR: b.pR, lean: b.lean, use: b.use, e: b.e });
+}
+function resetBike(b){ b.lapT = 0; b.lastLap = null; b.minCorner = null; b.maxWide = 0; b.s = 0; b.v = vStraight; b.lean = 0; b.leanVel = 0; b.e = 0; b.ev = 0; b.omF = b.v / GEO.rF; b.omR = b.v / GEO.rR; b.fx = 0; b.pF = b.pR = b.thr = 0; b.panic = false; b.lastExit = null; b.lap = 0; b.log.length = 0; b.off = false; }
+const A = makeBike(strategyA, 0xD4784E), B = makeBike(strategyB, 0x7FA6C9);
+resetBike(A); resetBike(B);
+
+/* =============== ui =============== */
+const $ = id => document.getElementById(id);
+$('vin').addEventListener('input', e => { vStraight = +e.target.value * 0.447; $('vinOut').textContent = e.target.value + ' mph'; });
+$('mu').addEventListener('input', e => { MU = +e.target.value; $('muOut').textContent = MU.toFixed(2); });
+$('rideBtn').addEventListener('click', () => { riding = !riding; $('rideBtn').textContent = riding ? 'PAUSE' : 'RIDE'; });
+$('restartBtn').addEventListener('click', () => { resetBike(A); resetBike(B); });
+function loadScenario(i){
+  scenario = i; const sc = SCENARIOS[i];
+  A.strategy = sc.a.strategy; B.strategy = sc.b.strategy; resetBike(A); resetBike(B);
+  $('tagA').textContent = sc.a.name; $('tagB').textContent = sc.b.name; $('hA').textContent = sc.a.name; $('hB').textContent = sc.b.name; $('dA').textContent = sc.a.desc; $('dB').textContent = sc.b.desc;
+  document.querySelectorAll('#scSeg button').forEach((x, j) => x.classList.toggle('on', j === i));
+}
+SCENARIOS.forEach((sc, i) => { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = (i + 1) + ' · ' + sc.title; bt.addEventListener('click', () => loadScenario(i)); $('scSeg').appendChild(bt); });
+loadScenario(0);
+if (matchMedia('(prefers-reduced-motion: reduce)').matches){ riding = false; $('rideBtn').textContent = 'RIDE'; }
+
+function drawCircle(cv, b){
+  const c = cv.getContext('2d'), W = cv.width, cx = W / 2, cy = W / 2, R = W * 0.4;
+  c.clearRect(0, 0, W, W); c.fillStyle = '#262A20'; c.fillRect(0, 0, W, W);
+  c.strokeStyle = '#484D3C'; c.lineWidth = 1; c.beginPath(); c.moveTo(cx, 8); c.lineTo(cx, W - 8); c.moveTo(8, cy); c.lineTo(W - 8, cy); c.stroke();
+  c.strokeStyle = '#A39F88'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.stroke();
+  const cap = Math.max(1, MU * (b.NF + b.NR));
+  const px = cx + R * clamp(Math.tan(Math.abs(b.lean)) * M * G9 / cap, 0, 1.5) * (b.lean < 0 ? 1 : -1), py = cy - R * clamp(b.fx / cap, -1.5, 1.5);
+  c.strokeStyle = '#484D3C'; c.beginPath(); c.moveTo(cx, cy); c.lineTo(px, py); c.stroke();
+  c.fillStyle = b.use > 1 ? '#D9534F' : b.use > 0.85 ? '#D9A441' : '#8DBF6A'; c.fillRect(px - 4, py - 4, 8, 8);
+  c.fillStyle = '#A39F88'; c.font = '9px monospace'; c.fillText('BRAKE', cx - 16, W - 4); c.fillText('DRIVE', cx - 16, 12); c.fillText('CORNER', W - 44, cy - 4);
+}
+function txt(id, s, cls){ const el = $(id); el.textContent = s; if (cls !== undefined) el.className = 'v ' + cls; }
+function hud(b, k, ph){
+  txt('sp' + k, (b.v / 0.447).toFixed(1) + ' mph');
+  txt('ln' + k, Math.abs(Math.round(b.lean / D2R)) + '°');
+  txt('gp' + k, Math.round(b.use * 100) + '%', b.use > 1 ? 'warn' : b.use > 0.85 ? '' : 'good');
+  txt('of' + k, b.e < 0.1 ? 'on line' : (b.e.toFixed(1) + ' m wide' + (b.off ? ' · OFF TRAIL' : '')), b.off ? 'warn' : b.e > 0.4 ? '' : 'good');
+  txt('su' + k, Math.round(b.standUp) + ' N·m', b.standUp > 150 ? 'warn' : '');
+  txt('gy' + k, Math.round(b.gyroRight) + ' N·m');
+  txt('rb' + k, Math.round(Math.abs(b.barTq)) + ' N·m' + (Math.abs(b.barTq) >= 415 ? ' (max)' : ''), Math.abs(b.barTq) >= 415 ? 'warn' : '');
+  txt('ex' + k, (b.minCorner !== null ? (b.minCorner / 0.447).toFixed(1) : '–') + ' · ' + (b.lastExit ? (b.lastExit / 0.447).toFixed(1) + ' mph' : '–'));
+  txt('lp' + k, b.lastLap ? b.lastLap.toFixed(2) + ' s' : (b.lapT.toFixed(1) + ' s…'));
+  txt('wd' + k, b.maxWide.toFixed(1) + ' m', b.maxWide > 1.3 ? 'warn' : b.maxWide > 0.5 ? '' : 'good');
+  $('bf' + k).style.width = (b.pF * 100) + '%'; $('br' + k).style.width = (b.pR * 100) + '%'; $('th' + k).style.width = (b.thr * 100) + '%';
+  ph.innerHTML = '<b>' + segAt(b.s)[0].name + ' · LAP ' + (b.lap + 1) + '</b>' + b.phase;
+}
+function drawChart(){
+  const cv = $('chart'), c = cv.getContext('2d'), W = cv.width, H = cv.height, L = 48, Rr = 16, T = 22, Bt = 30;
+  c.clearRect(0, 0, W, H); c.fillStyle = '#2F3328'; c.fillRect(0, 0, W, H);
+  const X = s => L + (W - L - Rr) * s / LOOP, Y = v => T + (H - T - Bt) * (1 - clamp(v / 0.447 / 34, 0, 1));
+  c.fillStyle = 'rgba(212,120,78,0.10)'; for (const g of SEGS) if (g.k > 0) c.fillRect(X(g.start), T, X(g.start + g.len) - X(g.start), H - T - Bt);
+  c.strokeStyle = '#484D3C'; c.lineWidth = 1; c.font = '10px monospace'; c.fillStyle = '#A39F88';
+  for (let m = 0; m <= 30; m += 10){ c.beginPath(); c.moveTo(L, Y(m * 0.447)); c.lineTo(W - Rr, Y(m * 0.447)); c.stroke(); c.fillText(m + ' mph', 4, Y(m * 0.447) + 4); }
+  const lim = cornerLimit(); c.strokeStyle = '#D9A441'; c.setLineDash([4, 4]); c.beginPath(); c.moveTo(L, Y(lim)); c.lineTo(W - Rr, Y(lim)); c.stroke(); c.setLineDash([]);
+  c.fillStyle = '#D9A441'; c.fillText('grip-limited corner speed ' + (lim / 0.447).toFixed(1) + ' mph', L + 6, Y(lim) - 4);
+  for (const g of SEGS) c.fillText(g.name, X(g.start) + 4, H - 8);
+  for (const [b, col] of [[A, '#D4784E'], [B, '#7FA6C9']]){
+    if (b.log.length < 2) continue;
+    c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); b.log.forEach((p, i) => i ? c.lineTo(X(p.s), Y(p.v)) : c.moveTo(X(p.s), Y(p.v))); c.stroke();
+    c.lineWidth = 1; c.globalAlpha = 0.7; c.beginPath(); b.log.forEach((p, i) => { const y = H - Bt - (p.pF + p.pR) * 40; i ? c.lineTo(X(p.s), y) : c.moveTo(X(p.s), y); }); c.stroke(); c.globalAlpha = 1;
+  }
+  c.fillStyle = '#EFE8D6'; c.font = '11px monospace'; c.fillText('speed (thick) and brake pressure (thin) vs distance around the loop · A orange · B blue', L + 6, 14);
+}
+
+/* =============== 3d =============== */
+const canvas = $('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer.setSize(896, 300, false); renderer.setScissorTest(true);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9FC3DC); scene.fog = new THREE.Fog(0xB9D0DC, 30, 160);
+scene.add(new THREE.AmbientLight(0xdfe8f0, 0.85)); const sun = new THREE.DirectionalLight(0xfff2d6, 0.8); sun.position.set(40, 70, 30); scene.add(sun);
+const mat = c => new THREE.MeshLambertMaterial({ color: c }), box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+/* ground and ribbon */
+{
+  const g = new THREE.PlaneGeometry(400, 400, 60, 60); g.rotateX(-Math.PI / 2);
+  const pos = g.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++){ const x = pos.getX(i), z = pos.getZ(i); pos.setY(i, -0.04 + 0.4 * Math.sin(x * 0.07) * Math.cos(z * 0.05)); const n = 0.5 + 0.5 * Math.sin(x * 0.7) * Math.cos(z * 0.9); c.setHSL(0.27 + 0.03 * n, 0.38, 0.30 + 0.10 * n); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals(); const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })); m.position.set(30, 0, 12); scene.add(m);
+  const RL = [-1.4, -0.7, 0, 0.7, 1.4], n = Math.floor(LOOP / 0.5), nv = n * RL.length, p2 = new Float32Array(nv * 3), c2 = new Float32Array(nv * 3), idx = [];
+  for (let i = 0; i < n; i++){ const P = pathAt(i * 0.5), rx = -Math.sin(P.theta), rz = Math.cos(P.theta); for (let j = 0; j < RL.length; j++){ const l = RL[j], k = (i * RL.length + j) * 3; p2[k] = P.x + rx * l; p2[k + 1] = 0.02 - 0.05 * l * l; p2[k + 2] = P.z + rz * l; c.setHex(0x8B6A4A); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.03 : 0.02) - 0.05 * Math.abs(l)); c2[k] = c.r; c2[k + 1] = c.g; c2[k + 2] = c.b; }
+    const i2 = (i + 1) % n; for (let j = 0; j + 1 < RL.length; j++){ const a = i * RL.length + j, b = i2 * RL.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
+  const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.BufferAttribute(p2, 3)); rg.setAttribute('color', new THREE.BufferAttribute(c2, 3)); rg.setIndex(idx); rg.computeVertexNormals();
+  scene.add(new THREE.Mesh(rg, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
+  // apex markers and braking-zone cones
+  for (const g2 of SEGS) if (g2.k > 0){ const P = pathAt(g2.start + g2.len / 2), rx = -Math.sin(P.theta), rz = Math.cos(P.theta); const m2 = box(0.3, 0.6, 0.3, 0xD9A441); m2.position.set(P.x + rx * 1.7, 0.3, P.z + rz * 1.7); scene.add(m2);
+    for (const d of [-25, -15, -5]){ const Q = pathAt(g2.start + d), qx = -Math.sin(Q.theta), qz = Math.cos(Q.theta); const cone = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.5, 6), mat(0xD4784E)); cone.position.set(Q.x + qx * -1.8, 0.25, Q.z + qz * -1.8); scene.add(cone); } }
+  let seed = 3; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < 160; i++){ const x = -40 + rnd() * 150, z = -50 + rnd() * 130; let near = false; for (let k = 0; k < PATH.n; k += 8) if (Math.hypot(PATH.x[k] - x, PATH.z[k] - z) < 4) { near = true; break; } if (near) continue;
+    const sc = 0.9 + rnd() * 0.9, t = new THREE.Group(); const tr = box(0.16, 1.2 * sc, 0.16, 0x5C4633); tr.position.y = 0.6 * sc; const c1 = box(1.1 * sc, 1.1 * sc, 1.1 * sc, rnd() < 0.5 ? 0x3E6644 : 0x35573B); c1.rotation.set(0, Math.PI / 4, Math.PI / 4); c1.position.y = 1.5 * sc; const c3 = box(0.8 * sc, 0.8 * sc, 0.8 * sc, 0x3E6644); c3.rotation.set(0, Math.PI / 4, Math.PI / 4); c3.position.y = 2.3 * sc; t.add(tr, c1, c3); t.position.set(x, -0.1, z); scene.add(t); }
+}
+/* limbs */
+const DOWN = new THREE.Vector3(0, -1, 0), _dir = new THREE.Vector3(), P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
+function limb(len, w, d, color){ const g = new THREE.BoxGeometry(w, len, d); g.translate(0, -len / 2, 0); const m = new THREE.Mesh(g, mat(color)); m.userData.len = len; return m; }
+function aimLimb(m, a, b){ m.position.copy(a); _dir.subVectors(b, a); const L = _dir.length() || 0.001; m.scale.y = L / m.userData.len; m.quaternion.setFromUnitVectors(DOWN, _dir.divideScalar(L)); }
+function ik(a, b, l1, l2, prefer, maxDeg){ const bb = b.clone(); let dx = bb.x - a.x, dy = bb.y - a.y, d = Math.hypot(dx, dy); const dMax = chord(l1, l2, maxDeg), dMin = Math.abs(l1 - l2) + 0.02;
+  if (d > dMax || d < dMin){ const f = clamp(d, dMin, dMax) / d; dx *= f; dy *= f; bb.x = a.x + dx; bb.y = a.y + dy; d = Math.hypot(dx, dy); }
+  const ux = dx / d, uy = dy / d, al = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - al * al)); let px = uy, py = -ux;
+  if ((prefer === 'fwd' && px < 0) || (prefer === 'down' && py > 0)){ px = -px; py = -py; } return { joint: new THREE.Vector3(a.x + ux * al + px * h, a.y + uy * al + py * h, (a.z + bb.z) / 2), end: bb }; }
+const C = { frame: 0x8A5A3A, frame2: 0x6E4630, decal: 0x1E1A18, forkUp: 0xC8952A, forkLow: 0x1E1E1E, sw: 0x8A5A3A, link: 0x1E1E1E, coil: 0x1E1E1E, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, pants: 0xE9E4DC, shoe: 0x25211E, motor: 0x1B1B1B };
+function wheel(r){ const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.TorusGeometry(r - 0.033, 0.036, 6, 16), mat(C.tire)), new THREE.Mesh(new THREE.TorusGeometry(r - 0.075, 0.014, 5, 16), mat(C.rim)), box(0.07, 0.07, 0.11, C.hub));
+  for (let i = 0; i < 6; i++){ const s = box(0.008, (r - 0.075) * 2, 0.008, 0xC9C2B0); s.rotation.z = i * Math.PI / 6; s.position.z = (i % 2 ? 0.02 : -0.02); g.add(s); } return g; }
+function buildBike(jersey){
+  const rig = new THREE.Group(); rig.rotation.order = 'YXZ'; const frame = new THREE.Group(); rig.add(frame);
+  const tube = (a, b, t, c, d) => { const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; };
+  tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), 0.055, C.frame, 0.06);
+  tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.115, C.frame, 0.085); tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);
+  tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame); tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);
+  tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);
+  const motor = box(0.27, 0.19, 0.16, C.motor); motor.position.set(-0.01, -0.03, 0); frame.add(motor);
+  const o = { rig, frame, wF: wheel(GEO.rF), wR: wheel(GEO.rR), lowerLink: limb(1, 0.035, 0.10, C.link), lowerArm: limb(1, 0.03, 0.08, C.link), upperLink: limb(1, 0.03, 0.09, C.link),
+    shockBody: limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil: limb(1, 0.072, 0.072, C.coil), shockShaft: limb(1, 0.026, 0.026, 0xC9C2B0), brace: limb(1, 0.03, 0.15, C.sw),
+    chainL: limb(1, 0.05, 0.04, C.sw), chainR: limb(1, 0.05, 0.04, C.sw), seatL: limb(1, 0.038, 0.032, C.sw), seatR: limb(1, 0.038, 0.032, C.sw),
+    stanchL: limb(1, 0.042, 0.042, C.forkUp), stanchR: limb(1, 0.042, 0.042, C.forkUp), lowerL: limb(1, 0.058, 0.058, C.forkLow), lowerR: limb(1, 0.058, 0.058, C.forkLow),
+    post: limb(1, 0.031, 0.031, 0xC8952A), saddle: box(0.27, 0.045, 0.09, 0x1E1A18), stem: limb(1, 0.035, 0.035, 0x1E1E1E), bar: box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x1E1E1E),
+    crankL: limb(CRANK, 0.03, 0.025, 0x25211E), crankR: limb(CRANK, 0.03, 0.025, 0x25211E), pedL: box(0.1, 0.02, 0.07, 0x6F675A), pedR: box(0.1, 0.02, 0.07, 0x6F675A),
+    torso: limb(0.5, 0.16, 0.24, jersey), head: box(0.15, 0.15, 0.15, C.skin), helmet: box(0.22, 0.20, 0.21, 0x1E3F8F), visor: box(0.11, 0.025, 0.2, 0x1E3F8F), chin: box(0.075, 0.07, 0.19, 0x1E3F8F), goggle: box(0.02, 0.06, 0.17, 0x1E1A18), hipBox: box(0.17, 0.14, 0.22, C.pants),
+    uArmL: limb(0.31, 0.06, 0.06, jersey), lArmL: limb(0.29, 0.05, 0.05, jersey), uArmR: limb(0.31, 0.06, 0.06, jersey), lArmR: limb(0.29, 0.05, 0.05, jersey),
+    thighL: limb(0.44, 0.085, 0.085, C.pants), shinL: limb(0.44, 0.065, 0.065, C.pants), thighR: limb(0.44, 0.085, 0.085, C.pants), shinR: limb(0.44, 0.065, 0.065, C.pants), shoeL: box(0.15, 0.055, 0.08, C.shoe), shoeR: box(0.15, 0.055, 0.08, C.shoe) };
+  for (const k of Object.keys(o)) if (k !== 'rig' && k !== 'frame' && k !== 'wF' && k !== 'wR') frame.add(o[k]);
+  rig.add(o.wF, o.wR);
+  aimLimb(o.stem, P3(HEAD_TOP.x, HEAD_TOP.y), P3(BAR.x, BAR.y)); o.bar.position.set(BAR.x, BAR.y, 0);
+  const sad = P3(stDir.x * 0.47, stDir.y * 0.47); aimLimb(o.post, P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y), sad); o.saddle.position.set(sad.x - 0.03, sad.y + 0.02, 0);
+  scene.add(rig); return o;
+}
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+function poseBike(o, b, dt){
+  const P = pathAt(b.s), rx = -Math.sin(P.theta), rz = Math.cos(P.theta);
+  const e = -b.e;                                                                   // outward of a right turn is the rider's left (-right)
+  o.rig.position.set(P.x + rx * e, 0, P.z + rz * e); o.rig.rotation.y = -P.theta; o.rig.rotation.x = -b.lean;
+  const k = vtLookup(b.travR), axR = P3(k.ax, k.ay), axF = axleFLocal(b.travF);
+  const pitch = Math.atan2((axR.y + GEO.rR) - (axF.y + GEO.rF), axF.x - axR.x) * -1;   // chassis pitch that puts both tyres on the ground
+  o.frame.rotation.z = pitch; o.frame.position.y = -(axR.x * Math.sin(pitch) + axR.y * Math.cos(pitch)) + GEO.rR;
+  const c = Math.cos(pitch), s = Math.sin(pitch);
+  o.wF.position.set(axF.x * c - axF.y * s, o.frame.position.y + axF.x * s + axF.y * c, 0); o.wR.position.set(axR.x * c - axR.y * s, o.frame.position.y + axR.x * s + axR.y * c, 0);
+  o.wF.rotation.z -= b.omF * dt; o.wR.rotation.z -= b.omR * dt;
+  aimLimb(o.lowerLink, P3(VPP.P1.x, VPP.P1.y), P3(k.P2.x, k.P2.y)); aimLimb(o.lowerArm, P3(VPP.P1.x, VPP.P1.y), P3(k.S.x, k.S.y)); aimLimb(o.upperLink, P3(VPP.P3.x, VPP.P3.y), P3(k.P4.x, k.P4.y));
+  for (const [cs, ss, zz] of [[o.chainL, o.seatL, 0.075], [o.chainR, o.seatR, -0.075]]){ aimLimb(cs, P3(k.P2.x, k.P2.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(k.P4.x, k.P4.y, zz), P3(axR.x, axR.y, zz)); }
+  _a.set(k.P2.x, k.P2.y, 0).lerp(_c.set(axR.x, axR.y, 0), 0.42); _b.set(k.P4.x, k.P4.y, 0).lerp(_c, 0.42); aimLimb(o.brace, _a, _b);
+  _a.set(VPP.F.x, VPP.F.y, 0); _b.set(k.S.x, k.S.y, 0); aimLimb(o.shockBody, _a, _c.copy(_a).lerp(_b, 0.45)); aimLimb(o.shockShaft, _c.copy(_a).lerp(_b, 0.4), _b); aimLimb(o.shockCoil, _c.copy(_a).lerp(_b, 0.12), _a.clone().lerp(_b, 0.85));
+  for (const [st, lo, zz] of [[o.stanchL, o.lowerL, 0.085], [o.stanchR, o.lowerR, -0.085]]){ _a.set(CROWN.x, CROWN.y, zz); _b.set(axF.x, axF.y, zz); aimLimb(st, _a, _c.copy(_a).lerp(_b, 0.55)); aimLimb(lo, _c.copy(_a).lerp(_b, 0.38), _b); }
+  /* rider: attack, outside (left) foot down in the right-hander, hips slightly inside, head turned into the turn */
+  const inTurn = Math.abs(b.lean) > 0.05, crank = inTurn ? Math.PI : Math.PI / 2;
+  const pl = P3(Math.sin(crank) * CRANK, Math.cos(crank) * CRANK, PEDAL_Z), pr = P3(-Math.sin(crank) * CRANK, -Math.cos(crank) * CRANK, -PEDAL_Z);
+  aimLimb(o.crankL, P3(0, 0, 0.1), _a.set(pl.x, pl.y, 0.1)); aimLimb(o.crankR, P3(0, 0, -0.1), _a.set(pr.x, pr.y, -0.1)); o.pedL.position.copy(pl); o.pedR.position.copy(pr);
+  const dip = b.pF > 0.1 ? -0.05 : 0;
+  const hips = P3(-0.22 + (b.thr > 0.5 ? 0.04 : 0), 0.74 + dip - 0.10 * (Math.sqrt(1 + Math.tan(b.lean) ** 2) - 1), 0.06 * Math.sign(-b.lean) * Math.abs(b.lean) * 0), tor = 37 * D2R;
+  const sh = P3(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor), 0);
+  o.hipBox.position.set(hips.x, hips.y + 0.02, 0); aimLimb(o.torso, sh, hips);
+  const neck = tor + 35 * D2R; o.head.position.set(sh.x + 0.17 * Math.cos(neck), sh.y + 0.17 * Math.sin(neck), 0);
+  o.helmet.position.set(o.head.position.x - 0.01, o.head.position.y + 0.02, 0); o.helmet.rotation.z = neck - 90 * D2R; o.visor.position.set(o.head.position.x + 0.10, o.head.position.y + 0.11, 0); o.visor.rotation.z = -0.25;
+  o.chin.position.set(o.head.position.x + 0.12, o.head.position.y - 0.045, 0); o.goggle.position.set(o.head.position.x + 0.10, o.head.position.y + 0.035, 0);
+  const turn = inTurn ? -0.6 : 0; for (const h of [o.head, o.helmet, o.visor, o.chin, o.goggle]) h.rotation.y = turn;
+  for (const [ua, la, zz] of [[o.uArmL, o.lArmL, 0.13], [o.uArmR, o.lArmR, -0.13]]){ _a.set(sh.x, sh.y - 0.02, zz); const r = ik(_a, P3(BAR.x, BAR.y, zz > 0 ? GRIP_Z : -GRIP_Z), 0.31, 0.29, 'down', 160); r.joint.z = (zz > 0 ? 1 : -1) * 0.46; aimLimb(ua, _a, r.joint); aimLimb(la, r.joint, r.end); }
+  for (const [th, sn, ped, zz, shoe] of [[o.thighL, o.shinL, pl, 0.10, o.shoeL], [o.thighR, o.shinR, pr, -0.10, o.shoeR]]){ _a.set(hips.x, hips.y, zz); _b.set(ped.x, ped.y + 0.04, ped.z); const r = ik(_a, _b, 0.44, 0.44, 'fwd', 160); aimLimb(th, _a, r.joint); aimLimb(sn, r.joint, r.end); shoe.position.set(ped.x - 0.02, ped.y + 0.045, ped.z); shoe.rotation.z = -0.25; }
+  o.bar.rotation.y = -clamp(kappaAt(b.s) * 2.2, -0.5, 0.5) * (inTurn ? 1 : 0);
+}
+const bikeA = buildBike(0xE9E4DC), bikeB = buildBike(0xE9E4DC);
+/* tint the jerseys by strategy: A orange sleeves, B blue */
+bikeA.torso.material = mat(0xD4784E); bikeA.uArmL.material = bikeA.uArmR.material = mat(0xD4784E); bikeB.torso.material = mat(0x7FA6C9); bikeB.uArmL.material = bikeB.uArmR.material = mat(0x7FA6C9);
+const camA = new THREE.PerspectiveCamera(44, 448 / 300, 0.1, 400), camB = new THREE.PerspectiveCamera(44, 448 / 300, 0.1, 400);
+const camPosA = new THREE.Vector3(), camPosB = new THREE.Vector3(), lookA = new THREE.Vector3(), lookB = new THREE.Vector3();
+let snap = true;
+function chase(cam, cp, lk, b, dt){
+  const P = pathAt(b.s), fx = Math.cos(P.theta), fz = Math.sin(P.theta), rx = -fz, rz = fx, e = -b.e;
+  const want = new THREE.Vector3(P.x + rx * e + fx * -4.2 + rx * -2.2, 2.4, P.z + rz * e + fz * -4.2 + rz * -2.2);   // behind and to the inside so the lean reads
+  const tgt = new THREE.Vector3(P.x + rx * e + fx * 1.0, 0.7, P.z + rz * e + fz * 1.0);
+  if (snap){ cp.copy(want); lk.copy(tgt); } else { cp.lerp(want, Math.min(1, dt * 5)); lk.lerp(tgt, Math.min(1, dt * 9)); }
+  cam.position.copy(cp); cam.lookAt(lk);
+}
+
+/* =============== loop =============== */
+const PDT = 1 / 300; let last = performance.now(), acc = 0, frame = 0;
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 30){ step(A, PDT); step(B, PDT); acc -= PDT; n++; } }
+  poseBike(bikeA, A, riding ? dt : 0); poseBike(bikeB, B, riding ? dt : 0);
+  chase(camA, camPosA, lookA, A, dt); chase(camB, camPosB, lookB, B, dt); snap = false;
+  renderer.setViewport(0, 0, 448, 300); renderer.setScissor(0, 0, 448, 300); renderer.render(scene, camA);
+  renderer.setViewport(448, 0, 448, 300); renderer.setScissor(448, 0, 448, 300); renderer.render(scene, camB);
+  if ((frame++ & 1) === 0){ hud(A, 'A', $('phA')); hud(B, 'B', $('phB')); drawCircle($('fcA'), A); drawCircle($('fcB'), B); drawChart(); }
+}
+$('restartBtn').addEventListener('click', () => { snap = true; });
+requestAnimationFrame(tick);
+window.LAB = { A, B, step, cornerLimit, LOOP, SEGS, loadScenario, resetBike };
+</script>

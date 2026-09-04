@@ -1,0 +1,418 @@
+<title>Pump Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --bg:#23261E; --panel:#2F3328; --panel2:#262A20; --line:#484D3C; --ink:#EFE8D6; --dim:#A39F88;
+    --accent:#D9A441; --a:#D4784E; --b:#7FA6C9; --danger:#D9534F; --good:#8DBF6A;
+    --disp:'Silkscreen',monospace; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:14px; line-height:1.5}
+  .wrap{max-width:1160px; margin:0 auto; padding:18px 16px 40px; display:flex; flex-direction:column; gap:14px}
+  header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--accent); text-shadow:3px 3px 0 #15170f}
+  .sub{color:var(--dim); font-size:12px; margin-top:2px; max-width:78ch}
+  .sub a{color:var(--b)}
+  .ctl{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .lbl{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--dim)}
+  .hs{display:flex; align-items:center; gap:8px}
+  .hs output{font-weight:600; min-width:60px; font-variant-numeric:tabular-nums}
+  .hs input{width:110px; height:22px}
+  .btn{font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 14px; cursor:pointer; background:var(--b); color:#132030; border:2px solid var(--line)}
+  .btn.alt{background:var(--panel2); color:var(--ink)}
+  .seg{display:flex; border:2px solid var(--line)}
+  .seg button{font-family:var(--disp); font-size:9px; letter-spacing:1px; padding:7px 9px; background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--accent); color:#1d1a10}
+  .btn:focus-visible,input:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  input[type=range]{-webkit-appearance:none; appearance:none; background:transparent; cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  input[type=range]::-moz-range-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; margin-top:-8px; background:var(--accent); border:2px solid #15170f}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:0; background:var(--accent); border:2px solid #15170f}
+
+  .views{border:3px solid var(--line); background:#9FC3DC; position:relative; overflow:hidden}
+  .views canvas.gl{display:block; width:100%; height:auto; image-rendering:pixelated}
+  .tag{position:absolute; top:8px; font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:5px 8px; background:rgba(20,24,16,.7); pointer-events:none}
+  .tag.a{left:8px; color:var(--a)} .tag.b{left:calc(50% + 8px); color:var(--b)}
+  .legend{position:absolute; right:8px; top:8px; font-size:10px; color:#EFE8D6; background:rgba(20,24,16,.7); padding:4px 8px; pointer-events:none; line-height:1.5}
+  .legend i{display:inline-block; width:10px; height:3px; vertical-align:middle; margin-right:5px}
+  .phase{position:absolute; bottom:8px; font-size:11px; padding:4px 8px; background:rgba(20,24,16,.7); color:var(--ink); pointer-events:none; line-height:1.4}
+  .phase.a{left:8px} .phase.b{left:calc(50% + 8px)}
+  .phase b{font-family:var(--disp); font-size:9px; letter-spacing:1px; display:block}
+  .divider{position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--line); pointer-events:none}
+
+  .panels{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .card{background:var(--panel); border:3px solid var(--line); padding:12px 12px 14px}
+  .card h2{font-family:var(--disp); font-size:13px; letter-spacing:1px; margin:0 0 6px}
+  .card.a h2{color:var(--a)} .card.b h2{color:var(--b)}
+  .card .desc{color:var(--dim); font-size:12px; margin:0 0 10px; min-height:3.2em}
+  .row{display:grid; grid-template-columns:150px 1fr; gap:12px; align-items:start}
+  .fc{width:150px; height:150px; image-rendering:pixelated; border:2px solid var(--line); background:var(--panel2)}
+  .reads{display:grid; grid-template-columns:1fr 1fr; gap:6px 10px}
+  .read .k{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); white-space:nowrap}
+  .read .v{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .read .v.warn{color:var(--danger)} .read .v.good{color:var(--good)}
+  .bars{margin-top:8px; display:grid; grid-template-columns:auto 1fr; gap:4px 8px; align-items:center; font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim)}
+  .bar{height:12px; background:var(--panel2); border:2px solid var(--line); position:relative}
+  .bar i{position:absolute; left:0; top:0; bottom:0; width:0}
+  .bar.f i{background:var(--accent)} .bar.r i{background:var(--dim)} .bar.t i{background:var(--good)}
+  .chart{border:3px solid var(--line); background:var(--panel)}
+  .chart canvas{display:block; width:100%; height:auto; image-rendering:pixelated}
+  .note{color:var(--dim); font-size:12px; max-width:80ch}
+  .note b{color:var(--ink)}
+  @media (max-width:860px){ .panels{grid-template-columns:1fr} h1{font-size:20px} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>PUMP LAB</h1>
+      <div class="sub">Where the speed in a pump actually comes from, animated on the Bullit model. After Seb Stott's <i>How to Pump Your Bike, According to Physics</i> (Pinkbike, 2021): it isn't pushing on the down-slope, it's moving your mass toward the centre of curvature where the ground curves. Same rider and bike as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a> and <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a>.</div>
+    </div>
+    <div class="ctl">
+      <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
+      <div class="hs"><label class="lbl" for="v0">ENTRY MPH</label><input id="v0" type="range" min="8" max="16" step="1" value="11"><output id="v0Out">11 mph</output></div>
+      <div class="hs"><label class="lbl" for="amp">PUMP RANGE</label><input id="amp" type="range" min="0.10" max="0.30" step="0.02" value="0.22"><output id="ampOut">22 cm</output></div>
+      <button type="button" class="btn" id="rideBtn">PAUSE</button>
+      <button type="button" class="btn alt" id="restartBtn">RESTART</button>
+    </div>
+  </header>
+
+  <div class="views">
+    <canvas id="gl" class="gl" width="896" height="300"></canvas>
+    <div class="divider"></div>
+    <div class="tag a" id="tagA">A</div>
+    <div class="tag b" id="tagB">B</div>
+    <div class="legend"><i style="background:#D9A441"></i>leg force (&times; body weight) <i style="background:#8DBF6A"></i>velocity <i style="background:#EFE8D6"></i>centre of curvature <i style="background:#D4784E"></i>CoM path</div>
+    <div class="phase a" id="phA"><b>PHASE</b>–</div>
+    <div class="phase b" id="phB"><b>PHASE</b>–</div>
+  </div>
+
+  <div class="panels">
+    <section class="card a">
+      <h2 id="hA">A</h2>
+      <p class="desc" id="dA"></p>
+      <div class="reads">
+        <div class="read"><div class="k">SPEED</div><div class="v" id="spA">–</div></div>
+        <div class="read"><div class="k">NET GAIN (AT ENTRY HEIGHT)</div><div class="v" id="dvA">–</div></div>
+        <div class="read"><div class="k">COM HEIGHT</div><div class="v" id="hA2">–</div></div>
+        <div class="read"><div class="k">LEG LOAD</div><div class="v" id="ldA">–</div></div>
+        <div class="read"><div class="k">LEG POWER</div><div class="v" id="pwA">–</div></div>
+        <div class="read"><div class="k">WORK DONE</div><div class="v" id="wkA">–</div></div>
+        <div class="read"><div class="k">GROUND CURVATURE</div><div class="v" id="kA">–</div></div>
+        <div class="read"><div class="k">m·v·r (local)</div><div class="v" id="lA">–</div></div>
+      </div>
+      <div class="bars"><span>EXTENSION</span><div class="bar t"><i id="exA"></i></div><span>LEG LOAD</span><div class="bar f"><i id="ldbA"></i></div></div>
+    </section>
+    <section class="card b">
+      <h2 id="hB">B</h2>
+      <p class="desc" id="dB"></p>
+      <div class="reads">
+        <div class="read"><div class="k">SPEED</div><div class="v" id="spB">–</div></div>
+        <div class="read"><div class="k">NET GAIN (AT ENTRY HEIGHT)</div><div class="v" id="dvB">–</div></div>
+        <div class="read"><div class="k">COM HEIGHT</div><div class="v" id="hB2">–</div></div>
+        <div class="read"><div class="k">LEG LOAD</div><div class="v" id="ldB">–</div></div>
+        <div class="read"><div class="k">LEG POWER</div><div class="v" id="pwB">–</div></div>
+        <div class="read"><div class="k">WORK DONE</div><div class="v" id="wkB">–</div></div>
+        <div class="read"><div class="k">GROUND CURVATURE</div><div class="v" id="kB">–</div></div>
+        <div class="read"><div class="k">m·v·r (local)</div><div class="v" id="lB">–</div></div>
+      </div>
+      <div class="bars"><span>EXTENSION</span><div class="bar t"><i id="exB"></i></div><span>LEG LOAD</span><div class="bar f"><i id="ldbB"></i></div></div>
+    </section>
+  </div>
+
+  <div class="chart"><canvas id="chart" width="1120" height="260"></canvas></div>
+
+  <p class="note"><b>The model.</b> The bike follows the surface; the rider's mass sits a distance <i>h</i> above it along the surface normal, on legs the rider drives. The only forces are gravity, the legs, and the ground pushing back along the normal. Energy is tracked exactly: the legs add energy at the rate <i>force &times; extension speed</i>, so the rider gains speed only when extending against a big load or compressing under a small one. In a trough the load is body weight <i>plus</i> the centripetal load <i>m&middot;v&sup2;&middot;&kappa;</i>; over a crest it is body weight <i>minus</i> it. That is the whole trick: extend where the ground curves up (&kappa; &gt; 0), compress where it curves down. On the straight part of a slope &kappa; = 0, so a push there only lifts your own weight and gives it straight back.
+  <br><b>Angular momentum.</b> In the trough the ground is an arc around a centre above you. Extending moves your mass toward that centre; with <i>m&middot;v&middot;r</i> conserved about it, a smaller <i>r</i> means a faster <i>v</i>. The readout shows <i>m&middot;v&middot;r</i> of the rider's mass about the current centre of curvature while the ground is curved.
+  <br><b>The transition taketh away.</b> A passive rider (or a soft suspension) does the opposite: the centripetal load in the trough compresses the legs, work flows out, and the bike slows. Pumping is not free speed; it is the work the rider does against that load.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+const D2R = Math.PI / 180, G9 = 9.81;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
+const V2 = (x, y) => ({ x, y });
+/* =============== the Bullit (same numbers as the Suspension Lab) =============== */
+const GEO = { reach: 0.475, stack: 0.636, hta: 64 * D2R, sta: 77.1 * D2R, cs: 0.449, wb: 1.268, bb: 0.348, rF: 0.373, rR: 0.354, forkTravel: 0.170, offset: 0.044, ht: 0.120, stroke: 0.065, travelR: 0.170 };
+const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta)), dFwd = V2(Math.sin(GEO.hta), Math.cos(GEO.hta)), dUp = V2(-dDown.x, -dDown.y);
+const HEAD_TOP = V2(GEO.reach, GEO.stack), HEAD_BOT = V2(HEAD_TOP.x + GEO.ht * dDown.x, HEAD_TOP.y + GEO.ht * dDown.y);
+const CROWN = V2(HEAD_BOT.x + 0.022 * dDown.x, HEAD_BOT.y + 0.022 * dDown.y);
+const A2C = ((GEO.rF - GEO.bb) - CROWN.y - GEO.offset * dFwd.y) / dDown.y;
+const axleFLocal = s => V2(CROWN.x + (A2C - s) * dDown.x + GEO.offset * dFwd.x, CROWN.y + (A2C - s) * dDown.y + GEO.offset * dFwd.y);
+const stDir = V2(-Math.cos(GEO.sta), Math.sin(GEO.sta)), SEAT_CLUSTER = V2(stDir.x * 0.44, stDir.y * 0.44);
+const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035), GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
+const TRAIL = (GEO.rF * Math.cos(GEO.hta) - GEO.offset) / Math.sin(GEO.hta);       // mechanical trail from the head angle, offset and wheel radius (~0.13 m)
+const VPP = { P1: V2(-0.02241, 0.07347), L1: 0.04607, P3: V2(-0.11195, 0.32914), L2: 0.14507, D: 0.17165, AX: V2(0.35125, 0.32061), S: V2(-0.07583, 0.00725), F: V2(0.08155, 0.19481), th0: 0.47391 };
+function vppSolve(th, prevP4){
+  const P1 = VPP.P1, P3 = VPP.P3, P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));
+  const vx = P3.x - P2.x, vy = P3.y - P2.y, d = Math.hypot(vx, vy), a = (VPP.D * VPP.D - VPP.L2 * VPP.L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, VPP.D * VPP.D - a * a));
+  const mx = P2.x + a * vx / d, my = P2.y + a * vy / d, px = -vy / d, py = vx / d, c1 = V2(mx + h * px, my + h * py), c2 = V2(mx - h * px, my - h * py);
+  const P4 = prevP4 ? (Math.hypot(c1.x - prevP4.x, c1.y - prevP4.y) < Math.hypot(c2.x - prevP4.x, c2.y - prevP4.y) ? c1 : c2) : c1;
+  const ex = V2((P4.x - P2.x) / VPP.D, (P4.y - P2.y) / VPP.D), ey = V2(-ex.y, ex.x);
+  const axle = V2(P2.x + VPP.AX.x * ex.x + VPP.AX.y * ey.x, P2.y + VPP.AX.x * ex.y + VPP.AX.y * ey.y);
+  const lx = V2((P2.x - P1.x) / VPP.L1, (P2.y - P1.y) / VPP.L1), ly = V2(-lx.y, lx.x), S = V2(P1.x + VPP.S.x * lx.x + VPP.S.y * ly.x, P1.y + VPP.S.x * lx.y + VPP.S.y * ly.y);
+  return { P2, P4, axle, S, shock: Math.hypot(S.x - VPP.F.x, S.y - VPP.F.y) };
+}
+const VT = { n: 0, t: [], ax: [], ay: [], st: [], lr: [], P2: [], P4: [], S: [] };
+(function(){ let prev = null; const rows = [];
+  for (let s = 0; s <= 1.3; s += 0.004){ const r = vppSolve(VPP.th0 - s, prev); prev = r.P4; rows.push(r); if (r.axle.y - rows[0].axle.y > GEO.travelR + 0.012) break; }
+  const y0 = rows[0].axle.y, e0 = rows[0].shock;
+  for (const r of rows){ VT.t.push(r.axle.y - y0); VT.ax.push(r.axle.x); VT.ay.push(r.axle.y); VT.st.push(e0 - r.shock); VT.P2.push(r.P2); VT.P4.push(r.P4); VT.S.push(r.S); }
+  VT.n = rows.length; for (let i = 0; i < VT.n; i++){ const a = Math.max(0, i - 1), b = Math.min(VT.n - 1, i + 1); VT.lr.push((VT.t[b] - VT.t[a]) / Math.max(1e-6, VT.st[b] - VT.st[a])); } })();
+function vtLookup(t){ const tt = clamp(t, 0, VT.t[VT.n - 1]); let lo = 0, hi = VT.n - 1; while (hi - lo > 1){ const m = (lo + hi) >> 1; if (VT.t[m] <= tt) lo = m; else hi = m; }
+  const f = (tt - VT.t[lo]) / Math.max(1e-9, VT.t[hi] - VT.t[lo]), L = a => lerp(a[lo], a[hi], f), LP = a => V2(lerp(a[lo].x, a[hi].x, f), lerp(a[lo].y, a[hi].y, f));
+  return { ax: L(VT.ax), ay: L(VT.ay), st: L(VT.st), lr: L(VT.lr), P2: LP(VT.P2), P4: LP(VT.P4), S: LP(VT.S) }; }
+function forkSpring(x, psi, tokens){ const pA = psi * 6894.76 * 1.02e-3, L = 0.215 - tokens * 0.009, Ln = 0.085; let f = pA * (Math.pow(L / Math.max(0.004, L - x), 1.3) - Math.pow(Ln / (Ln + x), 1.3)); if (x < 0) f = 40000 * x; return Math.min(f, 15000); }
+function coilSpring(S, k){ let f = k * S + 60; if (S > GEO.stroke - 0.006) f += 400000 * (S - (GEO.stroke - 0.006)); if (S < 0) f = 40000 * S; return Math.min(f, 40000); }
+const FORK_PSI = 104, FORK_TOK = 3, COIL_K = 625 * 175.13;
+function forkTravelFor(load){ let lo = 0, hi = GEO.forkTravel; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; (forkSpring(m, FORK_PSI, FORK_TOK) * Math.sin(GEO.hta) < load) ? lo = m : hi = m; } return lo; }
+function rearTravelFor(load){ let lo = 0, hi = GEO.travelR; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; const k = vtLookup(m); (coilSpring(k.st, COIL_K) / k.lr < load) ? lo = m : hi = m; } return lo; }
+
+
+/* =============== masses =============== */
+const M_BIKE = 22.7, M_RIDER = 90.7;
+const H0 = 1.02, H_MIN = 0.70, H_MAX = 1.32;                                        // rider CoM height above the surface: rest, crouched, extended
+
+/* =============== the rollers =============== */
+const LAM = 8, AMP = 0.55, N_ROLL = 5, X0 = 8, XEND = X0 + N_ROLL * LAM, TRACK_END = XEND + 8;
+function yS(x){ if (x < X0 || x > XEND) return AMP; return AMP * (1 + Math.cos(2 * Math.PI * (x - X0) / LAM)) / 2; }
+function surf(x){                                                                     // height, slope angle, curvature (positive = trough / concave up)
+  const e = 0.02, y = yS(x), y1 = (yS(x + e) - yS(x - e)) / (2 * e), y2 = (yS(x + e) - 2 * y + yS(x - e)) / (e * e);
+  return { y, th: Math.atan(y1), k: y2 / Math.pow(1 + y1 * y1, 1.5), u: (x - X0) / LAM * 2 * Math.PI };
+}
+
+/* =============== rider strategies: how the legs are driven =============== */
+/* each returns the leg force F (N, along the normal, >= 0) given the rider state; load = what holding still would take */
+function ctlTrough(r, load){   // push in the trough (k>0), compress over the crest (k<0): the article's timing
+  const S = r.S; const inR = r.x > X0 - 1 && r.x < XEND + 1;
+  const ht = inR ? H0 + PUMP * (-Math.cos(S.u + 0.35)) : H0;                          // slightly ahead of the geometry, like a good rider
+  r.phase = !inR ? 'FLAT · coasting' : S.k > 0.02 ? 'TROUGH · extending against the load' : S.k < -0.02 ? 'CREST · pulling the bike up, light' : (S.th < 0 ? 'DOWN-SLOPE · waiting for the curve' : 'UP-SLOPE · staying tall');
+  return clamp(load + M_RIDER * (60 * (ht - r.h) - 12 * r.hd), 0, 3.0 * M_RIDER * G9);
+}
+function ctlDownslope(r, load){   // pumps early: starts the push on the down-slope, 45 degrees ahead of the curve, the way the coach in the article said not to
+  const S = r.S; const inR = r.x > X0 - 1 && r.x < XEND + 1;
+  const ht = inR ? H0 + PUMP * (-Math.cos(S.u + 0.35 + 0.8)) : H0;
+  r.phase = !inR ? 'FLAT · coasting' : (S.th < -0.15 && S.k > -0.02) ? 'DOWN-SLOPE · pushing early, ground still straight' : S.k > 0.02 ? 'TROUGH · already extended, load arrives late' : S.k < -0.02 ? 'CREST · compressing late' : 'UP-SLOPE · already low';
+  return clamp(load + M_RIDER * (60 * (ht - r.h) - 12 * r.hd), 0, 3.0 * M_RIDER * G9);
+}
+function ctlPassive(r, load){     // soft legs and suspension: the load compresses them in the trough and they spring back on the crest
+  r.phase = r.S.k > 0.02 ? 'TROUGH · load squashes the legs, work flows out' : r.S.k < -0.02 ? 'CREST · legs spring back, little to gain' : 'coasting, legs soft';
+  return clamp(M_RIDER * G9 + 9000 * (H0 - r.h) - 900 * r.hd, 0, 3.0 * M_RIDER * G9);
+}
+function ctlRigid(r, load){       // locked out: no leg motion, no work either way
+  r.phase = 'RIGID · absorbing nothing, gaining nothing';
+  r.hd = 0; return load;
+}
+const SCENARIOS = [
+  { title: 'DOWN-SLOPE PUSH vs TROUGH PUSH',
+    a: { name: 'A · PUSH ON THE DOWN-SLOPE (EARLY)', desc: 'The common advice: extend as the down-slope steepens. The ground there is straight, so the push mostly lifts the rider; the legs are already out when the curved transition and its heavy load arrive, and they fold under it.', ctl: ctlDownslope },
+    b: { name: 'B · PUSH IN THE TROUGH', desc: 'Wait for the curve. Extend where the ground curves up (the transition at the bottom), where the centripetal load makes the legs push against something heavy; pull the bike up over the crest where the load is light.', ctl: ctlTrough } },
+  { title: 'PASSIVE vs PUMP',
+    a: { name: 'A · PASSIVE, SOFT LEGS', desc: 'Legs and suspension left soft. The load in each trough compresses them and the work leaks out; they spring back over the crest where there is little load to gain from. The rollers steal speed.', ctl: ctlPassive },
+    b: { name: 'B · PUMP THE TRANSITIONS', desc: 'Same rollers, same entry speed, the rider works the transitions. The energy comes from the legs pushing against the trough load and letting the bike rise on the crest.', ctl: ctlTrough } },
+  { title: 'RIGID vs PUMP',
+    a: { name: 'A · RIGID (LOCKED OUT)', desc: 'Legs held stiff, mass rides at a constant height above the ground. No work in, none out: the bike neither gains nor loses beyond drag. A baseline for what the pump adds.', ctl: ctlRigid },
+    b: { name: 'B · PUMP THE TRANSITIONS', desc: 'Same entry speed, pumping the curves. Every trough is a chance to spend leg work against a heavy load and get it back as speed.', ctl: ctlTrough } }
+];
+let scenario = 0, PUMP = 0.22, V0 = 11 * 0.447, riding = true;
+
+/* =============== physics: bike on the surface, rider mass on legs along the normal, exact energy bookkeeping =============== */
+function makeRider(ctl){ return { ctl, x: 0, v: V0, h: H0, hd: 0, F: 0, E: 0, W: 0, S: surf(0), phase: '', v0: V0, trail: [], lastX: 0, travF: 0.04, travR: 0.05, L: 0, done: false }; }
+function resetRider(r){ r.x = 0; r.v = V0; r.v0 = V0; r.h = H0; r.hd = 0; r.F = M_RIDER * G9; r.W = 0; r.S = surf(0); r.trail.length = 0; r.done = false;
+  r.E = 0.5 * M_BIKE * r.v * r.v + 0.5 * M_RIDER * r.v * r.v + M_BIKE * G9 * r.S.y + M_RIDER * G9 * (r.S.y + r.h); }
+function step(r, dt){
+  if (r.done) return;
+  const S = r.S = surf(r.x), c = Math.cos(S.th);
+  const cen = r.v * r.v * S.k * (1 - S.k * r.h);                                    // centripetal acceleration the rider's mass needs along the normal
+  const load = M_RIDER * (G9 * c + cen);                                             // leg force that holds h constant
+  let F = r.ctl(r, load);
+  const hdd = F / M_RIDER - (G9 * c + cen);
+  r.hd += hdd * dt; r.h += r.hd * dt;
+  if (r.h < H_MIN){ r.h = H_MIN; if (r.hd < 0){ r.hd = 0; } F = Math.max(F, load); }     // leg stops
+  if (r.h > H_MAX){ r.h = H_MAX; if (r.hd > 0){ r.hd = 0; } }
+  r.F = F;
+  const Fdrag = 0.5 * 1.2 * 0.55 * r.v * r.v + 0.005 * (M_BIKE + M_RIDER) * G9;    // aero + a pump-track rolling resistance
+  const P = F * r.hd;                                                                 // leg power: positive when extending under load
+  r.E += (P - Fdrag * r.v) * dt; r.W += P * dt;
+  const Vpot = M_BIKE * G9 * S.y + M_RIDER * G9 * (S.y + r.h * c);
+  const mEff = M_BIKE + M_RIDER * Math.pow(1 - S.k * r.h, 2);
+  const T = r.E - Vpot - 0.5 * M_RIDER * r.hd * r.hd;
+  r.v = Math.sqrt(Math.max(0.3, 2 * T / mEff));
+  r.x += r.v * c * dt;
+  r.L = Math.abs(S.k) > 0.01 ? M_RIDER * r.v * (1 - S.k * r.h) * Math.abs(1 / S.k - r.h) : 0;   // m·v·r of the rider about the centre of curvature
+  if (r.x - r.lastX > 0.15){ r.lastX = r.x; const n = normalAt(S); r.trail.push({ x: r.x + n.x * r.h, y: S.y + n.y * r.h }); if (r.trail.length > 60) r.trail.shift(); }
+  if (r.x > TRACK_END) r.done = true;
+  const NF = F * 0.42, NR = F * 0.58; r.travF += (forkTravelFor(NF) - r.travF) * Math.min(1, dt * 9); r.travR += (rearTravelFor(NR) - r.travR) * Math.min(1, dt * 9);
+}
+function normalAt(S){ return { x: -Math.sin(S.th), y: Math.cos(S.th) }; }
+const A = makeRider(ctlDownslope), B = makeRider(ctlTrough); resetRider(A); resetRider(B);
+
+/* =============== ui =============== */
+const $ = id => document.getElementById(id);
+$('v0').addEventListener('input', e => { V0 = +e.target.value * 0.447; $('v0Out').textContent = e.target.value + ' mph'; });
+$('amp').addEventListener('input', e => { PUMP = +e.target.value; $('ampOut').textContent = Math.round(PUMP * 100) + ' cm'; });
+$('rideBtn').addEventListener('click', () => { riding = !riding; $('rideBtn').textContent = riding ? 'PAUSE' : 'RIDE'; });
+function loadScenario(i){ scenario = i; const sc = SCENARIOS[i]; A.ctl = sc.a.ctl; B.ctl = sc.b.ctl; resetRider(A); resetRider(B);
+  $('tagA').textContent = sc.a.name; $('tagB').textContent = sc.b.name; $('hA').textContent = sc.a.name; $('hB').textContent = sc.b.name; $('dA').textContent = sc.a.desc; $('dB').textContent = sc.b.desc;
+  document.querySelectorAll('#scSeg button').forEach((x, j) => x.classList.toggle('on', j === i)); snap = true; }
+SCENARIOS.forEach((sc, i) => { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = (i + 1) + ' · ' + sc.title; bt.addEventListener('click', () => loadScenario(i)); $('scSeg').appendChild(bt); });
+$('restartBtn').addEventListener('click', () => { resetRider(A); resetRider(B); snap = true; });
+if (matchMedia('(prefers-reduced-motion: reduce)').matches){ riding = false; $('rideBtn').textContent = 'RIDE'; }
+function txt(id, s, cls){ const el = $(id); el.textContent = s; if (cls !== undefined) el.className = 'v ' + cls; }
+function hud(r, k, ph){
+  const c0 = Math.cos(r.S.th), veq = Math.sqrt(Math.max(0, r.v * r.v + 2 * G9 * ((r.S.y - AMP) + (r.h * c0 - H0)))), dv = (veq - r.v0) / 0.447;   // speed the rider would have back at entry height: strips out the free ups and downs
+  txt('sp' + k, (r.v / 0.447).toFixed(1) + ' mph'); txt('dv' + k, (dv >= 0 ? '+' : '') + dv.toFixed(1) + ' mph', dv > 0.3 ? 'good' : dv < -0.3 ? 'warn' : '');
+  txt('h' + k + '2', (r.h * 100).toFixed(0) + ' cm'); txt('ld' + k, (r.F / (M_RIDER * G9)).toFixed(2) + ' × bw', r.F / (M_RIDER * G9) > 2 ? 'warn' : '');
+  txt('pw' + k, Math.round(r.F * r.hd) + ' W', r.F * r.hd > 200 ? 'good' : r.F * r.hd < -200 ? 'warn' : ''); txt('wk' + k, Math.round(r.W) + ' J', r.W > 50 ? 'good' : r.W < -50 ? 'warn' : '');
+  txt('k' + k, Math.abs(r.S.k) < 0.01 ? 'straight' : (r.S.k > 0 ? 'trough  R ' : 'crest  R ') + (1 / Math.abs(r.S.k)).toFixed(1) + ' m');
+  txt('l' + k, r.L ? r.L.toFixed(0) + ' kg·m²/s' : '–');
+  $('ex' + k).style.width = ((r.h - H_MIN) / (H_MAX - H_MIN) * 100) + '%'; $('ldb' + k).style.width = clamp(r.F / (M_RIDER * G9) / 3 * 100, 0, 100) + '%';
+  ph.innerHTML = '<b>' + (r.done ? 'FINISHED' : 'ROLLER ' + clamp(Math.floor((r.x - X0) / LAM) + 1, 0, N_ROLL) + ' / ' + N_ROLL) + '</b>' + r.phase;
+}
+function drawChart(){
+  const cv = $('chart'), c = cv.getContext('2d'), W = cv.width, H = cv.height, L = 52, R = 16, T = 22, Bt = 26;
+  c.clearRect(0, 0, W, H); c.fillStyle = '#2F3328'; c.fillRect(0, 0, W, H);
+  const X = x => L + (W - L - R) * x / TRACK_END, Y = v => T + (H - T - Bt) * (1 - clamp(v / 0.447 / 22, 0, 1));
+  c.strokeStyle = '#484D3C'; c.lineWidth = 1; c.font = '10px monospace'; c.fillStyle = '#A39F88';
+  for (let m = 0; m <= 20; m += 5){ c.beginPath(); c.moveTo(L, Y(m * 0.447)); c.lineTo(W - R, Y(m * 0.447)); c.stroke(); c.fillText(m + ' mph', 4, Y(m * 0.447) + 4); }
+  c.strokeStyle = '#5C4633'; c.lineWidth = 2; c.beginPath(); for (let x = 0; x <= TRACK_END; x += 0.5){ const y = H - Bt - yS(x) * 30; x ? c.lineTo(X(x), y) : c.moveTo(X(x), y); } c.stroke();
+  for (const [r, col] of [[A, '#D4784E'], [B, '#7FA6C9']]){ if (r.log && r.log.length > 1){ c.strokeStyle = col; c.lineWidth = 2; c.beginPath(); r.log.forEach((p, i) => i ? c.lineTo(X(p.x), Y(p.v)) : c.moveTo(X(p.x), Y(p.v))); c.stroke(); } }
+  c.fillStyle = '#EFE8D6'; c.font = '11px monospace'; c.fillText('speed vs distance through the rollers · A orange · B blue · ground profile below', L + 6, 14);
+}
+function logRider(r){ if (!r.log) r.log = []; if (r.log.length === 0 || r.x - r.log[r.log.length - 1].x > 0.3) r.log.push({ x: r.x, v: r.v }); }
+
+/* =============== 3d =============== */
+const canvas = $('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer.setSize(896, 300, false); renderer.setScissorTest(true);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9FC3DC); scene.fog = new THREE.Fog(0xB9D0DC, 25, 90);
+scene.add(new THREE.AmbientLight(0xdfe8f0, 0.85)); const sun = new THREE.DirectionalLight(0xfff2d6, 0.8); sun.position.set(20, 50, 40); scene.add(sun);
+const mat = c => new THREE.MeshLambertMaterial({ color: c }), box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+/* the two lanes: same rollers, side by side in z so each viewport shows one rider */
+const LANE_Z = [0, 40];
+for (const lz of LANE_Z){
+  const n = Math.round(TRACK_END / 0.25) + 1, RL = [-1.4, -0.7, 0, 0.7, 1.4], nv = n * RL.length, pos = new Float32Array(nv * 3), col = new Float32Array(nv * 3), idx = [], c = new THREE.Color();
+  for (let i = 0; i < n; i++){ const x = i * 0.25, y = yS(x); for (let j = 0; j < RL.length; j++){ const k = (i * RL.length + j) * 3; pos[k] = x; pos[k + 1] = y + 0.02 - 0.03 * RL[j] * RL[j]; pos[k + 2] = lz + RL[j]; c.setHex(0x8B6A4A); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.03 : 0.02)); col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b; }
+    if (i + 1 < n) for (let j = 0; j + 1 < RL.length; j++){ const a = i * RL.length + j, b = (i + 1) * RL.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
+  const gp = new THREE.PlaneGeometry(200, 60, 80, 24); gp.rotateX(-Math.PI / 2); const p2 = gp.attributes.position, c2 = new Float32Array(p2.count * 3);
+  for (let i = 0; i < p2.count; i++){ const x = p2.getX(i) + TRACK_END / 2, z = p2.getZ(i) + lz; const inLane = Math.abs(z - lz) < 1.6; p2.setXYZ(i, x, inLane ? yS(clamp(x, 0, TRACK_END)) - 0.05 : yS(clamp(x, 0, TRACK_END)) * (1 - smooth((Math.abs(z - lz) - 1.6) / 6)) + 0.3 * Math.sin(x * 0.2) * Math.cos(z * 0.3) * smooth((Math.abs(z - lz) - 1.6) / 6) - 0.05, z);
+    const nn = 0.5 + 0.5 * Math.sin(x * 0.7) * Math.cos(z * 0.9); c.setHSL(0.27 + 0.03 * nn, 0.38, 0.30 + 0.10 * nn); c2[i * 3] = c.r; c2[i * 3 + 1] = c.g; c2[i * 3 + 2] = c.b; }
+  gp.setAttribute('color', new THREE.BufferAttribute(c2, 3)); gp.computeVertexNormals(); scene.add(new THREE.Mesh(gp, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
+  let seed = 11 + lz; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  for (let i = 0; i < 40; i++){ const x = rnd() * TRACK_END, z = lz + (rnd() < 0.5 ? -1 : 1) * (4 + rnd() * 14), sc = 0.9 + rnd() * 0.9, t = new THREE.Group(); const tr = box(0.16, 1.2 * sc, 0.16, 0x5C4633); tr.position.y = 0.6 * sc; const c1 = box(1.1 * sc, 1.1 * sc, 1.1 * sc, rnd() < 0.5 ? 0x3E6644 : 0x35573B); c1.rotation.set(0, Math.PI / 4, Math.PI / 4); c1.position.y = 1.5 * sc; t.add(tr, c1); t.position.set(x, yS(clamp(x, 0, TRACK_END)) * 0.3 - 0.1, z); scene.add(t); }
+  /* trough / crest markers on the ground: centre-of-curvature posts are drawn live */
+  for (let i = 0; i < N_ROLL; i++){ const xt = X0 + LAM / 2 + i * LAM, xc = X0 + (i + 1) * LAM; const mt = box(0.12, 0.5, 0.12, 0x7FA6C9); mt.position.set(xt, yS(xt) + 0.25, lz - 1.8); scene.add(mt); if (xc < XEND){ const mc = box(0.12, 0.5, 0.12, 0xD4784E); mc.position.set(xc, yS(xc) + 0.25, lz - 1.8); scene.add(mc); } }
+}
+/* limbs */
+const DOWN = new THREE.Vector3(0, -1, 0), _dir = new THREE.Vector3(), P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
+function limb(len, w, d, color){ const g = new THREE.BoxGeometry(w, len, d); g.translate(0, -len / 2, 0); const m = new THREE.Mesh(g, mat(color)); m.userData.len = len; return m; }
+function aimLimb(m, a, b){ m.position.copy(a); _dir.subVectors(b, a); const L = _dir.length() || 0.001; m.scale.y = L / m.userData.len; m.quaternion.setFromUnitVectors(DOWN, _dir.divideScalar(L)); }
+function ik(a, b, l1, l2, prefer, maxDeg){ const bb = b.clone(); let dx = bb.x - a.x, dy = bb.y - a.y, d = Math.hypot(dx, dy); const dMax = chord(l1, l2, maxDeg), dMin = Math.abs(l1 - l2) + 0.02;
+  if (d > dMax || d < dMin){ const f = clamp(d, dMin, dMax) / d; dx *= f; dy *= f; bb.x = a.x + dx; bb.y = a.y + dy; d = Math.hypot(dx, dy); }
+  const ux = dx / d, uy = dy / d, al = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - al * al)); let px = uy, py = -ux;
+  if ((prefer === 'fwd' && px < 0) || (prefer === 'down' && py > 0)){ px = -px; py = -py; } return { joint: new THREE.Vector3(a.x + ux * al + px * h, a.y + uy * al + py * h, (a.z + bb.z) / 2), end: bb }; }
+const C = { frame: 0x8A5A3A, frame2: 0x6E4630, decal: 0x1E1A18, forkUp: 0xC8952A, forkLow: 0x1E1E1E, sw: 0x8A5A3A, link: 0x1E1E1E, coil: 0x1E1E1E, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, pants: 0xE9E4DC, shoe: 0x25211E, motor: 0x1B1B1B };
+function wheel(r){ const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.TorusGeometry(r - 0.033, 0.036, 6, 16), mat(C.tire)), new THREE.Mesh(new THREE.TorusGeometry(r - 0.075, 0.014, 5, 16), mat(C.rim)), box(0.07, 0.07, 0.11, C.hub));
+  for (let i = 0; i < 6; i++){ const s = box(0.008, (r - 0.075) * 2, 0.008, 0xC9C2B0); s.rotation.z = i * Math.PI / 6; s.position.z = (i % 2 ? 0.02 : -0.02); g.add(s); } return g; }
+function buildBike(jersey){
+  const rig = new THREE.Group(); rig.rotation.order = 'YXZ'; const frame = new THREE.Group(); rig.add(frame);
+  const tube = (a, b, t, c, d) => { const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; };
+  tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), 0.055, C.frame, 0.06);
+  tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.115, C.frame, 0.085); tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);
+  tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame); tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);
+  tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);
+  const motor = box(0.27, 0.19, 0.16, C.motor); motor.position.set(-0.01, -0.03, 0); frame.add(motor);
+  const o = { rig, frame, wF: wheel(GEO.rF), wR: wheel(GEO.rR), lowerLink: limb(1, 0.035, 0.10, C.link), lowerArm: limb(1, 0.03, 0.08, C.link), upperLink: limb(1, 0.03, 0.09, C.link),
+    shockBody: limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil: limb(1, 0.072, 0.072, C.coil), shockShaft: limb(1, 0.026, 0.026, 0xC9C2B0), brace: limb(1, 0.03, 0.15, C.sw),
+    chainL: limb(1, 0.05, 0.04, C.sw), chainR: limb(1, 0.05, 0.04, C.sw), seatL: limb(1, 0.038, 0.032, C.sw), seatR: limb(1, 0.038, 0.032, C.sw),
+    stanchL: limb(1, 0.042, 0.042, C.forkUp), stanchR: limb(1, 0.042, 0.042, C.forkUp), lowerL: limb(1, 0.058, 0.058, C.forkLow), lowerR: limb(1, 0.058, 0.058, C.forkLow),
+    post: limb(1, 0.031, 0.031, 0xC8952A), saddle: box(0.27, 0.045, 0.09, 0x1E1A18), stem: limb(1, 0.035, 0.035, 0x1E1E1E), bar: box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x1E1E1E),
+    crankL: limb(CRANK, 0.03, 0.025, 0x25211E), crankR: limb(CRANK, 0.03, 0.025, 0x25211E), pedL: box(0.1, 0.02, 0.07, 0x6F675A), pedR: box(0.1, 0.02, 0.07, 0x6F675A),
+    torso: limb(0.5, 0.16, 0.24, jersey), head: box(0.15, 0.15, 0.15, C.skin), helmet: box(0.22, 0.20, 0.21, 0x1E3F8F), visor: box(0.11, 0.025, 0.2, 0x1E3F8F), chin: box(0.075, 0.07, 0.19, 0x1E3F8F), goggle: box(0.02, 0.06, 0.17, 0x1E1A18), hipBox: box(0.17, 0.14, 0.22, C.pants),
+    uArmL: limb(0.31, 0.06, 0.06, jersey), lArmL: limb(0.29, 0.05, 0.05, jersey), uArmR: limb(0.31, 0.06, 0.06, jersey), lArmR: limb(0.29, 0.05, 0.05, jersey),
+    thighL: limb(0.44, 0.085, 0.085, C.pants), shinL: limb(0.44, 0.065, 0.065, C.pants), thighR: limb(0.44, 0.085, 0.085, C.pants), shinR: limb(0.44, 0.065, 0.065, C.pants), shoeL: box(0.15, 0.055, 0.08, C.shoe), shoeR: box(0.15, 0.055, 0.08, C.shoe) };
+  for (const k of Object.keys(o)) if (k !== 'rig' && k !== 'frame' && k !== 'wF' && k !== 'wR') frame.add(o[k]);
+  rig.add(o.wF, o.wR);
+  aimLimb(o.stem, P3(HEAD_TOP.x, HEAD_TOP.y), P3(BAR.x, BAR.y)); o.bar.position.set(BAR.x, BAR.y, 0);
+  const sad = P3(stDir.x * 0.47, stDir.y * 0.47); aimLimb(o.post, P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y), sad); o.saddle.position.set(sad.x - 0.03, sad.y + 0.02, 0);
+  scene.add(rig); return o;
+}
+
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+function makeOverlay(){
+  const g = { arrowF: new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1, 0xD9A441, 0.25, 0.14), arrowV: new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 1, 0x8DBF6A, 0.2, 0.12),
+    centre: new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), new THREE.MeshBasicMaterial({ color: 0xEFE8D6 })), spoke: null, com: new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), new THREE.MeshBasicMaterial({ color: 0xD4784E })), trail: null };
+  const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(60 * 3), 3)); g.trail = new THREE.Line(tg, new THREE.LineBasicMaterial({ color: 0xD4784E }));
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3)); g.spoke = new THREE.Line(sg, new THREE.LineBasicMaterial({ color: 0xEFE8D6 }));
+  scene.add(g.arrowF, g.arrowV, g.centre, g.spoke, g.com, g.trail); return g;
+}
+function poseRider(o, ov, r, lz, dt){
+  const S = r.S, n = normalAt(S);
+  o.rig.position.set(r.x, S.y, lz); o.rig.rotation.y = 0; o.rig.rotation.x = 0;
+  const k = vtLookup(r.travR), axR = P3(k.ax, k.ay), axF = axleFLocal(r.travF);
+  const pitch = S.th - Math.atan2((axR.y + GEO.rR) - (axF.y + GEO.rF), axF.x - axR.x) * -1 * -1;   // frame pitch = ground slope + the pitch that levels both tyres on it
+  const pl = Math.atan2((axR.y + GEO.rR) - (axF.y + GEO.rF), axF.x - axR.x);
+  o.frame.rotation.z = S.th + pl; const c = Math.cos(o.frame.rotation.z), s = Math.sin(o.frame.rotation.z);
+  o.frame.position.set(0, 0, 0);
+  // put the rear tyre on the ground: the rig origin is the ground under the BB, so lift the frame by the rear axle geometry
+  const liftY = -(axR.x * s + axR.y * c) + GEO.rR * Math.cos(S.th), liftX = -(axR.x * c - axR.y * s) + GEO.cs * 0 - 0.449 * 0;
+  o.frame.position.set(0, liftY, 0);
+  o.wF.position.set(axF.x * c - axF.y * s, liftY + axF.x * s + axF.y * c, 0); o.wR.position.set(axR.x * c - axR.y * s, liftY + axR.x * s + axR.y * c, 0);
+  o.wF.rotation.z -= r.v / GEO.rF * dt; o.wR.rotation.z -= r.v / GEO.rR * dt;
+  aimLimb(o.lowerLink, P3(VPP.P1.x, VPP.P1.y), P3(k.P2.x, k.P2.y)); aimLimb(o.lowerArm, P3(VPP.P1.x, VPP.P1.y), P3(k.S.x, k.S.y)); aimLimb(o.upperLink, P3(VPP.P3.x, VPP.P3.y), P3(k.P4.x, k.P4.y));
+  for (const [cs, ss, zz] of [[o.chainL, o.seatL, 0.075], [o.chainR, o.seatR, -0.075]]){ aimLimb(cs, P3(k.P2.x, k.P2.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(k.P4.x, k.P4.y, zz), P3(axR.x, axR.y, zz)); }
+  _a.set(k.P2.x, k.P2.y, 0).lerp(_c.set(axR.x, axR.y, 0), 0.42); _b.set(k.P4.x, k.P4.y, 0).lerp(_c, 0.42); aimLimb(o.brace, _a, _b);
+  _a.set(VPP.F.x, VPP.F.y, 0); _b.set(k.S.x, k.S.y, 0); aimLimb(o.shockBody, _a, _c.copy(_a).lerp(_b, 0.45)); aimLimb(o.shockShaft, _c.copy(_a).lerp(_b, 0.4), _b); aimLimb(o.shockCoil, _c.copy(_a).lerp(_b, 0.12), _a.clone().lerp(_b, 0.85));
+  for (const [st, lo, zz] of [[o.stanchL, o.lowerL, 0.085], [o.stanchR, o.lowerR, -0.085]]){ _a.set(CROWN.x, CROWN.y, zz); _b.set(axF.x, axF.y, zz); aimLimb(st, _a, _c.copy(_a).lerp(_b, 0.55)); aimLimb(lo, _c.copy(_a).lerp(_b, 0.38), _b); }
+  /* rider: hips follow the CoM height (frame-local, along the frame's up axis), pedals level */
+  const crank = Math.PI / 2, pl2 = P3(Math.sin(crank) * CRANK, Math.cos(crank) * CRANK, PEDAL_Z), pr = P3(-Math.sin(crank) * CRANK, -Math.cos(crank) * CRANK, -PEDAL_Z);
+  aimLimb(o.crankL, P3(0, 0, 0.1), _a.set(pl2.x, pl2.y, 0.1)); aimLimb(o.crankR, P3(0, 0, -0.1), _a.set(pr.x, pr.y, -0.1)); o.pedL.position.copy(pl2); o.pedR.position.copy(pr);
+  const hips = P3(-0.22 - 0.10 * (r.h - H0), r.h - 0.30, 0), tor = (34 + 18 * (H0 - r.h)) * D2R;
+  const sh = P3(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor), 0);
+  o.hipBox.position.set(hips.x, hips.y + 0.02, 0); aimLimb(o.torso, sh, hips);
+  const neck = tor + 35 * D2R; o.head.position.set(sh.x + 0.17 * Math.cos(neck), sh.y + 0.17 * Math.sin(neck), 0);
+  o.helmet.position.set(o.head.position.x - 0.01, o.head.position.y + 0.02, 0); o.helmet.rotation.z = neck - 90 * D2R; o.visor.position.set(o.head.position.x + 0.10, o.head.position.y + 0.11, 0); o.visor.rotation.z = -0.25;
+  o.chin.position.set(o.head.position.x + 0.12, o.head.position.y - 0.045, 0); o.goggle.position.set(o.head.position.x + 0.10, o.head.position.y + 0.035, 0);
+  for (const [ua, la, zz] of [[o.uArmL, o.lArmL, 0.13], [o.uArmR, o.lArmR, -0.13]]){ _a.set(sh.x, sh.y - 0.02, zz); const rr = ik(_a, P3(BAR.x, BAR.y, zz > 0 ? GRIP_Z : -GRIP_Z), 0.31, 0.29, 'down', 165); rr.joint.z = (zz > 0 ? 1 : -1) * 0.46; aimLimb(ua, _a, rr.joint); aimLimb(la, rr.joint, rr.end); }
+  for (const [th, sn, ped, zz, shoe] of [[o.thighL, o.shinL, pl2, 0.10, o.shoeL], [o.thighR, o.shinR, pr, -0.10, o.shoeR]]){ _a.set(hips.x, hips.y, zz); _b.set(ped.x, ped.y + 0.04, ped.z); const rr = ik(_a, _b, 0.44, 0.44, 'fwd', 168); aimLimb(th, _a, rr.joint); aimLimb(sn, rr.joint, rr.end); shoe.position.set(ped.x - 0.02, ped.y + 0.045, ped.z); shoe.rotation.z = -0.2; }
+  /* overlay: leg force along the normal from the ground, velocity along the tangent, centre of curvature, CoM and its path */
+  const comW = new THREE.Vector3(r.x + n.x * r.h, S.y + n.y * r.h, lz + 1.0);
+  ov.com.position.copy(comW);
+  ov.arrowF.position.set(r.x, S.y, lz + 1.0); ov.arrowF.setDirection(new THREE.Vector3(n.x, n.y, 0)); ov.arrowF.setLength(Math.max(0.05, r.F / (M_RIDER * G9) * 0.9), 0.22, 0.12);
+  ov.arrowV.position.copy(comW); ov.arrowV.setDirection(new THREE.Vector3(Math.cos(S.th), Math.sin(S.th), 0)); ov.arrowV.setLength(Math.max(0.05, r.v * 0.18), 0.2, 0.1);
+  const curved = Math.abs(S.k) > 0.015;
+  ov.centre.visible = curved; ov.spoke.visible = curved;
+  if (curved){ const Rc = 1 / S.k; ov.centre.position.set(r.x + n.x * Rc, S.y + n.y * Rc, lz + 1.0); const sp = ov.spoke.geometry.attributes.position; sp.setXYZ(0, ov.centre.position.x, ov.centre.position.y, lz + 1.0); sp.setXYZ(1, comW.x, comW.y, lz + 1.0); sp.needsUpdate = true; }
+  const tp = ov.trail.geometry.attributes.position; for (let i = 0; i < 60; i++){ const q = r.trail[Math.min(i, r.trail.length - 1)] || { x: comW.x, y: comW.y }; tp.setXYZ(i, q.x, q.y, lz + 1.0); } tp.needsUpdate = true; ov.trail.geometry.setDrawRange(0, Math.max(1, r.trail.length));
+}
+const bikeA = buildBike(0xD4784E), bikeB = buildBike(0x7FA6C9), ovA = makeOverlay(), ovB = makeOverlay();
+const camA = new THREE.PerspectiveCamera(40, 448 / 300, 0.1, 200), camB = new THREE.PerspectiveCamera(40, 448 / 300, 0.1, 200);
+const camPosA = new THREE.Vector3(), camPosB = new THREE.Vector3(), lookA = new THREE.Vector3(), lookB = new THREE.Vector3(); let snap = true;
+function sideCam(cam, cp, lk, r, lz, dt){
+  const want = new THREE.Vector3(r.x + 0.6, r.S.y + 1.6, lz + 8.5), tgt = new THREE.Vector3(r.x + 0.6, r.S.y + 0.9, lz);
+  if (snap){ cp.copy(want); lk.copy(tgt); } else { cp.lerp(want, Math.min(1, dt * 6)); lk.lerp(tgt, Math.min(1, dt * 8)); }
+  cam.position.copy(cp); cam.lookAt(lk);
+}
+/* =============== loop =============== */
+const PDT = 1 / 600; let last = performance.now(), acc = 0, frame = 0, doneT = 0;
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 60){ step(A, PDT); step(B, PDT); logRider(A); logRider(B); acc -= PDT; n++; }
+    if (A.done && B.done){ doneT += dt; if (doneT > 2.5){ doneT = 0; resetRider(A); resetRider(B); A.log = []; B.log = []; snap = true; } } }
+  poseRider(bikeA, ovA, A, LANE_Z[0], riding ? dt : 0); poseRider(bikeB, ovB, B, LANE_Z[1], riding ? dt : 0);
+  sideCam(camA, camPosA, lookA, A, LANE_Z[0], dt); sideCam(camB, camPosB, lookB, B, LANE_Z[1], dt); snap = false;
+  renderer.setViewport(0, 0, 448, 300); renderer.setScissor(0, 0, 448, 300); renderer.render(scene, camA);
+  renderer.setViewport(448, 0, 448, 300); renderer.setScissor(448, 0, 448, 300); renderer.render(scene, camB);
+  if ((frame++ & 1) === 0){ hud(A, 'A', $('phA')); hud(B, 'B', $('phB')); drawChart(); }
+}
+loadScenario(0);
+requestAnimationFrame(tick);
+window.LAB = { A, B, step, loadScenario, resetRider, surf, SCENARIOS };
+</script>
