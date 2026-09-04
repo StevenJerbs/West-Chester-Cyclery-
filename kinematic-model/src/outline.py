@@ -32,17 +32,31 @@ class OutlineTracker:
         self.seg = YOLO(seg_weights)
         self.conf = conf
 
-    def masks_for_frame(self, frame_bgr, near_point: tuple[float, float] | None = None):
+    def masks_for_frame(self, frame_bgr, near_point: tuple[float, float] | None = None,
+                        roi_size: float | None = None):
         """Return (bike_mask, rider_mask) as uint8 0/255 arrays sized to the
         frame, or None each if nothing of that class was found. When
         near_point is given, picks the instance whose centroid is closest
         to it (keeps the outline on the same subject frame to frame);
-        otherwise picks the largest instance of each class.
+        otherwise picks the largest instance of each class. When the bike
+        is missed at full frame and roi_size is given, segments a zoomed
+        crop of roi_size px around near_point (small, distant bikes).
         """
         h, w = frame_bgr.shape[:2]
         result = self.seg(frame_bgr, conf=self.conf, verbose=False)[0]
+        roi = None   # (x0, y0, size, scale) when the zoomed crop was used
         if result.masks is None or BICYCLE_CLASS not in result.boxes.cls.cpu().numpy().astype(int):
             result = self.seg(frame_bgr, conf=self.conf, imgsz=1280, verbose=False)[0]  # small, distant bike
+        if (result.masks is None or BICYCLE_CLASS not in result.boxes.cls.cpu().numpy().astype(int)) \
+                and near_point is not None and roi_size:
+            size = int(max(224, min(roi_size, min(h, w))))
+            x0 = int(np.clip(near_point[0] - size / 2, 0, w - size)); y0 = int(np.clip(near_point[1] - size / 2, 0, h - size))
+            crop = frame_bgr[y0:y0 + size, x0:x0 + size]
+            scale = 640.0 / size if size < 640 else 1.0
+            if scale > 1.0:
+                crop = cv2.resize(crop, (640, 640), interpolation=cv2.INTER_CUBIC)
+            result = self.seg(crop, conf=max(0.15, self.conf - 0.1), imgsz=640, verbose=False)[0]
+            roi = (x0, y0, size, scale)
         bike_mask = rider_mask = None
         if result.masks is None:
             return bike_mask, rider_mask
@@ -50,6 +64,9 @@ class OutlineTracker:
         classes = result.boxes.cls.cpu().numpy().astype(int)
         masks = result.masks.data.cpu().numpy()  # (n, mh, mw) in [0,1]
         boxes = result.boxes.xyxy.cpu().numpy()
+        if roi:
+            boxes = boxes / roi[3]
+            boxes[:, [0, 2]] += roi[0]; boxes[:, [1, 3]] += roi[1]
 
         def pick(cls_id):
             idxs = np.where(classes == cls_id)[0]
@@ -63,8 +80,14 @@ class OutlineTracker:
                     (boxes[i][0] + boxes[i][2]) / 2 - px,
                     (boxes[i][1] + boxes[i][3]) / 2 - py))
             m = masks[best]
-            m = cv2.resize(m, (w, h), interpolation=cv2.INTER_LINEAR)
-            return (m > 0.5).astype(np.uint8) * 255
+            if roi is None:
+                m = cv2.resize(m, (w, h), interpolation=cv2.INTER_LINEAR)
+                return (m > 0.5).astype(np.uint8) * 255
+            x0, y0, size, _ = roi
+            m = cv2.resize(m, (size, size), interpolation=cv2.INTER_LINEAR)
+            full = np.zeros((h, w), dtype=np.uint8)
+            full[y0:y0 + size, x0:x0 + size] = (m > 0.5).astype(np.uint8) * 255
+            return full
 
         bike_mask = pick(BICYCLE_CLASS)
         rider_mask = pick(PERSON_CLASS)

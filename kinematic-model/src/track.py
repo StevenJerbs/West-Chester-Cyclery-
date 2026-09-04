@@ -102,6 +102,36 @@ class BikeRiderTracker:
         self.conf = conf
         self._last_hip = None   # rider identity continuity across frames
         self._miss = 0          # frames since the rider was last confirmed
+        self._last_box = None   # last bike box, for the zoomed retry
+        self._box_miss = 0
+
+    def _best_bike(self, det, offset=(0, 0), scale=1.0):
+        best = None
+        for box in det.boxes:
+            if int(box.cls) == BICYCLE_CLASS:
+                c = float(box.conf)
+                if best is None or c > best[1]:
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    best = ([x1 / scale + offset[0], y1 / scale + offset[1],
+                             x2 / scale + offset[0], y2 / scale + offset[1]], c)
+        return best
+
+    def _roi_detect(self, frame_bgr, center, size):
+        """Zoomed retry for a small, distant bike: crop a square around the
+        rider (or the last bike box), upscale it so the bike is a few hundred
+        px, and run the detector on that. Coordinates are mapped back."""
+        h, w = frame_bgr.shape[:2]
+        size = int(max(224, min(size, min(h, w))))
+        cx, cy = center
+        x0, y0 = int(np.clip(cx - size / 2, 0, w - size)), int(np.clip(cy - size / 2, 0, h - size))
+        crop = frame_bgr[y0:y0 + size, x0:x0 + size]
+        scale = 640.0 / size
+        if scale > 1.0:
+            crop = cv2.resize(crop, (640, 640), interpolation=cv2.INTER_CUBIC)
+        else:
+            scale = 1.0
+        det = self.det(crop, conf=max(0.15, self.conf - 0.1), imgsz=640, verbose=False)[0]
+        return self._best_bike(det, offset=(x0, y0), scale=scale)
 
     def track_frame(self, frame_bgr, idx: int, time_s: float) -> FrameTrack:
         rec = FrameTrack(frame=idx, time_s=time_s)
@@ -109,30 +139,46 @@ class BikeRiderTracker:
         best = None
         for imgsz in (self.IMGSZ, self.IMGSZ_RETRY):
             det = self.det(frame_bgr, conf=self.conf, imgsz=imgsz, verbose=False)[0]
-            for box in det.boxes:
-                if int(box.cls) == BICYCLE_CLASS:
-                    c = float(box.conf)
-                    if best is None or c > best[1]:
-                        best = (box.xyxy[0].tolist(), c)
+            best = self._best_bike(det)
             if best:
                 break
+
+        pose = self.pose(frame_bgr, conf=self.conf, imgsz=self.IMGSZ, verbose=False)[0]
+        if pose.keypoints is None or len(pose.keypoints) == 0:
+            pose = self.pose(frame_bgr, conf=self.conf, imgsz=self.IMGSZ_RETRY, verbose=False)[0]
+        person = None
+        if pose.keypoints is not None and len(pose.keypoints) > 0:
+            person = self._closest_person(pose, best[0] if best else None, frame_bgr.shape)
+
+        if not best:
+            # zoomed retry around the rider, else around where the bike last was
+            anchor = None
+            if person is not None:
+                vis = person[person[:, 2] > 0.3]
+                if len(vis) >= 4:
+                    ext = float(vis[:, 1].max() - vis[:, 1].min())
+                    anchor = ((float(vis[:, 0].mean()), float(vis[:, 1].mean()) + 0.3 * ext), 3.5 * max(ext, 40.0))
+            if anchor is None and self._last_box is not None and self._box_miss < 20:
+                x1, y1, x2, y2 = self._last_box
+                anchor = (((x1 + x2) / 2, (y1 + y2) / 2), 3.0 * max(y2 - y1, x2 - x1, 60.0))
+            if anchor is not None:
+                best = self._roi_detect(frame_bgr, *anchor)
+
         if best:
             (x1, y1, x2, y2), rec.bike_conf = best
             rec.bike_box = [x1, y1, x2, y2]
             rec.bike_center_y = (y1 + y2) / 2
             rec.bike_height = y2 - y1
+            self._last_box, self._box_miss = rec.bike_box, 0
+        else:
+            self._box_miss += 1
 
-        pose = self.pose(frame_bgr, conf=self.conf, imgsz=self.IMGSZ, verbose=False)[0]
-        if pose.keypoints is None or len(pose.keypoints) == 0:
-            pose = self.pose(frame_bgr, conf=self.conf, imgsz=self.IMGSZ_RETRY, verbose=False)[0]
-        if pose.keypoints is not None and len(pose.keypoints) > 0:
-            person = self._closest_person(pose, rec.bike_box, frame_bgr.shape)
-            if person is not None:
-                for name, i in KP.items():
-                    x, y, c = person[i]
-                    if c > 0.3:
-                        rec.keypoints[name] = [float(x), float(y), float(c)]
-                self._derive_geometry(rec)
+        if person is not None:
+            for name, i in KP.items():
+                x, y, c = person[i]
+                if c > 0.3:
+                    rec.keypoints[name] = [float(x), float(y), float(c)]
+            self._derive_geometry(rec)
         return rec
 
     def _closest_person(self, pose_result, bike_box, shape):

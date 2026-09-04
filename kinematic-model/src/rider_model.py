@@ -105,6 +105,10 @@ class RiderFormModel:
         wheels_summary = wheel_series(track["frames"], fps, specs)
         tire_env = load_envelope()
         tire = tire_summary(track["frames"], fps, tire_env)
+        from kinematics import rotation_rates, speed_series
+        from track import _ROTATIONS
+        rates = rotation_rates(track["frames"], fps)
+        speed = speed_series(video, track["frames"], _ROTATIONS.get(rot % 360), fps)
         track_json.write_text(json.dumps(track))
 
         cornering = analyze_cornering(track["frames"], fps)
@@ -146,6 +150,8 @@ class RiderFormModel:
             "attitude": attitude_summary,
             "wheels": wheels_summary,
             "tire": tire,
+            "rotation_rates": rates,
+            "speed": speed,
             "bike_specs": {k: specs.get(k) for k in ("wheel_front_in", "wheel_rear_in", "fork_travel_mm",
                                                      "rear_travel_mm", "tire_pressure_front_psi",
                                                      "tire_pressure_rear_psi", "source")},
@@ -212,11 +218,12 @@ class RiderFormModel:
             if code is not None:
                 frame = cv2.rotate(frame, code)
             rec = by_idx.get(i)
-            near = None
+            near, roi = None, None
             if rec and rec.get("bike_box"):
                 x1, y1, x2, y2 = rec["bike_box"]
                 near = ((x1 + x2) / 2, (y1 + y2) / 2)
-            bike_mask, _ = seg.masks_for_frame(frame, near_point=near)
+                roi = 3.0 * max(y2 - y1, x2 - x1, 60.0)
+            bike_mask, _ = seg.masks_for_frame(frame, near_point=near, roi_size=roi)
             if bike_mask is not None:
                 masks[i] = bike_mask
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -243,7 +250,34 @@ class RiderFormModel:
         cap.release()
         return masks
 
+    def _draw_hud(self, frame, rec, w, t):
+        """Top-right panel: live pitch/roll/yaw rate with running maxima, and
+        the ground-speed estimate. Maxima accumulate as the video plays so a
+        viewer sees the peak rotation rate build through the run."""
+        if not hasattr(self, "_hud_max"):
+            self._hud_max = {"pitch": 0.0, "roll": 0.0, "yaw": 0.0}
+        rates = (rec or {}).get("rates") or {}
+        x0, y0 = w - 330, 20
+        cv2.rectangle(frame, (x0 - 10, y0 - 14), (w - 10, y0 + 118), (0, 0, 0), -1)
+        cv2.putText(frame, "rotation rate  (proxy, deg/s)   now    max", (x0, y0 + 4),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.45, (200, 200, 200), 1, cv2.LINE_AA)
+        y = y0 + 28
+        for k, label in (("pitch", "pitch"), ("roll", "roll"), ("yaw", "yaw")):
+            v = rates.get(f"{k}_rate_deg_s")
+            if v is not None:
+                self._hud_max[k] = max(self._hud_max[k], abs(v))
+            now = f"{v:+6.0f}" if v is not None else "   --"
+            cv2.putText(frame, f"{label:<6}{now:>22}   {self._hud_max[k]:4.0f}", (x0, y),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            y += 22
+        sp = (rec or {}).get("speed_kmh_smooth")
+        cv2.putText(frame, f"speed est  {sp:5.1f} km/h" if sp is not None else "speed est   -- km/h", (x0, y + 4),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, (60, 220, 255), 1, cv2.LINE_AA)
+        cv2.putText(frame, "ground-flow estimate, not GPS", (x0, y + 22),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (160, 160, 160), 1, cv2.LINE_AA)
+
     def _render_labeled(self, video, track, rot, sus_times, sus_scores, grading, cornering, out_path):
+        self._hud_max = {"pitch": 0.0, "roll": 0.0, "yaw": 0.0}
         from highlights import annotate, _frame_lookup, _score_at
         from track import _ROTATIONS
         code = _ROTATIONS.get(rot % 360)
@@ -267,6 +301,7 @@ class RiderFormModel:
                 from wheels import draw_wheels
                 draw_wheels(frame, rec)
             h, w = frame.shape[:2]
+            self._draw_hud(frame, rec, w, i / fps)
             # deviation flags: the "not on par" highlights
             y = h - 60
             for d in devs:
