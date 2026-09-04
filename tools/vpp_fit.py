@@ -1,7 +1,8 @@
 # Fits a lower-link-driven VPP four-bar (Bullit-style) to published outputs:
-# 170 mm rear travel over a 230x65 shock, leverage ratio ~2.95 -> ~2.40, axle at
-# chainstay 449 mm / BB drop from a 27.5" rear wheel. Prints the pivot layout that
-# suspension-lab.html embeds as VPP = {...}. Needs numpy + scipy.
+# 170 mm rear travel over a 230x65 shock, leverage ratio ~3.0 -> ~2.3, a Megatower-style
+# axle path (~2 mm rearward to sag, then forward) and the axle at chainstay 449 mm with a
+# 27.5" rear wheel. Prints the pivot layout that suspension-lab.html embeds as VPP = {...}.
+# Needs numpy + scipy.
 import numpy as np
 from scipy.optimize import minimize
 AX0=np.array([-0.449,0.006]); E2E=0.230; STROKE=0.065
@@ -33,13 +34,21 @@ def metrics(p):
     return dict(travel=float(np.interp(STROKE,stroke,trav)),lr0=float(lr[0]),lr65=float(np.interp(STROKE,stroke,lr)),
                 e2e=float(sl[0]),axle0=ax[0],lr=lr[:i+1],stroke=stroke[:i+1],trav=trav[:i+1],raw=r[:i+1],
                 xshift=float(ax[i,0]-ax[0,0]))
+def axlepath(m):
+    # Megatower-style: ~2 mm rearward to sag (45 mm), then forward, ending 5-15 mm forward of start
+    r=m['raw']; x0=r[0][1][0]; c=0.0
+    xs=np.array([o[1][0] for o in r]); ts=np.array([o[1][1]-r[0][1][1] for o in r])
+    x45=np.interp(0.045,ts,xs)-x0; xe=xs[-1]-x0
+    c+=max(0,-0.004-x45)**2*3e5 + max(0,x45-0.0)**2*3e5
+    c+=max(0,0.004-xe)**2*2e5 + max(0,xe-0.015)**2*2e5
+    return c
 def cost(p):
     m=metrics(p)
     if m is None: return 1e3
-    c=(m['travel']-0.170)**2*4e4 + (m['lr0']-2.95)**2*3 + (m['lr65']-2.40)**2*3 + (m['e2e']-E2E)**2*4e4
+    c=(m['travel']-0.170)**2*4e4 + (m["lr0"]-2.98)**2*3 + (m["lr65"]-2.25)**2*3 + (m['e2e']-E2E)**2*4e4
     c+=np.linalg.norm(m['axle0']-AX0)**2*4e3
     c+=np.sum(np.clip(np.diff(m['lr']),0,None)**2)*30
-    c+=max(0,abs(m['xshift'])-0.02)**2*300     # near-vertical axle path (rearward ok, small)
+    c+=axlepath(m)
     return c
 def build(rng):
     P1=np.array([rng.uniform(-0.12,0.02),rng.uniform(-0.08,0.06)]); L1=rng.uniform(0.04,0.10); th0=rng.uniform(0,2*np.pi)
