@@ -34,9 +34,11 @@
   .views{border:3px solid var(--line); background:#9FC3DC; position:relative; overflow:hidden}
   .views canvas.gl{display:block; width:100%; height:auto; image-rendering:pixelated}
   .tag{position:absolute; top:8px; font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:5px 8px; background:rgba(20,24,16,.7); pointer-events:none}
-  .tag.a{left:8px; color:var(--a)} .tag.b{left:calc(50% + 8px); color:var(--b)}
+  .tag.b{left:8px; color:var(--b)} .tag.a{left:8px; top:34px; color:var(--a); opacity:.85}
+  .tag.a::before{content:'GHOST · '; color:var(--dim)}
   .phase{position:absolute; bottom:8px; font-size:11px; padding:4px 8px; background:rgba(20,24,16,.7); color:var(--ink); pointer-events:none; line-height:1.4}
-  .phase.a{left:8px} .phase.b{left:calc(50% + 8px)}
+  .phase.a{left:8px; opacity:.85} .phase.b{right:8px; text-align:right}
+  .phase.a b{color:var(--a)} .phase.b b{color:var(--b)}
   .phase b{font-family:var(--disp); font-size:9px; letter-spacing:1px; display:block}
   .divider{position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--line); pointer-events:none}
 
@@ -66,23 +68,22 @@
   <header>
     <div>
       <h1>CORNER LAB</h1>
-      <div class="sub">Two identical Bullits, one fast right-hander (R 10 m), two ways to use the brakes. Left brakes <i>in</i> the turn; right rides <i>slow in, fast out</i>: brake in a straight line, trail off into the entry while the bias moves rearward, off by the apex, on the power out. Same bike, rider and physics as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>.</div>
+      <div class="sub">Two identical Bullits, one fast right-hander (R 10 m), two ways to use the brakes, one view: the solid rider does it right, the translucent ghost is the other technique on the same trail at the same moment. The ghost brakes <i>in</i> the turn; the solid rider rides <i>slow in, fast out</i>: brake in a straight line, trail off into the entry while the bias moves rearward, off by the apex, on the power out. Same bike, rider and physics as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>.</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
       <div class="hs"><label class="lbl" for="vin">STRAIGHT MPH</label><input id="vin" type="range" min="22" max="32" step="1" value="28"><output id="vinOut">28 mph</output></div>
       <div class="hs"><label class="lbl" for="mu">GRIP &mu;</label><input id="mu" type="range" min="0.55" max="0.95" step="0.05" value="0.8"><output id="muOut">0.80</output></div>
-      <div class="hs"><label class="lbl" for="tscale">PLAYBACK</label><input id="tscale" type="range" min="0.1" max="1.5" step="0.1" value="1"><output id="tscaleOut">1.0×</output></div>
+      <div class="hs"><label class="lbl" for="tscale">PLAYBACK</label><input id="tscale" type="range" min="0.1" max="1.5" step="0.1" value="0.5"><output id="tscaleOut">0.5×</output></div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
       <button type="button" class="btn alt" id="restartBtn">RESTART</button>
     </div>
   </header>
 
   <div class="views">
-    <canvas id="gl" class="gl" width="896" height="300"></canvas>
-    <div class="divider"></div>
-    <div class="tag a" id="tagA">A</div>
+    <canvas id="gl" class="gl" width="896" height="420"></canvas>
     <div class="tag b" id="tagB">B</div>
+    <div class="tag a" id="tagA">A</div>
     <div class="phase a" id="phA"><b>PHASE</b>–</div>
     <div class="phase b" id="phB"><b>PHASE</b>–</div>
   </div>
@@ -205,7 +206,7 @@ function pathAt(s){ let sp = s % LOOP; if (sp < 0) sp += LOOP; const f = sp / PA
   return { x: lerp(PATH.x[i], PATH.x[j], t), z: lerp(PATH.z[i], PATH.z[j], t), theta: lerp(th0, th1, t) }; }
 
 /* =============== rider strategies =============== */
-let vStraight = 28 * 0.447, MU = 0.80, riding = true, TSCALE = 1;
+let vStraight = 28 * 0.447, MU = 0.80, riding = true, TSCALE = 0.5;
 function cornerLimit(){ return Math.sqrt(MU * G9 * R_TURN); }
 /* Each strategy returns { pF, pR (0..1 of max brake force), thr (0..1), phase }.
    A scenario pairs a "not that" (A) with a "do this" (B); add more to SCENARIOS to build the series. */
@@ -349,7 +350,8 @@ function step(b, dt){
   if (b.s >= LOOP){ b.s -= LOOP; b.lap++; b.log.length = 0; b.lastLap = b.lapT; b.lapT = 0; }
   if (b.log.length === 0 || b.s - b.log[b.log.length - 1].s > 0.5) b.log.push({ s: b.s, v: b.v, pF: b.pF, pR: b.pR, lean: b.lean, use: b.use, e: b.e });
 }
-function resetBike(b){ b.lapT = 0; b.lastLap = null; b.minCorner = null; b.maxWide = 0; b.s = 0; b.v = vStraight; b.lean = 0; b.leanVel = 0; b.e = 0; b.ev = 0; b.omF = b.v / GEO.rF; b.omR = b.v / GEO.rR; b.fx = 0; b.pF = b.pR = b.thr = 0; b.panic = false; b.lastExit = null; b.lap = 0; b.log.length = 0; b.off = false; }
+function startS(){ const vE = cornerLimit() * 0.99, dBrake = Math.max(0, (vStraight * vStraight - vE * vE) / (2 * 0.72 * G9)) + 1.0; return Math.max(0, SEGS[1].start - dBrake - 5); }   // a few metres before the slow-in rider brakes
+function resetBike(b){ b.lapT = 0; b.lastLap = null; b.minCorner = null; b.maxWide = 0; b.s = startS(); b.v = vStraight; b.lean = 0; b.leanVel = 0; b.e = 0; b.ev = 0; b.omF = b.v / GEO.rF; b.omR = b.v / GEO.rR; b.fx = 0; b.pF = b.pR = b.thr = 0; b.panic = false; b.lastExit = null; b.lap = 0; b.log.length = 0; b.off = false; }
 const A = makeBike(strategyA, 0xD4784E), B = makeBike(strategyB, 0x7FA6C9);
 resetBike(A); resetBike(B);
 
@@ -418,7 +420,7 @@ function drawChart(){
 
 /* =============== 3d =============== */
 const canvas = $('gl');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer.setSize(896, 300, false); renderer.setScissorTest(true);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer.setSize(896, 420, false);
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9FC3DC); scene.fog = new THREE.Fog(0xB9D0DC, 30, 160);
 scene.add(new THREE.AmbientLight(0xdfe8f0, 0.85)); const sun = new THREE.DirectionalLight(0xfff2d6, 0.8); sun.position.set(40, 70, 30); scene.add(sun);
 const mat = c => new THREE.MeshLambertMaterial({ color: c }), box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
@@ -528,13 +530,15 @@ function poseBike(o, b, dt){
 const bikeA = buildBike(0xE9E4DC), bikeB = buildBike(0xE9E4DC);
 /* tint the jerseys by strategy: A orange sleeves, B blue */
 bikeA.torso.material = mat(0xD4784E); bikeA.uArmL.material = bikeA.uArmR.material = mat(0xD4784E); bikeB.torso.material = mat(0x7FA6C9); bikeB.uArmL.material = bikeB.uArmR.material = mat(0x7FA6C9);
-const camA = new THREE.PerspectiveCamera(44, 448 / 300, 0.1, 400), camB = new THREE.PerspectiveCamera(44, 448 / 300, 0.1, 400);
+const camB = new THREE.PerspectiveCamera(42, 896 / 420, 0.1, 400);
+function ghostify(o){ o.rig.traverse(m => { if (m.material){ m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.38; m.material.depthWrite = false; } }); }
+ghostify(bikeA);
 const camPosA = new THREE.Vector3(), camPosB = new THREE.Vector3(), lookA = new THREE.Vector3(), lookB = new THREE.Vector3();
 let snap = true;
 function chase(cam, cp, lk, b, dt){
   const P = pathAt(b.s), fx = Math.cos(P.theta), fz = Math.sin(P.theta), rx = -fz, rz = fx, e = -b.e;
-  const want = new THREE.Vector3(P.x + rx * e + fx * -4.2 + rx * -2.2, 2.4, P.z + rz * e + fz * -4.2 + rz * -2.2);   // behind and to the inside so the lean reads
-  const tgt = new THREE.Vector3(P.x + rx * e + fx * 1.0, 0.7, P.z + rz * e + fz * 1.0);
+  const want = new THREE.Vector3(P.x + rx * e + fx * -5.2 + rx * -2.8, 2.9, P.z + rz * e + fz * -5.2 + rz * -2.8);   // behind and to the inside so the lean reads, wide enough to keep the ghost in frame
+  const tgt = new THREE.Vector3(P.x + rx * e + fx * 1.5, 0.8, P.z + rz * e + fz * 1.5);
   if (snap){ cp.copy(want); lk.copy(tgt); } else { cp.lerp(want, Math.min(1, dt * 5)); lk.lerp(tgt, Math.min(1, dt * 9)); }
   cam.position.copy(cp); cam.lookAt(lk);
 }
@@ -546,9 +550,8 @@ function tick(now){
   const dtReal = Math.min(0.05, (now - last) / 1000); last = now; const dt = dtReal * TSCALE;   // slow motion: same physics step, fewer of them per frame
   if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 45){ step(A, PDT); step(B, PDT); acc -= PDT; n++; } }
   poseBike(bikeA, A, riding ? dt : 0); poseBike(bikeB, B, riding ? dt : 0);
-  chase(camA, camPosA, lookA, A, dtReal); chase(camB, camPosB, lookB, B, dtReal); snap = false;
-  renderer.setViewport(0, 0, 448, 300); renderer.setScissor(0, 0, 448, 300); renderer.render(scene, camA);
-  renderer.setViewport(448, 0, 448, 300); renderer.setScissor(448, 0, 448, 300); renderer.render(scene, camB);
+  chase(camB, camPosB, lookB, B, dtReal); snap = false;
+  renderer.render(scene, camB);
   if ((frame++ & 1) === 0){ hud(A, 'A', $('phA')); hud(B, 'B', $('phB')); drawCircle($('fcA'), A); drawCircle($('fcB'), B); drawChart(); }
 }
 $('restartBtn').addEventListener('click', () => { snap = true; });

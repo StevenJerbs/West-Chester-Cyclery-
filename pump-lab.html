@@ -34,11 +34,13 @@
   .views{border:3px solid var(--line); background:#9FC3DC; position:relative; overflow:hidden}
   .views canvas.gl{display:block; width:100%; height:auto; image-rendering:pixelated}
   .tag{position:absolute; top:8px; font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:5px 8px; background:rgba(20,24,16,.7); pointer-events:none}
-  .tag.a{left:8px; color:var(--a)} .tag.b{left:calc(50% + 8px); color:var(--b)}
+  .tag.b{left:8px; color:var(--b)} .tag.a{left:8px; top:34px; color:var(--a); opacity:.85}
+  .tag.a::before{content:'GHOST · '; color:var(--dim)}
   .legend{position:absolute; right:8px; top:8px; font-size:10px; color:#EFE8D6; background:rgba(20,24,16,.7); padding:4px 8px; pointer-events:none; line-height:1.5}
   .legend i{display:inline-block; width:10px; height:3px; vertical-align:middle; margin-right:5px}
   .phase{position:absolute; bottom:8px; font-size:11px; padding:4px 8px; background:rgba(20,24,16,.7); color:var(--ink); pointer-events:none; line-height:1.4}
-  .phase.a{left:8px} .phase.b{left:calc(50% + 8px)}
+  .phase.a{left:8px; opacity:.85} .phase.b{right:8px; text-align:right}
+  .phase.a b{color:var(--a)} .phase.b b{color:var(--b)}
   .phase b{font-family:var(--disp); font-size:9px; letter-spacing:1px; display:block}
   .divider{position:absolute; left:50%; top:0; bottom:0; width:3px; background:var(--line); pointer-events:none}
 
@@ -68,23 +70,22 @@
   <header>
     <div>
       <h1>PUMP LAB</h1>
-      <div class="sub">Where the speed in a pump actually comes from, animated on the Bullit model. After Seb Stott's <i>How to Pump Your Bike, According to Physics</i> (Pinkbike, 2021): it isn't pushing on the down-slope, it's moving your mass toward the centre of curvature where the ground curves. Same rider and bike as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a> and <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a>.</div>
+      <div class="sub">Where the speed in a pump actually comes from, animated on the Bullit model: the solid rider does it right, the translucent ghost is the other technique on the same rollers, released at the same instant. After Seb Stott's <i>How to Pump Your Bike, According to Physics</i> (Pinkbike, 2021): it isn't pushing on the down-slope, it's moving your mass toward the centre of curvature where the ground curves. Same rider and bike as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a> and <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a>.</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
       <div class="hs"><label class="lbl" for="v0">ENTRY MPH</label><input id="v0" type="range" min="8" max="16" step="1" value="11"><output id="v0Out">11 mph</output></div>
       <div class="hs"><label class="lbl" for="amp">PUMP RANGE</label><input id="amp" type="range" min="0.10" max="0.30" step="0.02" value="0.22"><output id="ampOut">22 cm</output></div>
-      <div class="hs"><label class="lbl" for="tscale">PLAYBACK</label><input id="tscale" type="range" min="0.1" max="1.5" step="0.1" value="1"><output id="tscaleOut">1.0×</output></div>
+      <div class="hs"><label class="lbl" for="tscale">PLAYBACK</label><input id="tscale" type="range" min="0.1" max="1.5" step="0.1" value="0.5"><output id="tscaleOut">0.5×</output></div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
       <button type="button" class="btn alt" id="restartBtn">RESTART</button>
     </div>
   </header>
 
   <div class="views">
-    <canvas id="gl" class="gl" width="896" height="300"></canvas>
-    <div class="divider"></div>
-    <div class="tag a" id="tagA">A</div>
+    <canvas id="gl" class="gl" width="896" height="420"></canvas>
     <div class="tag b" id="tagB">B</div>
+    <div class="tag a" id="tagA">A</div>
     <div class="legend"><i style="background:#D9A441"></i>leg force (&times; body weight) <i style="background:#8DBF6A"></i>velocity <i style="background:#EFE8D6"></i>centre of curvature <i style="background:#D4784E"></i>CoM path</div>
     <div class="phase a" id="phA"><b>PHASE</b>–</div>
     <div class="phase b" id="phB"><b>PHASE</b>–</div>
@@ -229,7 +230,7 @@ const SCENARIOS = [
     a: { name: 'A · BULLIT, SUSPENSION OPEN', desc: 'Same pump, same rider. The trough load compresses the suspension before the rider can push against it, the damper turns part of every stroke into heat, and the rebound gives back only what the spring kept.', ctl: ctlTrough, sus: true },
     b: { name: 'B · SAME PUMP, LOCKED OUT', desc: 'Suspension locked (a hardtail, or a lockout lever). Every newton the legs push goes straight to the ground, so the same leg motion buys more speed. The article\'s point: on a full-suspension bike you have to work harder to pump.', ctl: ctlTrough, sus: false } }
 ];
-let scenario = 0, PUMP = 0.22, V0 = 11 * 0.447, riding = true, TSCALE = 1;
+let scenario = 0, PUMP = 0.22, V0 = 11 * 0.447, riding = true, TSCALE = 0.5;
 
 /* =============== physics: bike on the surface, rider mass on legs along the normal, exact energy bookkeeping =============== */
 function makeRider(ctl, sus = true){ return { ctl, sus, x: 0, v: V0, h: H0, hd: 0, u: 0, ud: 0, udd: 0, F: 0, E: 0, W: 0, D: 0, S: surf(0), phase: '', v0: V0, trail: [], lastX: 0, travF: 0.04, travR: 0.05, L: 0, done: false }; }
@@ -315,13 +316,13 @@ function logRider(r){ if (!r.log) r.log = []; if (r.log.length === 0 || r.x - r.
 
 /* =============== 3d =============== */
 const canvas = $('gl');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer.setSize(896, 300, false); renderer.setScissorTest(true);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer.setSize(896, 420, false);
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9FC3DC); scene.fog = new THREE.Fog(0xB9D0DC, 25, 90);
 scene.add(new THREE.AmbientLight(0xdfe8f0, 0.85)); const sun = new THREE.DirectionalLight(0xfff2d6, 0.8); sun.position.set(20, 50, 40); scene.add(sun);
 const mat = c => new THREE.MeshLambertMaterial({ color: c }), box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
 /* the two lanes: same rollers, side by side in z so each viewport shows one rider */
-const LANE_Z = [0, 40];
-for (const lz of LANE_Z){
+const LANE_Z = [0, 0];
+for (const lz of [0]){
   const n = Math.round(TRACK_END / 0.25) + 1, RL = [-1.4, -0.7, 0, 0.7, 1.4], nv = n * RL.length, pos = new Float32Array(nv * 3), col = new Float32Array(nv * 3), idx = [], c = new THREE.Color();
   for (let i = 0; i < n; i++){ const x = i * 0.25, y = yS(x); for (let j = 0; j < RL.length; j++){ const k = (i * RL.length + j) * 3; pos[k] = x; pos[k + 1] = y + 0.02 - 0.03 * RL[j] * RL[j]; pos[k + 2] = lz + RL[j]; c.setHex(0x8B6A4A); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.03 : 0.02)); col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b; }
     if (i + 1 < n) for (let j = 0; j + 1 < RL.length; j++){ const a = i * RL.length + j, b = (i + 1) * RL.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
@@ -380,8 +381,9 @@ function makeOverlay(){
   scene.add(g.arrowF, g.arrowV, g.centre, g.spoke, g.com, g.trail); return g;
 }
 function poseRider(o, ov, r, lz, dt){
+  const zo = o === bikeA ? -0.02 : 0;
   const S = r.S, n = normalAt(S);
-  o.rig.position.set(r.x, S.y, lz); o.rig.rotation.y = 0; o.rig.rotation.x = 0;
+  o.rig.position.set(r.x, S.y, lz + zo); o.rig.rotation.y = 0; o.rig.rotation.x = 0;
   const k = vtLookup(r.travR), axR = P3(k.ax, k.ay), axF = axleFLocal(r.travF);
   const pitch = S.th - Math.atan2((axR.y + GEO.rR) - (axF.y + GEO.rF), axF.x - axR.x) * -1 * -1;   // frame pitch = ground slope + the pitch that levels both tyres on it
   const pl = Math.atan2((axR.y + GEO.rR) - (axF.y + GEO.rF), axF.x - axR.x);
@@ -419,10 +421,12 @@ function poseRider(o, ov, r, lz, dt){
   const tp = ov.trail.geometry.attributes.position; for (let i = 0; i < 60; i++){ const q = r.trail[Math.min(i, r.trail.length - 1)] || { x: comW.x, y: comW.y }; tp.setXYZ(i, q.x, q.y, lz + 1.0); } tp.needsUpdate = true; ov.trail.geometry.setDrawRange(0, Math.max(1, r.trail.length));
 }
 const bikeA = buildBike(0xD4784E), bikeB = buildBike(0x7FA6C9), ovA = makeOverlay(), ovB = makeOverlay();
-const camA = new THREE.PerspectiveCamera(40, 448 / 300, 0.1, 200), camB = new THREE.PerspectiveCamera(40, 448 / 300, 0.1, 200);
+bikeA.rig.traverse(m => { if (m.material){ m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.38; m.material.depthWrite = false; } });
+for (const k of ['arrowF', 'arrowV', 'centre', 'spoke', 'com', 'trail']) ovA[k].traverse(m => { if (m.material){ m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.45; } });
+const camB = new THREE.PerspectiveCamera(38, 896 / 420, 0.1, 200);
 const camPosA = new THREE.Vector3(), camPosB = new THREE.Vector3(), lookA = new THREE.Vector3(), lookB = new THREE.Vector3(); let snap = true;
 function sideCam(cam, cp, lk, r, lz, dt){
-  const want = new THREE.Vector3(r.x + 0.6, r.S.y + 1.6, lz + 8.5), tgt = new THREE.Vector3(r.x + 0.6, r.S.y + 0.9, lz);
+  const want = new THREE.Vector3(r.x + 0.4, r.S.y + 1.7, lz + 9.5), tgt = new THREE.Vector3(r.x + 0.4, r.S.y + 0.95, lz);
   if (snap){ cp.copy(want); lk.copy(tgt); } else { cp.lerp(want, Math.min(1, dt * 6)); lk.lerp(tgt, Math.min(1, dt * 8)); }
   cam.position.copy(cp); cam.lookAt(lk);
 }
@@ -434,9 +438,8 @@ function tick(now){
   if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 90){ step(A, PDT); step(B, PDT); logRider(A); logRider(B); acc -= PDT; n++; }
     if (A.done && B.done){ doneT += dt; if (doneT > 2.5){ doneT = 0; resetRider(A); resetRider(B); A.log = []; B.log = []; snap = true; } } }
   poseRider(bikeA, ovA, A, LANE_Z[0], riding ? dt : 0); poseRider(bikeB, ovB, B, LANE_Z[1], riding ? dt : 0);
-  sideCam(camA, camPosA, lookA, A, LANE_Z[0], dtReal); sideCam(camB, camPosB, lookB, B, LANE_Z[1], dtReal); snap = false;
-  renderer.setViewport(0, 0, 448, 300); renderer.setScissor(0, 0, 448, 300); renderer.render(scene, camA);
-  renderer.setViewport(448, 0, 448, 300); renderer.setScissor(448, 0, 448, 300); renderer.render(scene, camB);
+  sideCam(camB, camPosB, lookB, B, LANE_Z[1], dtReal); snap = false;
+  renderer.render(scene, camB);
   if ((frame++ & 1) === 0){ hud(A, 'A', $('phA')); hud(B, 'B', $('phB')); drawChart(); }
 }
 loadScenario(0);
