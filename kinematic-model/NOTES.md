@@ -143,3 +143,110 @@ that states the number of folds. `weights/control_model_v001.joblib` is now the 
 
 Because the regen script analyses clean runs before training, `output/goldstone/msa_2023/result.json` says
 crash risk unavailable; re-run `analyze` after training when a risk read-out is wanted on that run.
+
+## Bike-detector training + keypoint suspension (2026-09-04, GPU session, round 2)
+
+### Bike keypoint model: pseudo-label fine-tune from v4
+
+The labeled corpus is fixed (bikekp_v5: 781 train / 137 val, same frames as v4), so the lever was domain
+adaptation: the tracker's confident, rider-corroborated frames on this project's footage were exported as
+pseudo labels (`my-project/data/datasets/bikekp_v6_pseudo`, 132 frames: box conf >= 0.6, >= 3 keypoints
+> 0.5 incl. both axles, an articulated rider over the box, every 5th qualifying frame; Friday Fails excluded
+because that is where the false positives were). Fine-tuned from `bikekp_v4_fullframe.pt` for 60 epochs at
+1024 px, batch 8, mtbkin's `mtbkin-train run` hyper-parameters (`runs/pose/pose/bikekp_v6_pseudo`).
+Control: identical run on v5 real labels only (`bikekp_v6_control`).
+
+Pixel error on the real val split (137 frames), median / PCK@20:
+
+| checkpoint | front_axle | rear_axle | fork_crown | bottom_bracket |
+|---|---|---|---|---|
+| v4 (deployed) | 13.8 / 72% | 19.6 / 51% | 15.1 / 69% | 16.9 / 63% |
+| v6_pseudo last.pt | 13.7 / 77% | 20.1 / 49% | 13.8 / 70% | 14.7 / 63% |
+| v6_pseudo best.pt | 15.0 / 70% | 23.8 / 42% | 12.7 / 73% | 17.9 / 56% |
+| v6_control last.pt | 16.1 / 65% | 18.9 / 57% | 15.5 / 64% | 14.3 / 67% |
+| v6_control best.pt | 15.5 / 62% | 19.7 / 50% | 14.6 / 67% | 14.5 / 67% |
+
+In-tracker A/B on the 12-clip eval set (frame-weighted bike-box coverage / both-axles coverage):
+
+| checkpoint | drone bike / axles | trackside bike / axles | compilation bike / axles | all bike / axles |
+|---|---|---|---|---|
+| v4 | 0.683 / 0.335 | 0.798 / 0.466 | 0.411 / 0.193 | 0.641 / 0.331 |
+| v6_pseudo last | 0.710 / 0.441 | 0.826 / 0.610 | 0.421 / 0.220 | 0.663 / 0.426 |
+
+Caveat: 8 of these 12 clips supplied the pseudo labels, so the drone/trackside gain is partly memorisation. The
+honest test is five clips never used for anything (Windrock broadcast x3, Bruni comparison sections x2,
+`output/_eval_v2/heldout/`), frame-weighted bike-box / both-axles coverage:
+
+| checkpoint | bruni s1 | bruni s3 | windrock dooley | windrock gwin | windrock women | all |
+|---|---|---|---|---|---|---|
+| v4 | 0.29 / 0.13 | 0.24 / 0.12 | 0.80 / 0.25 | 0.69 / 0.33 | 0.81 / 0.26 | 0.539 / 0.210 |
+| v6_pseudo last | 0.24 / 0.11 | 0.20 / 0.07 | 0.77 / 0.25 | 0.71 / 0.42 | 0.81 / 0.34 | 0.516 / 0.226 |
+| v6_control last | 0.23 / 0.08 | 0.19 / 0.05 | 0.78 / 0.18 | 0.64 / 0.32 | 0.81 / 0.28 | 0.502 / 0.171 |
+
+Decision: v4 stays the deployed default. The control shows that 60 more epochs on the 781 real frames alone overfits
+(held-out boxes 0.54 -> 0.50, axles 0.21 -> 0.17); the pseudo labels more than cancel that and lift held-out axle
+coverage above v4 (+8-9 points on two Windrock clips), at the cost of ~2 points of box coverage on the Bruni
+fixed-camera shots. Net vs v4 it is a trade, not a win, so `weights/bikekp_v6p_fullframe.pt` (also in
+`my-project/data/models/`) ships as an opt-in: `BIKEKP_WEIGHTS=weights/bikekp_v6p_fullframe.pt`. Use it when axle
+keypoints matter more than box coverage (wheel/travel work). What would make it decisive: pseudo labels mined from
+footage disjoint from any eval clip (the 66-min Windrock broadcast has thousands of qualifying frames; keep its
+eval time ranges out), and real Label Studio labels on ~100 drone-chase frames, which no amount of self-training
+replaces. Training cost on the 3070: 27 s/epoch at 1024 px, batch 8; a 60-epoch run is ~27 min and must have the
+GPU to itself.
+
+### Bike keypoint temporal refinement (`src/bike_kp_track.py`)
+
+Per-frame detections jitter by their own error (14-20 px). `refine_bike_kps()` predicts each of the four
+points from the previous frame with forward-backward-checked pyramidal LK and treats that as the prior; a
+detection only nudges it (alpha 0.25, scaled by confidence), snaps if it disagrees for 3 frames, and the LK
+point carries up to 15 frames with decaying confidence when the detector misses. Memory resets on a bike-box
+jump larger than the box. Runs inside `RiderFormModel.analyze` right after tracking, before anything reads
+`bike_kps`; raw points stay in `bike_kps_raw`, the rule per point in `bike_kps_src`.
+
+Median frame-to-frame change of wheelbase + fork length (px, a physical smoothness proxy), before -> after,
+and both-axles coverage:
+
+| run | jitter px | axles coverage |
+|---|---|---|
+| goldstone/vds_2023 | 7.3 -> 5.9 | 0.21 -> 0.31 |
+| goldstone/msa_2023 | 8.5 -> 5.4 | 0.42 -> 0.47 |
+| asa_vs_charlie/s1_asa | 13.1 -> 9.3 | 0.37 -> 0.45 |
+| asa_vs_charlie/s1_charlie | 14.9 -> 11.2 | 0.49 -> 0.56 |
+| asa_vs_charlie/s2_asa | 37.2 -> 24.6 | 0.37 -> 0.42 |
+| asa_vs_charlie/s2_charlie | 28.1 -> 20.5 | 0.52 -> 0.59 |
+| asa_vs_charlie/s3_asa | 17.1 -> 10.1 | 0.43 -> 0.53 |
+| asa_vs_charlie/s3_charlie | 23.3 -> 14.5 | 0.60 -> 0.67 |
+
+mtbkin got 14 -> 3 px with seed-and-track inside static shots; drone chase footage with motion blur does
+not track that cleanly. CoTracker3-online (2 GB VRAM) is the next step if sub-5 px is needed.
+
+### Keypoint-based travel (`wheels.kp_travel_series`)
+
+fork_len = |fork_crown - front_axle|, rear_len = |bottom_bracket - rear_axle|, wheelbase = |front - rear
+axle|, mtbkin's definitions. Series cut into segments at gaps > 6 frames and wheelbase jumps > 30%; per
+segment a CONSTANT scale = known wheelbase / 90th-pct wheelbase px; Savitzky-Golay 0.25 s; compression =
+90th-pct extended length - length; fork readings outside [-30, 1.25 x travel] dropped and counted.
+Only frames the attitude layer calls a side view are used: in rear/quarter views the fork foreshortens
+differently from the wheelbase and the ratio drifts with viewing angle (mtbkin hit the same wall: "needs a
+fixed side-on camera"). Adds `fork_travel_kp_mm`, `rear_center_delta_kp_mm`, `wheelbase_kp_px`,
+`kp_segment`, `kp_scale_mm_per_px` to `bike_geom`; summary under `wheels.kp_travel` in result.json; a HUD
+line on the labeled video.
+
+What it measures on this footage (side-view frames only):
+
+| run | measurable frames | fork p95 mm (% travel) | noise floor mm | dropped |
+|---|---|---|---|---|
+| goldstone/vds_2023 | 2% | 241 (120%) | 11 | 20% |
+| goldstone/msa_2023 | 18% | 212 (106%) | 12 | 3% |
+| asa_vs_charlie/s1_charlie | 5% | 105 (52%) | 12 | 0% |
+| asa_vs_charlie/s3_asa | 10% | 44 (22%) | 6 | 0% |
+| asa_vs_charlie/s3_charlie | 12% | 96 (48%) | 12 | 0% |
+| s1_asa, s2_asa, s2_charlie | 0% | no side-view segment >= 0.6 s | | |
+
+Read this honestly: the trackside G-out clips give physically plausible fork numbers (Asa 44 mm vs
+Charlie 96 mm, matching the narration that the host brakes into the compression) but from 0.6-0.7 s of
+footage each, so it is a demonstration, not a comparison. Drone footage saturates even in its side-view
+frames and stays "unmeasurable". Rear-centre delta reads 100-140 mm, which a linkage cannot do (~60 mm at
+full travel), so BB / rear-axle keypoints are too noisy for rear travel at this resolution; the field is
+kept but must not be quoted. To get real travel numbers: fixed side-on camera, closer, higher fps -- or
+mtbkin's tracked pipeline on the same clip.

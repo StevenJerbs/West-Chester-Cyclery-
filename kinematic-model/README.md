@@ -65,6 +65,7 @@ deviations → fatigue drift → crash risk → factor report → labeled video.
 | Silhouette outlines | `outline.py` | YOLOv8-seg |
 | Bike attitude (pitch / lean / yaw) | `attitude.py` | monocular proxies |
 | Wheels: axles, fork/shock travel, wheel roll, contact, deflection | `wheels.py` + `data/bike_specs.yaml` | mm scale from wheel diameter; travel is sprung-vs-unsprung distance change; contact is heuristic |
+| Bike keypoints over time + keypoint travel | `bike_kp_track.py` (LK-prior refinement of the 4 DH bike points), `wheels.kp_travel_series` | jitter -25-40%; fork travel from crown-to-axle length on side-view frames only, rear unmeasurable at this resolution (NOTES.md) |
 | Tyre: slip ratio, slip angle, camber, grip envelope, traction-loss events | `tire_model.py` | Magic-Formula (Pacejka) envelope, rally-sim loose-surface defaults, refit from corpus via `fit_envelope()`; slip needs a sharp, oblique wheel |
 | Cornering | `cornering.py` | metrics only; no verdicts until labeled data |
 | Discipline envelopes (12) | `disciplines.py` | coaching priors; learned bands after ≥3 advanced runs |
