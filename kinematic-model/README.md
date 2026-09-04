@@ -59,7 +59,7 @@ deviations → fatigue drift → crash risk → factor report → labeled video.
 
 | Layer | Module | Status |
 |---|---|---|
-| Detection + pose | `track.py`, checkpoints `weights/kinematic_pose_v*.pt` | trained, v003 |
+| Detection + pose | `track.py`: DH bike model `weights/bikekp_v4_fullframe.pt` (box + axle/crown/BB keypoints, COCO fallback) + rider pose `weights/kinematic_pose_v*.pt`, zoomed retries for both | bike coverage 0.37 -> 0.64, pose 0.71 -> 0.77 on the 12-clip eval set (NOTES.md) |
 | Suspension / terrain roughness | `suspension.py` | rule-based, validated |
 | Joint angles + vision path | `joint_analysis.py` | validated on 3 runs |
 | Silhouette outlines | `outline.py` | YOLOv8-seg |

@@ -63,3 +63,50 @@ With only 23 pre-crash windows the AUC is noisy either way; treat neither number
 carries windows.
 
 Pose inference with `kinematic_pose_v003.pt` at 640 px: ~22 ms/frame on the GPU vs ~250 ms on CPU on this machine.
+
+
+## Bike + rider labeling rework (2026-09-04, GPU session)
+
+`track.py` now runs the mtbkin DH bike keypoint model (`weights/bikekp_v4_fullframe.pt`, YOLOv8s-pose @1024,
+class `bike`, keypoints front_axle / rear_axle / fork_crown / bottom_bracket; trained on 666 labeled DH frames in
+the mtbkin project) as the primary bike detector, with the COCO `bicycle` class as fallback. Both weights files are
+gitignored (`*.pt`); copy `bikekp_v4_fullframe.pt` and `bikekp_v4_crop.pt` from `C:/Users/nadc7/my-project/data/models/`
+into `weights/`. Without them the tracker silently runs COCO-only as before.
+
+What changed per frame:
+- bike: DH model full-frame -> COCO 640/1280 -> zoomed retry (crop model + COCO) around the rider or the last box.
+- rider: full-frame pose -> zoomed retry around the bike (or last hips). Skeletons must be articulated
+  (>=5 joints, mean conf >=0.45; >=7 / 0.5 when nothing anchors the choice); with a confident bike the rider's
+  hips must lie within 1.5 bike sizes of it.
+- acceptance: a bike box stands alone only if conf >=0.5 AND its own keypoints look like a bike (>=2 confident,
+  axles inside the lower 70% of the box). Anything weaker needs a credible rider standing on it (hips/ankles over
+  the box) or continuity with the tracked bike, and continuity expires 15 frames after the last rider-supported
+  box so one false box cannot carry itself. Zoomed-retry hits never stand alone (upscaled crops inflate conf).
+- new FrameTrack fields: `bike_kps`, `bike_source` (bikekp | coco | bikekp_roi | coco_roi), `pose_source` (full | roi).
+- `wheels.find_wheels(..., bike_kps=)`: confident model axles decide front/rear and stand in for a wheel no ellipse
+  fits (flagged `approx` + `from_axle`; excluded from the mm/px scale). `labeled.py` draws the four bike points.
+
+Frame-weighted coverage on a fixed 12-clip set (2 Goldstone drone, 6 Asa/Charlie trackside, 4 Friday Fails
+compilation clips; `output/_eval_v2/metrics_*.json`, baseline = the cloud session's track.json files):
+
+| pass | what | drone (Goldstone x2) pose / bike | trackside (Asa/Charlie x6) pose / bike | compilation (Friday Fails x4) pose / bike | all pose / bike |
+|---|---|---|---|---|---|
+| baseline | COCO bicycle + yolov8n-pose, ROI retry for bike only | 0.79 / 0.36 | 0.95 / 0.54 | 0.35 / 0.22 | 0.71 / 0.37 |
+| v2 | bikekp-first + ROI retries, no gates | 0.83 / 0.89 | 0.96 / 0.89 | 0.40 / 0.74 | 0.75 / 0.85 |
+| v3 | + size plausibility / skeleton credibility gates | 0.84 / 0.79 | 0.96 / 0.83 | 0.40 / 0.68 | 0.75 / 0.77 |
+| v4 | + rider-support or continuity for weak boxes | 0.86 / 0.77 | 0.97 / 0.82 | 0.42 / 0.61 | 0.77 / 0.74 |
+| v5 | + retry never alone, continuity expires, tighter support | 0.85 / 0.72 | 0.97 / 0.81 | 0.42 / 0.53 | 0.77 / 0.69 |
+| v6 | + keypoint-plausibility gate, articulated skeleton for support | 0.86 / 0.68 | 0.97 / 0.80 | 0.42 / 0.41 | 0.77 / 0.64 |
+
+Precision check: for each pass, 24 frames the new tracker labeled that the baseline missed were eyeballed
+(`prec_v*/sheet.jpg`). Roughly 10/24 correct at v3, 15/24 at v6. The remaining false positives are almost all
+helmet-cam frames inside the Friday Fails clips (no third-person bike exists there) and bystanders at start/finish;
+drone and trackside gains are correct in nearly every sampled frame. Coverage on the compilation clips is therefore
+the number to distrust, not the drone/trackside ones.
+
+Wheel layer on two full `RiderFormModel.analyze` runs: both-wheel coverage s1_charlie 0.39 -> 0.61, s3_asa
+0.43 -> 0.71 (23% of frames use an axle-placed wheel); form grades unchanged. Axle jitter rose 17 -> 26 px and
+23 -> 32 px because more hard frames are covered and model axles jitter more than ellipse fits. Next step for that
+is the per-shot temporal tracking mtbkin uses (CoTracker/LK + 3-frame median), not more gating.
+
+Speed on the RTX 3070 with all retries: 10-20 fps at 1080p (three models, up to five passes on a bad frame).
