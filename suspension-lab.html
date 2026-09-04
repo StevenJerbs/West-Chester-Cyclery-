@@ -124,7 +124,7 @@
 
   <div class="bench">
     <section class="card rear">
-      <h2><span class="name">REAR SHOCK</span><span class="seg mini" id="shockSeg"><button type="button" data-v="coil" class="on">COIL</button><button type="button" data-v="air">AIR</button></span><span class="spec">VPP 170 mm &middot; 230&times;65 &middot; LR 3.0&rarr;2.3</span></h2>
+      <h2><span class="name">REAR SHOCK</span><span class="seg mini" id="shockSeg"><button type="button" data-v="coil" class="on">COIL</button><button type="button" data-v="air">AIR</button></span><span class="spec">VPP 170 mm &middot; 230&times;65 &middot; LR 3.05&rarr;2.47</span></h2>
       <div class="desk">
         <div class="ch"><div class="val" id="rUsed">0</div><div class="bar" id="barR"><div class="bo-zone"></div><div class="fill" id="fillR"></div><div class="sag" id="sagR"></div><div class="pack" id="packR"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
         <div class="ch"><output class="val" id="rSpringOut">550</output><div class="fader"><input id="rSpring" type="range" min="300" max="650" step="25" value="550" aria-label="Rear coil spring lb/in"></div><label class="lbl2" for="rSpring" id="rSpringLbl"><u>COIL</u><br>lb/in</label></div>
@@ -160,7 +160,7 @@
     </section>
   </div>
 
-  <p class="note"><b>What is simulated.</b> A planar rigid chassis (19 kg sprung, pitch inertia), two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping), a 78 kg rider on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 2.95&rarr;2.40 (18.6% progressive), near-vertical axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
+  <p class="note"><b>What is simulated.</b> A planar rigid chassis (19 kg sprung, pitch inertia), two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping), a 78 kg rider on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 3.05&rarr;2.47 (19% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
   <br><b>Sources in the repo's uploads.</b> Pinkbike's 2021 Bullit review (Kazimer): 29/27.5, 170 mm, 64&deg; HTA, 449 mm stays, 22.3 kg size L, 475 reach on the L, Fox 38 E-Tune 170 and a RockShox Super Deluxe; his setup was 175 psi in the shock for 30% sag and 100 psi + 3 tokens in the fork at 72.6 kg. The Loam Wolf shootout bike ran the Super Deluxe Coil Ultimate (51.7 lb). Pinkbike's Megatower "Behind the Numbers" scan gives the lower-link VPP family its shape: a near-linear falling leverage curve with an end-stroke shoulder, ~2 mm rearward then forward axle path, anti-squat ~110% falling off late in the travel, anti-rise 85%&rarr;&minus;25%. The linkage here is fitted to those outputs with the pivots and shock placed where the photos show them.
   <br><b>Rider posture.</b> PRO targets come from side-on frames in <code>crash_training/asa_vermette_vs_avg_rider_Y50K3ZZEdVY.mp4</code> (Asa at 185.5 s and 208.7 s: torso near trail-parallel, front knee ~135&ndash;140&deg;, elbows ~120&ndash;150&deg;) and the Goldstone FPV run; AVERAGE mirrors Charlie at 160.5 s and 194.5 s (upright torso, knee ~165&deg;, stiff legs). Hip height is solved from a target knee angle and torso angle from a target elbow angle, knees always bend forward and elbows down, and caps (knee &le;165&deg;, elbow &le;160&deg; for PRO) stop any lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.
   <br><b>Course.</b> Flat start &rarr; 11% climb (rider stands) &rarr; crest &rarr; rollers &rarr; braking-bump washboard &rarr; 18% rock garden &rarr; two G-outs &rarr; 0.8 m kicker over a 4 m gap &rarr; 1 m huck to flat. Speed carried into the lip decides whether the gap is cleared.</p>
@@ -194,9 +194,9 @@ const dUp = V2(-dDown.x, -dDown.y);
 const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035);
 const GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
 
-/* =============== VPP four-bar (lower-link driven), fitted to 170 mm / 230x65 / LR 3.0->2.35, Megatower-style axle path =============== */
-const VPP = { P1: V2(-0.06577, 0.04666), L1: 0.07439, P3: V2(-0.05797, 0.11553), L2: 0.15008, D: 0.18817,
-  AX: V2(0.07776, 0.30645), S: V2(-0.06571, -0.12045), F: V2(0.05467, -0.01726), th0: 3.57979 };
+/* =============== VPP four-bar (lower-link driven), fitted to 170 mm / 230x65 / LR 3.05->2.47 with pivots and shock placed as in the Bullit photo =============== */
+const VPP = { P1: V2(-0.02241, 0.07347), L1: 0.04607, P3: V2(-0.11195, 0.32914), L2: 0.14507, D: 0.17165,
+  AX: V2(0.35125, 0.32061), S: V2(-0.07583, 0.00725), F: V2(0.08155, 0.19481), th0: 0.47391 };
 function vppSolve(th, prevP4){
   const P1 = VPP.P1, P3 = VPP.P3;
   const P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));

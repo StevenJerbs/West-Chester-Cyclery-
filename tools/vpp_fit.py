@@ -1,8 +1,9 @@
-# Fits a lower-link-driven VPP four-bar (Bullit-style) to published outputs:
-# 170 mm rear travel over a 230x65 shock, leverage ratio ~3.0 -> ~2.3, a Megatower-style
-# axle path (~2 mm rearward to sag, then forward) and the axle at chainstay 449 mm with a
-# 27.5" rear wheel. Prints the pivot layout that suspension-lab.html embeds as VPP = {...}.
-# Needs numpy + scipy.
+# Fits a lower-link-driven VPP four-bar (Bullit-style) to published outputs: 170 mm rear travel
+# over a 230x65 shock, leverage ratio ~3.0 -> ~2.4, a Megatower-style axle path (~2 mm rearward
+# to sag, then forward), the axle at chainstay 449 mm with a 27.5" rear wheel, and soft priors
+# placing the lower-link pivot behind the BB, the upper pivot on the seat tube and the shock
+# running up-forward into the front triangle as in the Pinkbike photos. Prints the layout that
+# suspension-lab.html embeds as VPP = {...}. Needs numpy + scipy.
 import numpy as np
 from scipy.optimize import minimize
 AX0=np.array([-0.449,0.006]); E2E=0.230; STROKE=0.065
@@ -42,30 +43,35 @@ def axlepath(m):
     c+=max(0,-0.004-x45)**2*3e5 + max(0,x45-0.0)**2*3e5
     c+=max(0,0.004-xe)**2*2e5 + max(0,xe-0.015)**2*2e5
     return c
+def layout(p):
+    P1=np.array(p[0:2]); P3=np.array(p[3:5]); F=np.array(p[11:13])
+    c=np.sum((P1-np.array([-0.03,0.06]))**2)*40 + np.sum((P3-np.array([-0.09,0.29]))**2)*40 + np.sum((F-np.array([0.11,0.30]))**2)*40
+    return c
 def cost(p):
     m=metrics(p)
     if m is None: return 1e3
-    c=(m['travel']-0.170)**2*4e4 + (m["lr0"]-2.98)**2*3 + (m["lr65"]-2.25)**2*3 + (m['e2e']-E2E)**2*4e4
+    c=layout(p)
+    c+=(m['travel']-0.170)**2*4e4 + (m["lr0"]-3.00)**2*3 + (m["lr65"]-2.30)**2*3 + (m['e2e']-E2E)**2*4e4
     c+=np.linalg.norm(m['axle0']-AX0)**2*4e3
     c+=np.sum(np.clip(np.diff(m['lr']),0,None)**2)*30
     c+=axlepath(m)
     return c
 def build(rng):
-    P1=np.array([rng.uniform(-0.12,0.02),rng.uniform(-0.08,0.06)]); L1=rng.uniform(0.04,0.10); th0=rng.uniform(0,2*np.pi)
+    P1=np.array([rng.uniform(-0.08,0.02),rng.uniform(0.0,0.11)]); L1=rng.uniform(0.04,0.10); th0=rng.uniform(0,2*np.pi)
     P2=P1+L1*np.array([np.cos(th0),np.sin(th0)])
-    P3=np.array([rng.uniform(-0.10,0.03),rng.uniform(0.20,0.38)]); L2=rng.uniform(0.05,0.13); a2=rng.uniform(0,2*np.pi)
+    P3=np.array([rng.uniform(-0.14,-0.03),rng.uniform(0.22,0.34)]); L2=rng.uniform(0.05,0.13); a2=rng.uniform(0,2*np.pi)
     P4=P3+L2*np.array([np.cos(a2),np.sin(a2)])
     D=np.linalg.norm(P4-P2); ex=(P4-P2)/D; ey=np.array([-ex[1],ex[0]]); rel=AX0-P2; ax_loc=[rel@ex,rel@ey]
-    F=np.array([rng.uniform(0.05,0.28),rng.uniform(0.08,0.34)])
+    F=np.array([rng.uniform(0.05,0.18),rng.uniform(0.24,0.34)])
     ang=rng.uniform(0,2*np.pi); S=F+E2E*np.array([np.cos(ang),np.sin(ang)])
-    if np.linalg.norm(S-P1)>0.16: return None
+    if np.linalg.norm(S-P1)>0.13: return None
     lx=(P2-P1)/L1; ly=np.array([-lx[1],lx[0]]); rs=S-P1; S_loc=[rs@lx,rs@ly]
     # branch flag so that the initial P4 is reproduced
     v=P3-P2; d=np.linalg.norm(v); a=(D**2-L2**2+d**2)/(2*d); h=np.sqrt(max(0,D**2-a**2)); m=P2+a*v/d; perp=np.array([-v[1],v[0]])/d
     br=1 if np.linalg.norm(m+h*perp-P4)<np.linalg.norm(m-h*perp-P4) else -1
     return [*P1,L1,*P3,L2,D,*ax_loc,*S_loc,*F,th0,1,br]
 rng=np.random.default_rng(7); cands=[]
-for k in range(60000):
+for k in range(200000):
     p=build(rng)
     if p is None: continue
     for sgn in (1,-1):
@@ -73,7 +79,7 @@ for k in range(60000):
         if c<1e3: cands.append((c,list(p)))
 cands.sort(key=lambda t:t[0]); print('feasible',len(cands),'best raw costs',[round(c,3) for c,_ in cands[:5]])
 best=None
-for c,p in cands[:12]:
+for c,p in cands[:24]:
     fixed=(p[14],p[15]); x0=np.array(p[:14])
     f=lambda x: cost(list(x)+[fixed[0],fixed[1]])
     r=minimize(f,x0,method='Nelder-Mead',options=dict(maxiter=6000,xatol=1e-7,fatol=1e-10))
