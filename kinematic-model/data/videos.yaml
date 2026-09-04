@@ -109,7 +109,12 @@ videos:
       angle and lateral drift all failed the estimator self-check (median
       |kappa| 0.98, alpha 29 deg, "sliding" 91%): reported as unmeasurable,
       and the tyre envelope fit refused. Needs sharper, closer footage.
-      See output/goldstone/vds_2023/result.json and labeled.mp4.
+      With the zoomed detection retry: bike 39%, pose 76%, both wheels 30%.
+      Rotation-rate proxies (deg/s, max / p95 / rms): pitch 279 / 115 / 62
+      at 4.0s, roll 245 / 124 / 60 at 9.2s, yaw 258 / 181 / 90 at 18.2s.
+      Speed estimate: median 23, p95 73, max 78 km/h at 21.7s, 27%
+      coverage. See output/goldstone/vds_2023/result.json and
+      labeled_goldstone_vds_2023.mp4.
   - id: 3oUbTSelGH8
     url: https://youtu.be/3oUbTSelGH8
     title: "Drone FPV: Jackson Goldstone's Insane Run, 2023 Mont-Sainte-Anne"
@@ -119,6 +124,14 @@ videos:
     bike_id: jackson-goldstone-v10
     notes: >
       52s, 1080p24, AV1 (transcoded to data/raw/goldstone/msa_2023.mp4).
-      Bike is too small and blurred for the detector even with the 1280 px
-      retry: bicycle found in 1% of frames, rider pose 34%. Wheel and tyre
-      layer produced nothing usable; kept as pose-only reference.
+      First pass ran upside down: detect_orientation picked 180 deg on a
+      marginal pose score (bike 1%, pose 34%). With upright kept as the
+      prior and the zoomed detection retry: bike 38%, pose 82%, both
+      wheels 31%, contact 90%. Rotation-rate proxies (deg/s, max / p95 /
+      rms): pitch 284 / 181 / 76 at 35.0s, roll 268 / 135 / 62 at 21.2s,
+      yaw 243 / 168 / 85 at 16.0s. Ground-shift speed estimate: median 20,
+      p95 65, max 70 km/h at 30.2s, 22% coverage (fires only where the
+      ground beside the bike is textured enough, so the median is biased
+      to the slower sections). Form 57.9, attack 56%, look-ahead 64%.
+      Labeled video with skeleton, bike, wheels, vision path and rate/speed
+      HUD: output/goldstone/msa_2023/labeled_goldstone_msa_2023.mp4.
