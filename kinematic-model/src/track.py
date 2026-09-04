@@ -299,6 +299,7 @@ def detect_orientation(video_path: str | Path, tracker: "BikeRiderTracker",
     """
     cap = cv2.VideoCapture(str(video_path))
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) or 1
+    samples = max(samples, 10)
     idxs = [int(total * f) for f in np.linspace(0.1, 0.9, samples)]
     frames = []
     for i in idxs:
@@ -310,7 +311,7 @@ def detect_orientation(video_path: str | Path, tracker: "BikeRiderTracker",
     if not frames:
         return 0
 
-    best_deg, best_conf = 0, -1.0
+    scores = {}
     for deg, code in _ROTATIONS.items():
         total_conf = 0.0
         for f in frames:
@@ -319,8 +320,14 @@ def detect_orientation(video_path: str | Path, tracker: "BikeRiderTracker",
             if pose.keypoints is not None and len(pose.keypoints) > 0:
                 confs = pose.keypoints.data[..., 2].cpu().numpy()
                 total_conf += float(confs.max(axis=1).sum()) if confs.size else 0.0
-        if total_conf > best_conf:
-            best_deg, best_conf = deg, total_conf
+        scores[deg] = total_conf
+    # Upright is the prior. A banked FPV frame can score a little higher
+    # flipped (sky at the bottom looks like ground), and processing a whole
+    # run upside down costs everything downstream, so only rotate when a
+    # rotation wins by a clear margin.
+    best_deg = max(scores, key=scores.get)
+    if best_deg != 0 and scores[best_deg] < 1.6 * max(scores[0], 1e-6):
+        return 0
     return best_deg
 
 

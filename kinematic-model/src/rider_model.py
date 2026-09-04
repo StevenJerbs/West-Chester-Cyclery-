@@ -87,7 +87,8 @@ class RiderFormModel:
         from attitude import attitude_series
 
         tracker = BikeRiderTracker(pose_weights=self.pose_ckpt)
-        rot = detect_orientation(video, tracker)
+        rot = (metadata or {}).get("rotate_deg")
+        rot = int(rot) if rot is not None else detect_orientation(video, tracker)
         track_json = out_dir / "track.json"
         track_video(video, track_json, rotate_deg=rot)
         track = json.loads(track_json.read_text())

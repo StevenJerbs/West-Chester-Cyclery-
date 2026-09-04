@@ -19,12 +19,14 @@ were actually measured). Spikes above MAX_PLAUSIBLE_RATE are fit noise
 taken. Signed where the proxy has a sign (pitch, roll), unsigned for yaw.
 
 Speed is estimated from the ground: in a chase view the terrain streams
-past at the bike's speed. Optical flow of a wide band at the bike's image
-depth (its wheel line), excluding the bike itself, gives px/frame; the
-wheel-diameter scale from wheels.py turns that into mm, and fps into m/s.
-Frames are downscaled 4x first so blur helps rather than hurts the
-estimate. It is a chase-cam estimate, not GPS: expect +-30%, and it is
-blank where the ground is untextured or the bike scale is unknown.
+past at the bike's speed. The shift of a wide band at the bike's image
+depth (its wheel line) between consecutive frames, found by phase
+correlation (which survives motion blur far better than dense optical
+flow, whose estimate collapses toward zero on a smeared surface), gives
+px/frame; the wheel-diameter scale from wheels.py turns that into mm, and
+fps into m/s. It is a chase-cam estimate, not GPS: the camera's own motion
+relative to the bike adds error, expect +-30%, and it is blank where the
+ground is untextured or the bike scale is unknown.
 """
 
 from __future__ import annotations
@@ -34,7 +36,21 @@ import math
 import cv2
 import numpy as np
 
-MAX_PLAUSIBLE_RATE = 720.0     # deg/s
+MAX_PLAUSIBLE_RATE = 450.0     # deg/s: a DH bike does not rotate faster than this about any axis
+
+
+def _unwrap180(x):
+    """Axis angles live in (-90, 90]: a wheel-line or mask axis passing
+    through vertical flips sign, which would read as a 180 deg/frame jump.
+    Unwrap with period 180 so the series is continuous before differencing."""
+    x = np.array(x, float)
+    ok = ~np.isnan(x)
+    if ok.sum() < 2:
+        return x
+    out = x.copy()
+    vals = np.unwrap(np.radians(x[ok]) * 2.0) / 2.0   # period pi in radians == 180 deg
+    out[ok] = np.degrees(vals)
+    return out
 MAX_GAP_S = 0.4
 SPEED_MIN_KMH, SPEED_MAX_KMH = 3.0, 95.0
 
@@ -102,8 +118,8 @@ def rotation_rates(frames: list[dict], fps: float) -> dict:
     axle = _series(frames, geom("axle_line_deg"))
     pitch_mask = _series(frames, att("pitch_deg"))
     # pitch: axle line where both wheels are seen side-on, else the mask axis
-    pitch = np.where(~np.isnan(axle) & np.array([v == "side" for v in view]), axle, pitch_mask)
-    lean = _series(frames, att("lean_deg"))
+    pitch = _unwrap180(np.where(~np.isnan(axle) & np.array([v == "side" for v in view]), axle, pitch_mask))
+    lean = _unwrap180(_series(frames, att("lean_deg")))
     torso = _series(frames, att("torso_tilt_deg"))
     roll = np.where(~np.isnan(lean), lean, torso)
     yawp = _series(frames, geom("yaw_proxy"))         # 0 end-on .. 1 broadside
@@ -115,7 +131,7 @@ def rotation_rates(frames: list[dict], fps: float) -> dict:
     out = {}
     series = {}
     for name, x in (("pitch", pitch), ("roll", roll), ("yaw", yaw)):
-        s = _smooth_gapped(x, fps)
+        s = _smooth_gapped(x, fps, win_s=0.3)
         r = _rate(s, fps)
         series[name] = (s, r)
         finite = np.isfinite(r)
@@ -137,8 +153,17 @@ def rotation_rates(frames: list[dict], fps: float) -> dict:
     return out
 
 
-def speed_series(video_path, frames: list[dict], rot_code, fps: float, downscale: int = 4) -> dict:
-    """Ground-flow speed estimate per frame (mutates frames; returns summary)."""
+def _band_shift(a, b):
+    """Dominant image shift between two same-size grey bands, px, by phase
+    correlation with a Hanning window. Returns (dx, dy, response)."""
+    fa, fb = a.astype(np.float32), b.astype(np.float32)
+    win = cv2.createHanningWindow((fa.shape[1], fa.shape[0]), cv2.CV_32F)
+    (dx, dy), resp = cv2.phaseCorrelate(fa, fb, win)
+    return dx, dy, resp
+
+
+def speed_series(video_path, frames: list[dict], rot_code, fps: float, downscale: int = 2) -> dict:
+    """Ground-shift speed estimate per frame (mutates frames; returns summary)."""
     cap = cv2.VideoCapture(str(video_path))
     by_idx = {f["frame"]: f for f in frames}
     prev = None
@@ -162,21 +187,22 @@ def speed_series(video_path, frames: list[dict], rot_code, fps: float, downscale
                 # fallback scale: a DH bike + rider box is ~1.35 m tall
                 mmpp = 1350.0 / max(rec["bike_height"], 1.0)
             h, w = small.shape
-            band_y0, band_y1 = int(max(0, y2 - 0.5 * bh)), int(min(h, y2 + 0.8 * bh))
-            if band_y1 - band_y0 >= 6:
-                a, b = prev[band_y0:band_y1], small[band_y0:band_y1]
-                sharp = float(cv2.Laplacian(b, cv2.CV_64F).var())
-                if sharp > 15.0:
-                    flow = cv2.calcOpticalFlowFarneback(a, b, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-                    mask = np.ones(flow.shape[:2], bool)
-                    bx0, bx1 = int(max(0, x1 - 0.2 * bh)), int(min(w, x2 + 0.2 * bh))
-                    mask[:, bx0:bx1] = False
-                    if mask.sum() > 50:
-                        mag = np.hypot(flow[..., 0], flow[..., 1])[mask]
-                        px_frame = float(np.median(mag)) * downscale
-                        v_kmh = px_frame * mmpp * fps / 1000.0 * 3.6
-                        if not (SPEED_MIN_KMH <= v_kmh <= SPEED_MAX_KMH):
-                            v_kmh = None
+            band_y0, band_y1 = int(max(0, y2 - 0.3 * bh)), int(min(h, y2 + 1.2 * bh))
+            # the ground on either side of the bike, at its depth
+            bx0, bx1 = int(max(0, x1 - 0.3 * bh)), int(min(w, x2 + 0.3 * bh))
+            shifts = []
+            for sx0, sx1 in ((0, bx0), (bx1, w)):
+                if sx1 - sx0 >= 96 and band_y1 - band_y0 >= 24:
+                    a, b = prev[band_y0:band_y1, sx0:sx1], small[band_y0:band_y1, sx0:sx1]
+                    if float(cv2.Laplacian(b, cv2.CV_64F).var()) > 8.0:
+                        dx, dy, resp = _band_shift(a, b)
+                        if resp > 0.05:
+                            shifts.append((math.hypot(dx, dy), resp))
+            if shifts:
+                px_frame = max(shifts, key=lambda s: s[1])[0] * downscale
+                v_kmh = px_frame * mmpp * fps / 1000.0 * 3.6
+                if not (SPEED_MIN_KMH <= v_kmh <= SPEED_MAX_KMH):
+                    v_kmh = None
         if rec is not None:
             rec["speed_kmh_est"] = round(v_kmh, 1) if v_kmh is not None else None
             speeds.append(v_kmh if v_kmh is not None else np.nan)
@@ -193,5 +219,5 @@ def speed_series(video_path, frames: list[dict], rot_code, fps: float, downscale
         return {"median_kmh": round(float(np.median(fin)), 1), "p95_kmh": round(float(np.percentile(fin, 95)), 1),
                 "max_kmh": round(float(np.nanmax(sm)), 1), "at_s": round(frames[int(np.nanargmax(sm))]["time_s"], 2),
                 "coverage": round(float(np.isfinite(s).mean()), 2),
-                "note": "chase-cam ground-flow estimate scaled by wheel diameter (or bike height when wheels are missing); +-30%, not GPS"}
+                "note": "chase-cam ground-shift estimate (phase correlation) scaled by wheel diameter (or bike height when wheels are missing); +-30%, not GPS"}
     return {"median_kmh": None, "coverage": 0.0, "note": "no textured ground at the bike's depth to estimate speed from"}
