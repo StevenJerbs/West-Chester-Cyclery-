@@ -43,6 +43,7 @@
   .jr .band .pt{position:absolute; top:-2px; width:4px; height:12px; background:var(--ink); margin-left:-2px}
   .jr .band .pt.out{background:var(--danger)}
   .jr .v{font-variant-numeric:tabular-nums; text-align:right; font-weight:600}
+  .scene canvas.mm{position:absolute; left:8px; bottom:8px; width:112px; height:112px; image-rendering:pixelated; pointer-events:none; border:2px solid var(--line); cursor:default}
   .hint{position:absolute; right:8px; bottom:6px; font-size:10px; color:#EFE8D6; opacity:.8; background:rgba(20,24,16,.55); padding:2px 6px; pointer-events:none}
 
   .bench{display:grid; grid-template-columns:1fr 1fr; gap:14px}
@@ -119,6 +120,7 @@
       <div class="jr"><span class="n">ELBOW</span><span class="band" id="bElbow"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vElbow">0</span></div>
       <div class="jr"><span class="n">TORSO</span><span class="band" id="bTorso"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vTorso">0</span></div>
     </div>
+    <canvas id="mm" class="mm" width="150" height="150"></canvas>
     <div class="hint">drag to orbit</div>
   </div>
 
@@ -163,6 +165,7 @@
   <p class="note"><b>What is simulated.</b> A planar rigid chassis (19 kg sprung, pitch inertia), two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping), a 78 kg rider on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 3.05&rarr;2.47 (19% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
   <br><b>Sources in the repo's uploads.</b> Pinkbike's 2021 Bullit review (Kazimer): 29/27.5, 170 mm, 64&deg; HTA, 449 mm stays, 22.3 kg size L, 475 reach on the L, Fox 38 E-Tune 170 and a RockShox Super Deluxe; his setup was 175 psi in the shock for 30% sag and 100 psi + 3 tokens in the fork at 72.6 kg. The Loam Wolf shootout bike ran the Super Deluxe Coil Ultimate (51.7 lb). Pinkbike's Megatower "Behind the Numbers" scan gives the lower-link VPP family its shape: a near-linear falling leverage curve with an end-stroke shoulder, ~2 mm rearward then forward axle path, anti-squat ~110% falling off late in the travel, anti-rise 85%&rarr;&minus;25%. The linkage here is fitted to those outputs with the pivots and shock placed where the photos show them.
   <br><b>Rider posture.</b> PRO targets come from side-on frames in <code>crash_training/asa_vermette_vs_avg_rider_Y50K3ZZEdVY.mp4</code> (Asa at 185.5 s and 208.7 s: torso near trail-parallel, front knee ~135&ndash;140&deg;, elbows ~120&ndash;150&deg;) and the Goldstone FPV run; AVERAGE mirrors Charlie at 160.5 s and 194.5 s (upright torso, knee ~165&deg;, stiff legs). Hip height is solved from a target knee angle and torso angle from a target elbow angle, knees always bend forward and elbows down, and caps (knee &le;165&deg;, elbow &le;160&deg; for PRO) stop any lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.
+  <br><b>World.</b> The trail is generated from the course: every segment is a constant-curvature arc, a Hermite curve closes the loop into a ~9% return climb, a hill heightfield is bench-cut to the trail's elevation profile, and a 0.25 m trail ribbon carries the rocks, logs, washboard and the banked berm. The bike yaws with the tangent, pitches with the profile, and rolls to the lateral acceleration with a second-order response; a friction circle (&mu; 0.75 on dirt, more on the bank) limits cornering, braking and drive, and the tyres scrub when the lateral demand exceeds grip. Minimap bottom-left; drag to orbit the chase camera.
   <br><b>Course.</b> Flat start &rarr; 11% climb (rider stands, root-log and a rock step) &rarr; crest &rarr; flat left-hander (grip-limited, the rider brakes to it) &rarr; rollers with a log &rarr; braking-bump washboard &rarr; 35&deg; left berm (the bank carries the load, suspension takes the g) &rarr; 18% rock garden with boulders, a rock shelf step-down and a log &rarr; a 40 cm log-over &rarr; two G-outs &rarr; 0.75 m kicker onto a 5.5 m tabletop &rarr; 1 m huck to flat. Speed carried into the lip decides how far the tabletop is cleared; a second flat corner follows the landing.</p>
 </div>
 
@@ -260,31 +263,66 @@ const SEG = {
     h: t => t < up ? H * (1 - Math.cos(Math.PI * t / up)) / 2 : t < up + ledge ? H : 0 })
 };
 const COURSE = [
-  Object.assign(SEG.flat(6, 0.0), { name: 'START' }),
-  Object.assign(SEG.roots(36, 0.11, 0.03), { name: 'CLIMB 11%' }),
+  Object.assign(SEG.flat(6, 0.0), { name: 'START', turn: 0 }),
+  Object.assign(SEG.roots(36, 0.11, 0.03), { name: 'CLIMB 11%', turn: -25 }),
   Object.assign(SEG.flat(6, -0.03), { name: 'CREST' }),
-  Object.assign(SEG.corner(14, 9, 0, -0.02), { name: 'FLAT CORNER L' }),
-  Object.assign(SEG.rollers(4, 5, 0.25, -0.04), { name: 'ROLLERS' }),
+  Object.assign(SEG.corner(14, 9, 0, -0.02), { name: 'FLAT CORNER L', turn: -89 }),
+  Object.assign(SEG.rollers(4, 5, 0.25, -0.04), { name: 'ROLLERS', turn: -12 }),
   Object.assign(SEG.washboard(14, 0.85, 0.045, -0.09), { name: 'WASHBOARD', noPedal: [0, 99] }),
-  Object.assign(SEG.corner(17, 6.5, 35, -0.06), { name: 'BERM L 35°' }),
-  Object.assign(SEG.rocks(26, -0.18, 0.14), { name: 'ROCK GARDEN 18%', noPedal: [0, 99] }),
+  Object.assign(SEG.corner(17, 7.5, 35, -0.06), { name: 'BERM L 35°', turn: -130 }),
+  Object.assign(SEG.rocks(26, -0.16, 0.14), { name: 'ROCK GARDEN 16%', noPedal: [0, 99], turn: 18 }),
   Object.assign(SEG.flat(6, -0.05), { name: 'RUN-IN' }),
   Object.assign(SEG.gout(7, 0.42, -0.03), { name: 'G-OUT 1' }),
   Object.assign(SEG.flat(3, -0.03), { name: 'G-OUT' }),
   Object.assign(SEG.gout(7, 0.5, -0.03), { name: 'G-OUT 2' }),
-  Object.assign(SEG.flat(20, -0.10), { name: 'JUMP RUN-IN' }),
+  Object.assign(SEG.flat(20, -0.10), { name: 'JUMP RUN-IN', turn: -12 }),
   Object.assign(SEG.kicker(0.75, 3.0, 1.0, 4.5, 0, 0.6, 6.0, 0.0), { name: 'BIG JUMP', noPedal: [1.5, 14.5] }),
   Object.assign(SEG.flat(8, -0.02), { name: 'LANDING' }),
-  Object.assign(SEG.corner(15, 12, 0, -0.02), { name: 'FLAT CORNER L' }),
+  Object.assign(SEG.corner(15, 12, 0, -0.02), { name: 'FLAT CORNER L', turn: -72 }),
   Object.assign(SEG.huck(1.0, 8.0, 2.5, 10, 0.0), { name: 'HUCK TO FLAT', noPedal: [6.0, 12.5] }),
   Object.assign(SEG.flat(8, 0.0), { name: 'FINISH' })
 ];
+/* The trail is generated from the course itself: each segment is a constant-curvature arc (turn in degrees over its
+   length), then a cubic Hermite curve closes the loop back to the start and becomes the RETURN CLIMB, whose grade is
+   set so the elevation profile also closes. So the lap is a true loop: corner radii are exact and nothing teleports. */
+const PATH = { ds: 0.25, x: [], z: [], th: [], k: [], n: 0 };
 let COURSE_LEN = 0;
-for (const g of COURSE){ g.start = COURSE_LEN; COURSE_LEN += g.len; }
-(function setBase(){ let b = 0; for (const g of COURSE){ g.base = b; b += g.grade * g.len; } })();
+(function buildPath(){
+  let x = 0, z = 0, th = 0;
+  for (const g of COURSE){
+    const n = Math.max(1, Math.round(g.len / PATH.ds)); g.len = n * PATH.ds;
+    const kap = (g.turn || 0) * D2R / g.len;
+    for (let i = 0; i < n; i++){ PATH.x.push(x); PATH.z.push(z); PATH.th.push(th); PATH.k.push(kap); x += Math.cos(th) * PATH.ds; z += Math.sin(th) * PATH.ds; th += kap * PATH.ds; }
+  }
+  const p0 = [x, z], t0 = [Math.cos(th), Math.sin(th)], m = 0.9 * Math.hypot(x, z);
+  const H = u => { const h00 = 2*u*u*u - 3*u*u + 1, h10 = u*u*u - 2*u*u + u, h01 = -2*u*u*u + 3*u*u, h11 = u*u*u - u*u;
+    return [h00 * p0[0] + h10 * m * t0[0] + h11 * m, h00 * p0[1] + h10 * m * t0[1]]; };
+  const fine = []; for (let i = 0; i <= 4000; i++) fine.push(H(i / 4000));
+  const pts = [fine[0]]; let acc = 0;
+  for (let i = 1; i < fine.length; i++){ acc += Math.hypot(fine[i][0] - fine[i-1][0], fine[i][1] - fine[i-1][1]); if (acc >= PATH.ds){ pts.push(fine[i]); acc = 0; } }
+  const retLen = pts.length * PATH.ds;
+  let prevTh = th;
+  for (let i = 0; i < pts.length; i++){
+    const nx = i + 1 < pts.length ? pts[i+1] : [0, 0];
+    let a = Math.atan2(nx[1] - pts[i][1], nx[0] - pts[i][0]);
+    while (a - prevTh > Math.PI) a -= 2 * Math.PI; while (a - prevTh < -Math.PI) a += 2 * Math.PI;   // unwrap
+    PATH.x.push(pts[i][0]); PATH.z.push(pts[i][1]); PATH.th.push(a); PATH.k.push((a - prevTh) / PATH.ds); prevTh = a;
+  }
+  PATH.n = PATH.x.length;
+  const ret = Object.assign(SEG.roots(retLen, 0, 0.025), { name: 'RETURN CLIMB' });
+  COURSE.push(ret);
+  COURSE_LEN = 0; for (const g of COURSE){ g.start = COURSE_LEN; COURSE_LEN += g.len; }
+  let b = 0; for (const g of COURSE){ if (g === ret) g.grade = -b / g.len; g.base = b; b += g.grade * g.len; }
+})();
+function pathAt(sIn){
+  let sp = sIn % COURSE_LEN; if (sp < 0) sp += COURSE_LEN;
+  const f = sp / PATH.ds, i = Math.min(PATH.n - 1, Math.floor(f)), j = (i + 1) % PATH.n, t = f - i;
+  let th1 = PATH.th[j]; const th0 = PATH.th[i]; while (th1 - th0 > Math.PI) th1 -= 2 * Math.PI; while (th1 - th0 < -Math.PI) th1 += 2 * Math.PI;
+  return { x: lerp(PATH.x[i], PATH.x[j], t), z: lerp(PATH.z[i], PATH.z[j], t), theta: lerp(th0, th1, t), kappa: lerp(PATH.k[i], PATH.k[j], t) };
+}
 function segAt(u){
-  const p = clamp(u, 0, COURSE_LEN - 1e-6);
-  let lo = 0, hi = COURSE.length - 1;
+  let p = u % COURSE_LEN; if (p < 0) p += COURSE_LEN;
+  let lo = 0, hi = COURSE.length;
   while (hi - lo > 1){ const m = (lo + hi) >> 1; if (COURSE[m].start <= p) lo = m; else hi = m; }
   return [COURSE[lo], p - COURSE[lo].start];
 }
@@ -295,11 +333,11 @@ function addObst(segName, t, o){ const g = COURSE.find(x => x.name === segName);
 addObst('CLIMB 11%', 12, { type: 'log', r: 0.09 });                 // root-log on the climb
 addObst('CLIMB 11%', 26, { type: 'rock', h: 0.22, w: 0.55 });
 addObst('ROLLERS', 9.5, { type: 'log', r: 0.13 });
-addObst('ROCK GARDEN 18%', 4, { type: 'rock', h: 0.26, w: 0.6 });
-addObst('ROCK GARDEN 18%', 9, { type: 'rock', h: 0.33, w: 0.75 });
-addObst('ROCK GARDEN 18%', 13.5, { type: 'shelf', h: 0.38, w: 3.2, ramp: 1.2 });   // rock slab with a sheer step-down off its back
-addObst('ROCK GARDEN 18%', 20, { type: 'rock', h: 0.28, w: 0.6 });
-addObst('ROCK GARDEN 18%', 23.5, { type: 'log', r: 0.15 });
+addObst('ROCK GARDEN 16%', 4, { type: 'rock', h: 0.26, w: 0.6 });
+addObst('ROCK GARDEN 16%', 9, { type: 'rock', h: 0.33, w: 0.75 });
+addObst('ROCK GARDEN 16%', 13.5, { type: 'shelf', h: 0.38, w: 3.2, ramp: 1.2 });   // rock slab with a sheer step-down off its back
+addObst('ROCK GARDEN 16%', 20, { type: 'rock', h: 0.28, w: 0.6 });
+addObst('ROCK GARDEN 16%', 23.5, { type: 'log', r: 0.15 });
 addObst('RUN-IN', 3, { type: 'log', r: 0.20 });                     // the big log-over
 addObst('LANDING', 5, { type: 'rock', h: 0.2, w: 0.5 });
 function obstH(o, d){                                               // height of obstacle o at distance d from its centre
@@ -365,20 +403,25 @@ const wheelR = { y: 0, vy: 0, x: 0, t: 0, tv: 0, tire: 0, ema: 0, bo: 0, boFlash
 const rider = { y: 0, vy: 0, u: 0, k: 9000, c: 900, hx: -0.40, hy: 0.62, xTarget: -0.40, yTarget: 0.62, pop: 0 };
 let v = 3.0, scroll = 0, riding = true, lap = 1;
 const MU_DIRT = 0.75;
-const corner = { active: false, lean: 0, g: 1, R: 0, bank: 0, ahead: 99, vLimit: 99, braking: false };
-function cornerSpeed(cn){ return Math.sqrt(cn.R * G9 * Math.tan(Math.min(1.45, cn.bank + Math.atan(MU_DIRT)))); }   // grip-limited (flat) or bank-supported (berm)
+const corner = { active: false, lean: 0, g: 1, R: 0, bank: 0, ahead: 99, vLimit: 99, braking: false, usage: 0, sliding: false, aLat: 0 };
 function updateCorner(){
   const [seg, t] = segAt(scroll);
-  corner.active = !!seg.corner;
-  if (corner.active){
-    const aLat = Math.min(v * v / seg.corner.R, G9 * Math.tan(seg.corner.bank + Math.atan(MU_DIRT)));
-    corner.g = Math.sqrt(1 + (aLat / G9) * (aLat / G9));
-    const fade = smooth(Math.min(t, seg.len - t) / 3);                       // ease in and out of the arc
-    corner.lean = Math.atan2(aLat, G9) * fade; corner.g = 1 + (corner.g - 1) * fade;
-    corner.R = seg.corner.R; corner.bank = seg.corner.bank; corner.vLimit = cornerSpeed(seg.corner); corner.ahead = 0;
-  } else {
-    corner.lean = 0; corner.g = 1; corner.vLimit = 99; corner.ahead = 99;
-    for (const g of COURSE){ if (g.corner && g.start > scroll && g.start - scroll < 45){ corner.ahead = g.start - scroll; corner.vLimit = cornerSpeed(g.corner); break; } }
+  const P = pathAt(scroll + 1.2);                                              // the rider sets the lean up slightly ahead of the wheels
+  const kap = Math.abs(P.kappa);
+  const bank = seg.corner ? seg.corner.bank * smooth(Math.min(t, seg.len - t) / 3) : 0;
+  const cap = G9 * Math.tan(Math.min(1.45, bank + Math.atan(MU_DIRT)));      // lateral acceleration the surface can give
+  let aLat = v * v * kap;
+  corner.usage = aLat / Math.max(0.01, cap); corner.sliding = corner.usage > 1 && kap > 0.02;
+  aLat = Math.min(aLat, cap); corner.aLat = aLat;
+  corner.g = Math.sqrt(1 + (aLat / G9) * (aLat / G9));
+  corner.lean = Math.atan2(aLat, G9) * (P.kappa < 0 ? 1 : -1);                // positive = leaning left
+  corner.active = kap > 0.025; corner.bank = bank;
+  corner.braking = false; corner.vLimit = 99; corner.ahead = 99;
+  for (let d = 0; d <= 45; d += 1.5){                                          // look ahead for the tightest bend the grip can't hold at this speed
+    const Q = pathAt(scroll + d), k2 = Math.abs(Q.kappa); if (k2 < 0.02) continue;
+    const sq = segAt(scroll + d)[0], b2 = sq.corner ? sq.corner.bank : 0;
+    const vl = Math.sqrt(G9 * Math.tan(Math.min(1.45, b2 + Math.atan(MU_DIRT))) / k2) * 0.97;
+    if (v > vl && d < (v * v - vl * vl) / (2 * 4.5) + 2){ corner.braking = true; if (vl < corner.vLimit){ corner.vLimit = vl; corner.ahead = d; } }
   }
 }
 const tune = {};
@@ -615,7 +658,7 @@ function step(dt){
   const Prider = pedaling ? effortW * (poseState === 'climb' ? 1.25 : 1) : 0;
   const Pmotor = (pedaling && v < 8.9) ? Math.min(500, Prider * ASSIST[assistMode]) * clamp((8.9 - v) / 1.5, 0, 1) : 0;
   hudPower = Prider + Pmotor;
-  const Fprop = Math.min((Prider + Pmotor) / Math.max(v, 1.2), 900);
+  const Fprop = Math.min((Prider + Pmotor) / Math.max(v, 1.2), 900, MU_DIRT * tR * Math.sqrt(Math.max(0, 1 - Math.min(1, corner.usage) ** 2)) + 50);   // rear-tyre traction limits drive
   const Mt = M_SPRUNG + M_RIDER + M_UF + M_UR;
   const Fdrag = 0.5 * 1.2 * 0.62 * v * v, Froll = 0.018 * Mt * G9 * (airborne ? 0 : 1);
   // the ground pushes along its own normal: a tilted contact turns tyre load into drive (downhill) or drag (uphill, bump faces)
@@ -623,17 +666,20 @@ function step(dt){
   const Ncap = 1.6 * Mt * G9;
   const Fground = -(Math.min(tF, Ncap) * clamp(slFx, -0.7, 0.7) + Math.min(tR, Ncap) * clamp(slRx, -0.7, 0.7));
   updateCorner();
-  const dBrake = Math.max(0, (v * v - corner.vLimit * corner.vLimit) / (2 * 4.5)) + 1.5;
-  corner.braking = !airborne && v > corner.vLimit && (corner.active || corner.ahead < dBrake);
+  if (airborne) corner.braking = false;
+  // friction circle: lateral grip in use leaves less for driving and braking
+  const fCircle = Math.sqrt(Math.max(0, 1 - Math.min(1, corner.usage) * Math.min(1, corner.usage)));
   brakeF = (!airborne && v > vCap) ? Math.min(0.55 * Mt * G9, Mt * (v - vCap) * 2.5) : 0;
-  if (corner.braking) brakeF = Math.max(brakeF, Math.min(0.55 * Mt * G9, Mt * 4.5));
+  if (corner.braking) brakeF = Math.max(brakeF, Mt * 4.5);
+  brakeF = Math.min(brakeF, MU_DIRT * (tF + tR) * fCircle);
+  if (corner.sliding) v = Math.max(1, v - 2.5 * (corner.usage - 1) * dt);      // the tyres scrub when the lateral demand exceeds the grip
   accelX = (Fprop - Fdrag - Froll + Fground - brakeF) / Mt;
   v = Math.max(0.5, v + accelX * dt);
   scroll += v * dt;
   crank += (pedaling ? 82 / 60 * 2 * Math.PI : 0) * dt;
   if (!pedaling){ const level = corner.active ? 0 : Math.PI / 2; let d = ((level - crank) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; crank += d * Math.min(1, dt * 6); }   // level pedals; outside (right) foot down in a left turn
   poseController(dt, grade, airborne, scroll);
-  if (scroll >= COURSE_LEN - 0.5){ lap++; const keepLap = lap; reset(); lap = keepLap; }
+  if (scroll >= COURSE_LEN){ scroll -= COURSE_LEN; lap++; }
 }
 
 /* =============== ui =============== */
@@ -687,83 +733,147 @@ function updateHud(joints){
   ui.hudSpd.textContent = (v / 0.447).toFixed(0) + ' mph';
   ui.hudGrade.textContent = (gradeS * 100).toFixed(0) + '%';
   ui.hudState.textContent = { seated: 'SEATED PEDAL', climb: gradeS > 0.045 ? 'STANDING CLIMB' : 'STANDING PEDAL', attack: 'ATTACK', pop: 'PRELOAD / POP', air: 'AIRBORNE', land: 'ABSORB LANDING', huck: 'HUCK: WEIGHT BACK' }[poseState];
-  ui.hudPower.textContent = corner.active ? ('CORNER · ' + corner.g.toFixed(2) + ' g · lean ' + Math.round(corner.lean / D2R) + '°' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider+motor)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
+  ui.hudPower.textContent = corner.sliding ? ('SLIDING · grip ' + Math.round(corner.usage * 100) + '%') : corner.active ? ((corner.lean > 0 ? 'LEFT ' : 'RIGHT ') + corner.g.toFixed(2) + ' g · lean ' + Math.abs(Math.round(corner.lean / D2R)) + '° · grip ' + Math.round(corner.usage * 100) + '%' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider+motor)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
   for (const k of ['knee', 'hip', 'elbow', 'torso']) setJoint(k, joints[k]);
 }
 
-/* =============== 3d scene =============== */
+/* =============== 3d world =============== */
+const _tBuild = performance.now();
 const canvas = $('cv');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setSize(448, 252, false);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x7FAACB);
-const camera = new THREE.PerspectiveCamera(36, 448 / 252, 0.1, 80);
-const camTarget = new THREE.Vector3(0.1, 0.9, 0);
-let camAz = 0.30, camEl = 0.17;
-function placeCamera(){
-  const r = 4.6;
-  camera.position.set(camTarget.x + r * Math.sin(camAz) * Math.cos(camEl), camTarget.y + r * Math.sin(camEl), camTarget.z + r * Math.cos(camAz) * Math.cos(camEl));
-  camera.lookAt(camTarget);
-}
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9FC3DC); scene.fog = new THREE.Fog(0xB9D0DC, 28, 150);
+const camera = new THREE.PerspectiveCamera(44, 448 / 252, 0.1, 400);
+let camAz = 0, camEl = 0;
+const camPos = new THREE.Vector3(-4, 3, 4), camLook = new THREE.Vector3();
 let dragging = false, px = 0, py = 0;
 canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; canvas.setPointerCapture(e.pointerId); });
-canvas.addEventListener('pointermove', e => { if (!dragging) return; camAz = clamp(camAz + (e.clientX - px) * 0.006, -1.2, 1.2); camEl = clamp(camEl + (e.clientY - py) * 0.004, 0.03, 0.7); px = e.clientX; py = e.clientY; });
+canvas.addEventListener('pointermove', e => { if (!dragging) return; camAz = clamp(camAz + (e.clientX - px) * 0.006, -2.6, 2.6); camEl = clamp(camEl + (e.clientY - py) * 0.006, -0.6, 1.2); px = e.clientX; py = e.clientY; });
 canvas.addEventListener('pointerup', () => dragging = false);
-scene.add(new THREE.AmbientLight(0xdfe8f0, 0.9));
-const sun = new THREE.DirectionalLight(0xfff2d6, 0.75); sun.position.set(2, 4, 3); scene.add(sun);
+scene.add(new THREE.AmbientLight(0xdfe8f0, 0.85));
+const sun = new THREE.DirectionalLight(0xfff2d6, 0.8); sun.position.set(40, 70, 30); scene.add(sun);
 const mat = c => new THREE.MeshLambertMaterial({ color: c });
 const box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
 
-/* backdrop that follows the camera height */
-const backdrop = new THREE.Group(); scene.add(backdrop);
-[0x7FAACB, 0x9BC0D8, 0xB7D2E0, 0xD3DCD3].forEach((c, i) => { const b = new THREE.Mesh(new THREE.PlaneGeometry(80, 2.0), new THREE.MeshBasicMaterial({ color: c })); b.position.set(0, 4.6 - i * 2.0, -16); backdrop.add(b); });
-const sunSq = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ color: 0xF6EDC2 })); sunSq.position.set(-8, 4.2, -15.5); backdrop.add(sunSq);
-function hillLayer(z, col, h, n, stepX){ const g = new THREE.Group(); for (let i = 0; i < n; i++){ const m = box(h * 1.5, h * 1.5, 0.1, col); m.rotation.z = Math.PI / 4; m.position.set(-12 + i * stepX + (i % 3) * 0.7, -0.6 + (i % 2) * 0.25 * h, z); g.add(m); } backdrop.add(g); return g; }
-const hillsFar = hillLayer(-11, 0x8AA3AE, 2.6, 11, 2.4), hillsNear = hillLayer(-7, 0x5F7F62, 1.8, 13, 2.0);
-const trees = new THREE.Group(); scene.add(trees); const treeList = [];
-for (let i = 0; i < 13; i++){ const x = -9.6 + i * 1.6, sc = 0.8 + hash(i + 40) * 0.5; const g = new THREE.Group();
-  const trunk = box(0.12, 0.8, 0.12, 0x5C4633); trunk.position.y = 0.4;
-  const c1 = box(0.6 * sc, 0.6 * sc, 0.25, i % 2 ? 0x3E6644 : 0x35573B); c1.rotation.z = Math.PI / 4; c1.position.y = 0.55 + 0.3 * sc;
-  const c2 = box(0.45 * sc, 0.45 * sc, 0.25, i % 2 ? 0x3E6644 : 0x35573B); c2.rotation.z = Math.PI / 4; c2.position.y = 0.85 + 0.45 * sc;
-  g.add(trunk, c1, c2); g.position.set(x, 0, -2.8); trees.add(g); treeList.push(g); }
+/* ---- heightfield: hills, bench-cut to the trail's elevation profile ---- */
+const pathSamp = [];
+for (let i = 0; i < PATH.n; i += 4) pathSamp.push({ x: PATH.x[i], z: PATH.z[i], s: i * PATH.ds, th: PATH.th[i], h: terrainAt(i * PATH.ds) });
+let bx0 = 1e9, bx1 = -1e9, bz0 = 1e9, bz1 = -1e9;
+for (const q of pathSamp){ bx0 = Math.min(bx0, q.x); bx1 = Math.max(bx1, q.x); bz0 = Math.min(bz0, q.z); bz1 = Math.max(bz1, q.z); }
+const WCX = (bx0 + bx1) / 2, WCZ = (bz0 + bz1) / 2, WSIZE = Math.max(bx1 - bx0, bz1 - bz0) + 120, GRID = 150;
+function hills(x, z){ return 3.2 * Math.sin(x * 0.045 + 1.3) * Math.cos(z * 0.037 - 0.4) + 2.2 * Math.sin(x * 0.09 - z * 0.06 + 2) + 1.2 * Math.cos(z * 0.13 + x * 0.02) + 0.6 * Math.sin(x * 0.31) * Math.cos(z * 0.27); }
+function trailInfo(x, z){                                                     // inverse-distance blend of the trail elevation, nearest sample, signed side
+  let wsum = 0, hsum = 0, best = null, bd = 1e9;
+  for (const q of pathSamp){ const dx = x - q.x, dz = z - q.z, d2 = dx * dx + dz * dz; if (d2 < bd){ bd = d2; best = q; } const w = 1 / (d2 * d2 + 1); wsum += w; hsum += w * q.h; }
+  const d = Math.sqrt(bd);
+  const side = Math.sign(-Math.sin(best.th) * (x - best.x) + Math.cos(best.th) * (z - best.z));   // +1 = rider's right
+  return { h: hsum / wsum, d, s: best.s, side };
+}
+function bankAt(s){ const [g, t] = segAt(s); return g.corner ? g.corner.bank * smooth(Math.min(t, g.len - t) / 3) : 0; }
+function worldHeight(x, z, ti){
+  ti = ti || trailInfo(x, z);
+  const w = smooth((ti.d - 3.0) / 10);
+  let h = ti.h + w * hills(x, z);
+  const bk = bankAt(ti.s);                                                    // the berm's outer bank rises off the trail edge
+  if (bk > 0 && ti.side > 0 && ti.d < 4) h += Math.tan(bk) * Math.min(ti.d, 2.6) * (1 - w);
+  return h;
+}
+const terrainGeo = new THREE.PlaneGeometry(WSIZE, WSIZE, GRID, GRID); terrainGeo.rotateX(-Math.PI / 2);
+{
+  const pos = terrainGeo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const hs = new Float32Array(pos.count), ds = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++){ const x = pos.getX(i) + WCX, z = pos.getZ(i) + WCZ, ti = trailInfo(x, z); hs[i] = worldHeight(x, z, ti); ds[i] = ti.d; pos.setXYZ(i, x, hs[i] - 0.03, z); }
+  const W = GRID + 1;
+  for (let i = 0; i < pos.count; i++){
+    const x = pos.getX(i), z = pos.getZ(i);
+    const ix = i % W, iz = Math.floor(i / W), i1 = Math.min(pos.count - 1, i + 1), i2 = Math.min(pos.count - 1, i + W);
+    const cell = WSIZE / GRID, slope = Math.hypot((hs[i1] - hs[i]) / cell, (hs[i2] - hs[i]) / cell);
+    if (ds[i] < 1.7) c.setHex(0x8B6A4A);
+    else if (slope > 0.75) c.setHex(0x8A857B);
+    else { const n = 0.5 + 0.5 * Math.sin(x * 0.7) * Math.cos(z * 0.9); c.setHSL(0.27 + 0.03 * n, 0.38, 0.30 + 0.10 * n); }
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  terrainGeo.setAttribute('color', new THREE.BufferAttribute(col, 3)); terrainGeo.computeVertexNormals();
+}
+scene.add(new THREE.Mesh(terrainGeo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
 
-/* terrain columns */
-const NCOL = 64, COLW = 0.16, GROUND_COLS = { dirt: [0x8B6A4A, 0x7C5D40], rock: [0x8A857B, 0x7A756C], built: [0x6F5236, 0x644928] };
-const cols = [];
-for (let i = 0; i < NCOL; i++){ const b = box(COLW, 6, 2.4, 0x8B6A4A); b.position.set((i - NCOL / 2) * COLW + COLW / 2, -3, -0.2); scene.add(b); cols.push(b); }
-function updateTerrain(){
-  for (let i = 0; i < NCOL; i++){ const x = (i - NCOL / 2) * COLW + COLW / 2, u = scroll + x; const h = Math.round(groundAt(u) / 0.02) * 0.02; cols[i].position.y = h - 3; cols[i].material.color.setHex(GROUND_COLS[groundType(u)][i % 2]); }
-  const off = trees.position.x;
-  for (const t of treeList){ const wx = t.position.x + off; t.position.y = groundAt(scroll + wx) - 0.25; }
+/* ---- trail ribbon: the full-detail surface the wheels ride (features, obstacles, berm tilt) ---- */
+const RIB_L = [-1.4, -0.8, -0.3, 0, 0.3, 0.8, 1.4], RIB_DS = 0.25, RIB_N = Math.floor(COURSE_LEN / RIB_DS);
+{
+  const nv = RIB_N * RIB_L.length, pos = new Float32Array(nv * 3), col = new Float32Array(nv * 3), idx = [], c = new THREE.Color();
+  const GC = { dirt: 0x8B6A4A, rock: 0x8A857B, built: 0x6F5236 };
+  for (let i = 0; i < RIB_N; i++){
+    const s0 = i * RIB_DS, P = pathAt(s0), h0 = groundAt(s0), bk = bankAt(s0), rx = -Math.sin(P.theta), rz = Math.cos(P.theta);
+    const base = GC[groundType(s0)];
+    for (let j = 0; j < RIB_L.length; j++){
+      const l = RIB_L[j], k = (i * RIB_L.length + j) * 3;
+      let h = h0 - 0.06 * l * l;
+      if (bk > 0 && l > 0) h += Math.tan(bk) * l;
+      pos[k] = P.x + rx * l; pos[k + 1] = h + 0.02; pos[k + 2] = P.z + rz * l;
+      c.setHex(base); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.03 : 0.02) - 0.05 * Math.abs(l));
+      col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
+    }
+    const i2 = (i + 1) % RIB_N;
+    for (let j = 0; j + 1 < RIB_L.length; j++){ const a = i * RIB_L.length + j, b = i2 * RIB_L.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
 }
 
-/* berm faces on the outside of the banked corners */
-const berms = [];
-for (const g of COURSE){ if (g.corner && g.corner.bank > 0){ const m = box(g.len - 4, 0.10, 1.0, 0x7C5D40); m.material.transparent = true; m.material.opacity = 0.42; m.rotation.x = -g.corner.bank; scene.add(m); berms.push({ g, m }); } }   // the berm wall sits between the camera and the bike, so it is drawn see-through
-function updateBerms(){
-  for (const b of berms){ const x = b.g.start + b.g.len / 2 - scroll; b.m.visible = Math.abs(x) < 40;
-    const base = b.g.base + b.g.grade * b.g.len / 2, bk = b.g.corner.bank;
-    b.m.position.set(x, base + 0.5 * Math.sin(bk) - 0.03, 1.0 + 0.5 * Math.cos(bk)); }
-}
-/* obstacle meshes */
-const obstMeshes = [];
+/* ---- obstacles on the ribbon ---- */
 for (const o of OBST){
   let m;
-  if (o.type === 'log'){ m = new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r, 2.6, 10), mat(0x5A4030)); m.rotation.x = Math.PI / 2; }
-  else if (o.type === 'rock'){ m = box(o.w, o.h, 1.6, 0x9A958B); }
-  else { m = box(o.w, o.h, 2.0, 0x66625A); }
-  m.visible = false; scene.add(m); obstMeshes.push(m);
+  if (o.type === 'log'){ m = new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r, 2.8, 10), mat(0x5A4030)); m.rotation.x = Math.PI / 2; }
+  else if (o.type === 'rock'){ m = box(o.w, o.h, 1.9, 0x9A958B); }
+  else { m = box(o.w, o.h, 2.4, 0x66625A); }
+  const P = pathAt(o.u), base = terrainAt(o.u);
+  const holder = new THREE.Group(); holder.position.set(P.x, base, P.z); holder.rotation.y = -P.theta;
+  m.position.set(0, o.type === 'log' ? o.r : o.h / 2 - 0.02, 0); holder.add(m); scene.add(holder);
 }
-function updateObstacles(){
-  for (let i = 0; i < OBST.length; i++){
-    const o = OBST[i], m = obstMeshes[i], x = o.u - scroll;
-    if (x < -7 || x > 7){ m.visible = false; continue; }
-    m.visible = true;
-    const base = terrainAt(o.u);
-    if (o.type === 'log') m.position.set(x, base + o.r, 0.1);
-    else if (o.type === 'rock') m.position.set(x, base + o.h / 2 - 0.02, 0.1);
-    else m.position.set(x, base + o.h / 2 - 0.02, -0.1);
+
+/* ---- forest, scattered rocks, far hills ---- */
+{
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const trunkM = mat(0x5C4633), leafA = mat(0x3E6644), leafB = mat(0x35573B), rockM = mat(0x8A857B);
+  let placed = 0, tries = 0;
+  while (placed < 190 && tries < 4000){
+    tries++;
+    const x = WCX + (rnd() - 0.5) * WSIZE * 0.92, z = WCZ + (rnd() - 0.5) * WSIZE * 0.92;
+    const ti = trailInfo(x, z); if (ti.d < 3.4) continue;
+    const y = worldHeight(x, z, ti), sc = 0.9 + rnd() * 0.9;
+    const g = new THREE.Group();
+    const trunk = new THREE.Mesh(new THREE.BoxGeometry(0.16, 1.2 * sc, 0.16), trunkM); trunk.position.y = 0.6 * sc;
+    const c1 = new THREE.Mesh(new THREE.BoxGeometry(1.1 * sc, 1.1 * sc, 1.1 * sc), rnd() < 0.5 ? leafA : leafB); c1.rotation.set(0, Math.PI / 4, Math.PI / 4); c1.position.y = 1.5 * sc;
+    const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.8 * sc, 0.8 * sc, 0.8 * sc), rnd() < 0.5 ? leafA : leafB); c2.rotation.set(0, Math.PI / 4, Math.PI / 4); c2.position.y = 2.3 * sc;
+    g.add(trunk, c1, c2); g.position.set(x, y - 0.1, z); scene.add(g); placed++;
+  }
+  for (let i = 0; i < 45; i++){
+    const x = WCX + (rnd() - 0.5) * WSIZE * 0.9, z = WCZ + (rnd() - 0.5) * WSIZE * 0.9;
+    const ti = trailInfo(x, z); if (ti.d < 2.5) continue;
+    const r = new THREE.Mesh(new THREE.BoxGeometry(0.6 + rnd() * 1.6, 0.4 + rnd() * 0.9, 0.6 + rnd() * 1.4), rockM); r.rotation.y = rnd() * 3; r.position.set(x, worldHeight(x, z, ti) + 0.1, z); scene.add(r);
+  }
+  for (let i = 0; i < 26; i++){
+    const a = i / 26 * Math.PI * 2, R = WSIZE * 0.62 + (i % 3) * 14, h = 18 + (i % 4) * 9;
+    const m = box(h * 1.5, h * 1.5, 2, i % 2 ? 0x8AA3AE : 0x7F9AA8); m.rotation.z = Math.PI / 4; m.rotation.y = -a;
+    m.position.set(WCX + Math.cos(a) * R, -4, WCZ + Math.sin(a) * R); scene.add(m);
   }
 }
+
+window.WORLD_BUILD_MS = performance.now() - _tBuild;
+/* ---- minimap ---- */
+const mm = $('mm'), mmc = mm.getContext('2d');
+function drawMinimap(){
+  const W = mm.width, Hh = mm.height, scale = Math.min(W, Hh) * 0.88 / Math.max(bx1 - bx0, bz1 - bz0);
+  const tx = x => W / 2 + (x - WCX) * scale, tz = z => Hh / 2 + (z - WCZ) * scale;
+  mmc.clearRect(0, 0, W, Hh); mmc.fillStyle = 'rgba(20,24,16,0.6)'; mmc.fillRect(0, 0, W, Hh);
+  mmc.strokeStyle = '#D9A441'; mmc.lineWidth = 2; mmc.beginPath();
+  for (let i = 0; i < PATH.n; i += 2){ const X = tx(PATH.x[i]), Z = tz(PATH.z[i]); i === 0 ? mmc.moveTo(X, Z) : mmc.lineTo(X, Z); }
+  mmc.closePath(); mmc.stroke();
+  mmc.fillStyle = '#9A958B'; for (const o of OBST){ const P = pathAt(o.u); mmc.fillRect(tx(P.x) - 1.5, tz(P.z) - 1.5, 3, 3); }
+  const P = pathAt(scroll); mmc.fillStyle = '#EFE8D6'; mmc.beginPath(); mmc.arc(tx(P.x), tz(P.z), 3.5, 0, 7); mmc.fill();
+  mmc.strokeStyle = '#EFE8D6'; mmc.beginPath(); mmc.moveTo(tx(P.x), tz(P.z)); mmc.lineTo(tx(P.x) + Math.cos(P.theta) * 9, tz(P.z) + Math.sin(P.theta) * 9); mmc.stroke();
+}
+
 /* limbs */
 const DOWN = new THREE.Vector3(0, -1, 0), _dir = new THREE.Vector3();
 function limb(len, w, d, color){ const g = new THREE.BoxGeometry(w, len, d); g.translate(0, -len / 2, 0); const m = new THREE.Mesh(g, mat(color)); m.userData.len = len; return m; }
@@ -839,11 +949,11 @@ const shadF = box(0.55, 0.02, 0.3, 0x3F3226), shadR = box(0.55, 0.02, 0.3, 0x3F3
 
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
 const jointsOut = { knee: 130, hip: 90, elbow: 120, torso: 25 };
-let leanVis = 0, yawVis = 0, steerVis = 0, headTurnVis = 0;
+let leanVis = 0, leanVel = 0, leanAcc = 0, yawVis = 0, steerVis = 0, headTurnVis = 0;
 function pose(dt){
-  const gy = groundAt(scroll);                                         // the rig rolls about the trail surface under the bike
-  rig.position.set(0, gy, 0);
-  rig.rotation.x = -leanVis; rig.rotation.y = yawVis;
+  const gy = groundAt(scroll), PW = pathAt(scroll);                    // the rig sits on the trail, yawed to the tangent, rolled to the lean
+  rig.position.set(PW.x, gy, PW.z);
+  rig.rotation.x = -leanVis; rig.rotation.y = -PW.theta;
   frame.position.set(0, chassis.y - gy, 0); frame.rotation.z = chassis.phi; frame.updateMatrixWorld(true);
   const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi);
   /* rear linkage from the table */
@@ -914,25 +1024,27 @@ function pose(dt){
   }
   jointsOut.knee = kneeAng; jointsOut.elbow = elbowAng; jointsOut.torso = cur.torso - Math.atan(gradeS) / D2R + chassis.phi / D2R;
   /* camera & backdrop follow */
-  camTarget.y += ((chassis.y + 0.55) - camTarget.y) * (snapCam ? 1 : Math.min(1, dt * 2.5)); snapCam = false;
+  /* roll: a second-order response to the lean the corner asks for (the rider steers into it) */
+  leanAcc = 60 * (corner.lean - leanVis) - 14 * leanVel; leanVel += leanAcc * dt; leanVis += leanVel * dt;
   const av = Math.min(1, dt * 5);
-  leanVis += (corner.lean - leanVis) * av; yawVis += ((corner.active ? 0.22 : 0) - yawVis) * av;
-  steerVis += ((corner.active ? 0.35 : 0) - steerVis) * av; headTurnVis += ((corner.active || corner.ahead < 6 ? 0.6 : 0) - headTurnVis) * av;
-  backdrop.position.y = camTarget.y - 0.9;
-  placeCamera();
+  steerVis += (clamp(-PW.kappa * 2.2, -0.5, 0.5) - steerVis) * av; headTurnVis += (clamp(-pathAt(scroll + 6).kappa * 3, -0.7, 0.7) - headTurnVis) * av;
+  /* chase camera: behind and to the right, orbitable by drag */
+  const fx = Math.cos(PW.theta), fz = Math.sin(PW.theta), rx = -fz, rz = fx;
+  const az = camAz, r = 5.6, el = 0.33 + camEl;
+  const ox = -Math.cos(az) * 0.72 + Math.sin(az) * 0.69, oz = Math.sin(az) * 0.72 + Math.cos(az) * 0.69;
+  const want = new THREE.Vector3(PW.x + (fx * ox + rx * oz) * r * Math.cos(el), chassis.y + 0.4 + r * Math.sin(el), PW.z + (fz * ox + rz * oz) * r * Math.cos(el));
+  const tgt = new THREE.Vector3(PW.x, chassis.y + 0.55, PW.z);
+  if (snapCam){ camPos.copy(want); camLook.copy(tgt); snapCam = false; }
+  camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(tgt, Math.min(1, dt * 9));
+  camera.position.copy(camPos); camera.lookAt(camLook);
 }
-function parallax(dt){
-  const sweep = corner.active ? 2.2 : 1;                                             // the view sweeps faster through a turn
-  for (const [g, f, period] of [[hillsFar, 0.06, 7.2], [hillsNear, 0.14, 6.0], [trees, 0.42, 1.6]]){ g.position.x -= v * f * sweep * dt; if (g.position.x < -period) g.position.x += period; }
-}
-
 /* =============== main loop =============== */
 let last = performance.now(), acc = 0;
 function tick(now){
   requestAnimationFrame(tick);
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 60){ step(PDT); acc -= PDT; n++; } parallax(dt); }
-  updateTerrain(); updateObstacles(); updateBerms(); pose(riding ? dt : 0); updateHud(jointsOut); renderer.render(scene, camera);
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 60){ step(PDT); acc -= PDT; n++; } }
+  pose(riding ? dt : 0); updateHud(jointsOut); drawMinimap(); renderer.render(scene, camera);
 }
 requestAnimationFrame(tick);
 window.SIM = { chassis, wheelF, wheelR, rider, get v(){ return v; }, get scroll(){ return scroll; }, get state(){ return poseState; }, seg: () => segAt(scroll)[0].name, VT, GEO, A2C, joints: jointsOut };
