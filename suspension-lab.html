@@ -2,9 +2,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <style>
   :root{
-    --bg:#191233; --panel:#241B45; --panel2:#1E1640; --line:#3A2E66;
-    --ink:#F4EFDF; --dim:#9C92C4;
-    --amber:#FFB23E; --front:#53D7C0; --rear:#FF7A6B; --danger:#FF4D5E;
+    --bg:#23261E; --panel:#2F3328; --panel2:#262A20; --line:#484D3C;
+    --ink:#EFE8D6; --dim:#A39F88;
+    --accent:#D9A441; --front:#7FA6C9; --rear:#D4784E; --danger:#D9534F;
     --disp:'Silkscreen',monospace; --mono:'IBM Plex Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box}
@@ -15,17 +15,17 @@
   .wrap{max-width:1060px; margin:0 auto; padding:18px 16px 40px; display:flex; flex-direction:column; gap:14px}
 
   header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
-  h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--amber); text-shadow:3px 3px 0 #0d0a22}
+  h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--accent); text-shadow:3px 3px 0 #15170f}
   .sub{color:var(--dim); font-size:12px; margin-top:2px}
   .hdr-controls{display:flex; align-items:center; gap:14px; flex-wrap:wrap}
 
-  .terrain{display:flex; gap:0; border:2px solid var(--line)}
+  .terrain{display:flex; flex-wrap:wrap; border:2px solid var(--line)}
   .terrain button{
-    font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 12px;
+    font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:8px 10px;
     background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer;
   }
   .terrain button:last-child{border-right:0}
-  .terrain button.on{background:var(--amber); color:#1a1030}
+  .terrain button.on{background:var(--accent); color:#1d1a10}
   .terrain button:focus-visible, .btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
 
   .speedbox{display:flex; align-items:center; gap:8px}
@@ -34,75 +34,71 @@
 
   .btn{
     font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 16px; cursor:pointer;
-    background:var(--front); color:#0e2b26; border:2px solid var(--line);
+    background:var(--front); color:#132030; border:2px solid var(--line);
   }
   .btn[data-riding="1"]{background:var(--panel2); color:var(--ink)}
 
-  .scene{
-    border:3px solid var(--line); background:#221A4E; position:relative; overflow:hidden;
-  }
+  .scene{border:3px solid var(--line); background:#7FAACB; position:relative; overflow:hidden}
   .scene canvas{display:block; width:100%; height:auto; image-rendering:pixelated; touch-action:none; cursor:grab}
   .scene .hint{
-    position:absolute; right:8px; bottom:6px; font-size:10px; color:#cfc6ef; opacity:.75;
-    background:rgba(13,10,34,.55); padding:2px 6px; pointer-events:none;
+    position:absolute; right:8px; bottom:6px; font-size:10px; color:#EFE8D6; opacity:.8;
+    background:rgba(20,24,16,.55); padding:2px 6px; pointer-events:none;
   }
 
   .bench{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-  .card{background:var(--panel); border:3px solid var(--line); padding:14px 14px 16px}
+  .card{background:var(--panel); border:3px solid var(--line); padding:14px 12px 16px}
   .card h2{
     font-family:var(--disp); font-size:14px; letter-spacing:1px; margin:0;
     display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap;
   }
   .card h2 .spec{font-family:var(--mono); font-weight:400; font-size:11px; color:var(--dim); letter-spacing:0}
-  .card.rear h2 span.name{color:var(--rear)}
-  .card.front h2 span.name{color:var(--front)}
+  .card.rear h2 .name{color:var(--rear)}
+  .card.front h2 .name{color:var(--front)}
 
-  .card-body{display:grid; grid-template-columns:64px 1fr; gap:16px; margin-top:12px}
+  /* mixing-desk channel strips: travel gauge + three vertical faders */
+  .desk{display:flex; justify-content:space-between; gap:6px; margin-top:14px; padding:0 4px}
+  .ch{display:flex; flex-direction:column; align-items:center; gap:8px; width:74px}
+  .ch .val{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--accent); line-height:1; height:16px}
+  .card.front .ch .val{color:var(--front)}
+  .card.rear .ch .val{color:var(--rear)}
+  .ch .lbl{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); text-align:center; line-height:1.5}
+  .ch .lbl u{text-decoration:none; color:var(--ink)}
 
-  .gauge{display:flex; flex-direction:column; align-items:center; gap:6px}
-  .gauge .lbl{font-family:var(--disp); font-size:9px; color:var(--dim); letter-spacing:1px}
-  .bar{
-    position:relative; width:26px; height:160px; background:var(--panel2);
-    border:2px solid var(--line);
-  }
-  .bar .fill{position:absolute; left:0; right:0; top:0; height:0%; background:var(--amber)}
+  .bar{position:relative; width:28px; height:160px; background:var(--panel2); border:2px solid var(--line)}
+  .bar .fill{position:absolute; left:0; right:0; top:0; height:0%}
   .card.front .bar .fill{background:var(--front)}
   .card.rear .bar .fill{background:var(--rear)}
-  .bar .bo-zone{position:absolute; left:0; right:0; bottom:0; height:8%; background:rgba(255,77,94,.35)}
+  .bar .bo-zone{position:absolute; left:0; right:0; bottom:0; height:8%; background:rgba(217,83,79,.35)}
   .bar .sag{position:absolute; left:-6px; right:-6px; height:0; border-top:2px dashed var(--ink)}
-  .bar .pack{position:absolute; left:-10px; width:0; height:0;
-    border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid var(--amber); margin-top:-5px}
+  .bar .pack{position:absolute; left:-11px; width:0; height:0;
+    border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid var(--accent); margin-top:-5px}
   .bar.bo .fill{background:var(--danger)}
 
-  .sliders{display:flex; flex-direction:column; gap:12px; min-width:0}
-  .srow label{
-    display:flex; justify-content:space-between; gap:8px; align-items:baseline;
-    font-family:var(--disp); font-size:10px; letter-spacing:1px; color:var(--ink);
+  .fader{position:relative; width:44px; height:160px}
+  .fader::before{content:""; position:absolute; left:50%; top:0; bottom:0; width:8px; margin-left:-4px;
+    background:var(--panel2); border:2px solid var(--line)}
+  .fader input{
+    position:absolute; left:50%; top:50%; width:160px; height:24px; margin:0;
+    transform:translate(-50%,-50%) rotate(-90deg);
   }
-  .srow label output{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--amber); font-variant-numeric:tabular-nums; letter-spacing:0}
-  .card.front .srow label output{color:var(--front)}
-  .card.rear .srow label output{color:var(--rear)}
-
-  input[type=range]{
-    -webkit-appearance:none; appearance:none; width:100%; height:22px; margin:4px 0 0;
-    background:transparent; cursor:pointer;
-  }
+  input[type=range]{-webkit-appearance:none; appearance:none; background:transparent; cursor:pointer}
+  #speed{width:110px; height:22px}
   input[type=range]::-webkit-slider-runnable-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
   input[type=range]::-moz-range-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  .fader input::-webkit-slider-runnable-track{background:transparent; border-color:transparent}
+  .fader input::-moz-range-track{background:transparent; border-color:transparent}
   input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none; width:18px; height:18px; margin-top:-7px;
-    background:var(--amber); border:2px solid #0d0a22;
+    -webkit-appearance:none; width:20px; height:20px; margin-top:-8px;
+    background:var(--accent); border:2px solid #15170f;
   }
-  input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:0; background:var(--amber); border:2px solid #0d0a22}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:0; background:var(--accent); border:2px solid #15170f}
   .card.front input[type=range]::-webkit-slider-thumb{background:var(--front)}
   .card.front input[type=range]::-moz-range-thumb{background:var(--front)}
   .card.rear input[type=range]::-webkit-slider-thumb{background:var(--rear)}
   .card.rear input[type=range]::-moz-range-thumb{background:var(--rear)}
   input[type=range]:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
 
-  .reads{
-    display:flex; gap:0; margin-top:14px; border:2px solid var(--line); background:var(--panel2);
-  }
+  .reads{display:flex; margin-top:14px; border:2px solid var(--line); background:var(--panel2)}
   .read{flex:1; padding:7px 10px; border-right:2px solid var(--line); min-width:0}
   .read:last-child{border-right:0}
   .read .k{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); white-space:nowrap}
@@ -126,13 +122,17 @@
     </div>
     <div class="hdr-controls">
       <div class="terrain" role="group" aria-label="Terrain">
-        <button type="button" data-t="whoops" class="on">WHOOPS</button>
-        <button type="button" data-t="roots">ROOTS</button>
-        <button type="button" data-t="drops">DROPS</button>
+        <button type="button" data-t="trail" class="on">TRAIL</button>
+        <button type="button" data-t="whoops">WHOOPS</button>
+        <button type="button" data-t="rollers">ROLLERS</button>
+        <button type="button" data-t="gout">G-OUT</button>
+        <button type="button" data-t="rocks">ROCKS</button>
+        <button type="button" data-t="jump">JUMP</button>
+        <button type="button" data-t="huck">HUCK</button>
       </div>
       <div class="speedbox">
         <label for="speed">SPEED</label>
-        <input id="speed" type="range" min="5" max="25" step="1" value="13" style="width:110px">
+        <input id="speed" type="range" min="5" max="25" step="1" value="13">
         <output id="speedOut">13 mph</output>
       </div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
@@ -146,81 +146,84 @@
 
   <div class="bench">
     <section class="card rear">
-      <h2><span class="name">REAR SHOCK</span><span class="spec">150 mm travel &middot; coil &middot; 2.9:1 leverage</span></h2>
-      <div class="card-body">
-        <div class="gauge">
+      <h2><span class="name">REAR SHOCK</span><span class="spec">150 mm &middot; coil &middot; 2.9:1 leverage</span></h2>
+      <div class="desk">
+        <div class="ch">
+          <div class="val" id="rUsed">44</div>
           <div class="bar" id="barR">
             <div class="bo-zone"></div>
             <div class="fill" id="fillR"></div>
             <div class="sag" id="sagR"></div>
             <div class="pack" id="packR" title="dynamic ride height"></div>
           </div>
-          <div class="lbl">TRAVEL</div>
+          <div class="lbl"><u>TRAVEL</u><br>mm used</div>
         </div>
-        <div class="sliders">
-          <div class="srow">
-            <label for="rSpring">COIL SPRING <output id="rSpringOut">480 lb/in</output></label>
-            <input id="rSpring" type="range" min="300" max="650" step="25" value="480">
-          </div>
-          <div class="srow">
-            <label for="rComp">COMPRESSION <output id="rCompOut">7 clicks</output></label>
-            <input id="rComp" type="range" min="0" max="20" step="1" value="7">
-          </div>
-          <div class="srow">
-            <label for="rReb">REBOUND <output id="rRebOut">9 clicks</output></label>
-            <input id="rReb" type="range" min="0" max="20" step="1" value="9">
-          </div>
+        <div class="ch">
+          <output class="val" id="rSpringOut" for="rSpring">480</output>
+          <div class="fader"><input id="rSpring" type="range" min="300" max="650" step="25" value="480" aria-label="Rear coil spring, lb/in"></div>
+          <label class="lbl" for="rSpring"><u>COIL</u><br>lb/in</label>
+        </div>
+        <div class="ch">
+          <output class="val" id="rCompOut" for="rComp">7</output>
+          <div class="fader"><input id="rComp" type="range" min="0" max="20" step="1" value="7" aria-label="Rear compression clicks"></div>
+          <label class="lbl" for="rComp"><u>COMP</u><br>clicks</label>
+        </div>
+        <div class="ch">
+          <output class="val" id="rRebOut" for="rReb">9</output>
+          <div class="fader"><input id="rReb" type="range" min="0" max="20" step="1" value="9" aria-label="Rear rebound clicks"></div>
+          <label class="lbl" for="rReb"><u>REBOUND</u><br>clicks</label>
         </div>
       </div>
       <div class="reads">
         <div class="read"><div class="k">SAG</div><div class="v" id="rSag">29%</div></div>
         <div class="read"><div class="k">RIDE HEIGHT</div><div class="v" id="rPack">29%</div></div>
-        <div class="read"><div class="k">USED</div><div class="v" id="rUsed">44 mm</div></div>
-        <div class="read"><div class="k">B.O.</div><div class="v" id="rBo">0</div></div>
+        <div class="read"><div class="k">BOTTOM-OUTS</div><div class="v" id="rBo">0</div></div>
       </div>
     </section>
 
     <section class="card front">
-      <h2><span class="name">FRONT FORK</span><span class="spec">160 mm travel &middot; air spring</span></h2>
-      <div class="card-body">
-        <div class="gauge">
+      <h2><span class="name">FRONT FORK</span><span class="spec">160 mm &middot; air spring</span></h2>
+      <div class="desk">
+        <div class="ch">
+          <div class="val" id="fUsed">39</div>
           <div class="bar" id="barF">
             <div class="bo-zone"></div>
             <div class="fill" id="fillF"></div>
             <div class="sag" id="sagF"></div>
             <div class="pack" id="packF" title="dynamic ride height"></div>
           </div>
-          <div class="lbl">TRAVEL</div>
+          <div class="lbl"><u>TRAVEL</u><br>mm used</div>
         </div>
-        <div class="sliders">
-          <div class="srow">
-            <label for="fSpring">AIR SPRING <output id="fSpringOut">92 psi</output></label>
-            <input id="fSpring" type="range" min="50" max="130" step="2" value="92">
-          </div>
-          <div class="srow">
-            <label for="fComp">COMPRESSION <output id="fCompOut">6 clicks</output></label>
-            <input id="fComp" type="range" min="0" max="20" step="1" value="6">
-          </div>
-          <div class="srow">
-            <label for="fReb">REBOUND <output id="fRebOut">8 clicks</output></label>
-            <input id="fReb" type="range" min="0" max="20" step="1" value="8">
-          </div>
+        <div class="ch">
+          <output class="val" id="fSpringOut" for="fSpring">92</output>
+          <div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="92" aria-label="Fork air spring, psi"></div>
+          <label class="lbl" for="fSpring"><u>AIR</u><br>psi</label>
+        </div>
+        <div class="ch">
+          <output class="val" id="fCompOut" for="fComp">6</output>
+          <div class="fader"><input id="fComp" type="range" min="0" max="20" step="1" value="6" aria-label="Fork compression clicks"></div>
+          <label class="lbl" for="fComp"><u>COMP</u><br>clicks</label>
+        </div>
+        <div class="ch">
+          <output class="val" id="fRebOut" for="fReb">8</output>
+          <div class="fader"><input id="fReb" type="range" min="0" max="20" step="1" value="8" aria-label="Fork rebound clicks"></div>
+          <label class="lbl" for="fReb"><u>REBOUND</u><br>clicks</label>
         </div>
       </div>
       <div class="reads">
         <div class="read"><div class="k">SAG</div><div class="v" id="fSag">24%</div></div>
         <div class="read"><div class="k">RIDE HEIGHT</div><div class="v" id="fPack">24%</div></div>
-        <div class="read"><div class="k">USED</div><div class="v" id="fUsed">39 mm</div></div>
-        <div class="read"><div class="k">B.O.</div><div class="v" id="fBo">0</div></div>
+        <div class="read"><div class="k">BOTTOM-OUTS</div><div class="v" id="fBo">0</div></div>
       </div>
     </section>
   </div>
 
-  <p class="note"><b>How to read it:</b> the dashed line on each travel bar is static sag; the amber arrow is
-  dynamic ride height (a rolling average of travel used). Add rebound clicks and the damper returns slower than
-  the whoops arrive &mdash; the arrow sinks and the suspension <b>packs down</b>, riding deep with little travel
-  left. Back the rebound out to 0&ndash;2 clicks and the return velocity spikes: watch the bike pogo off the
-  DROPS landing. Compression clicks slow the stroke into the bump instead; spring rate sets where sag sits.</p>
+  <p class="note"><b>How to read it:</b> the dashed line on each travel bar is static sag; the yellow arrow is
+  dynamic ride height (a rolling average of travel used). TRAIL strings everything together: rollers, a G-out,
+  a rock garden, a tabletop, long undulations, then a huck to flat. Add rebound clicks and the damper returns
+  slower than the whoops arrive &mdash; the arrow sinks and the suspension <b>packs down</b>, riding deep with little
+  travel left. Back the rebound out to 0&ndash;2 clicks and the return velocity spikes: watch it pogo off the
+  huck landing. Compression clicks slow the stroke into the hit instead; spring rate sets where sag sits.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -248,12 +251,12 @@ function applyTuning(){
   front.cReb  = 140 * Math.pow(16, +ui.fReb.value  / 20);
   rear.cComp  = 120 * Math.pow(10, +ui.rComp.value / 20);
   rear.cReb   = 190 * Math.pow(16, +ui.rReb.value  / 20);
-  ui.fSpringOut.textContent = fPsi + ' psi';
-  ui.rSpringOut.textContent = rLb + ' lb/in';
-  ui.fCompOut.textContent = ui.fComp.value + ' clicks';
-  ui.fRebOut.textContent  = ui.fReb.value  + ' clicks';
-  ui.rCompOut.textContent = ui.rComp.value + ' clicks';
-  ui.rRebOut.textContent  = ui.rReb.value  + ' clicks';
+  ui.fSpringOut.textContent = fPsi;
+  ui.rSpringOut.textContent = rLb;
+  ui.fCompOut.textContent = ui.fComp.value;
+  ui.fRebOut.textContent  = ui.fReb.value;
+  ui.rCompOut.textContent = ui.rComp.value;
+  ui.rRebOut.textContent  = ui.rReb.value;
   for (const [c, el] of [[front, ui.fSag], [rear, ui.rSag]]){
     c.sag = Math.min(0.9, c.m * G9 / c.k / c.travel);
     el.textContent = Math.round(c.sag * 100) + '%';
@@ -262,21 +265,50 @@ function applyTuning(){
   ui.sagR.style.top = (rear.sag  * 100) + '%';
 }
 
-/* terrain height along track coordinate u (meters) */
-let terrainMode = 'whoops';
-function groundAt(u){
-  if (terrainMode === 'whoops'){
-    return 0.105 * Math.pow(Math.max(0, Math.sin(u * Math.PI * 2 / 1.15)), 1.4);
-  }
-  if (terrainMode === 'roots'){
-    return 0.055 * Math.max(0, Math.sin(u * 5.3)) * (0.55 + 0.45 * Math.sin(u * 1.27 + 0.8))
-         + 0.025 * Math.max(0, Math.sin(u * 9.1 + 2));
-  }
-  const p = ((u % 7) + 7) % 7;                 // drops: ramp up, table, square-edge drop
-  if (p < 2.4) return 0.36 * (p / 2.4);
-  if (p < 4.2) return 0.36;
-  return 0;
+/* ================= terrain: a course built from trail features ================= */
+function hash(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+const smooth = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+const SEG = {
+  flat: len => ({ len, type: 'dirt', h: () => 0 }),
+  rollers: (n, lam, A) => ({ len: n * lam, type: 'dirt', h: t => A * (1 - Math.cos(2 * Math.PI * t / lam)) / 2 }),
+  whoops: (n, lam, A) => ({ len: n * lam, type: 'dirt', h: t => A * Math.pow(Math.max(0, Math.sin(Math.PI * t / lam)), 1.4) }),
+  gout: (len, D) => ({ len, type: 'dirt', h: t => -D * (1 - Math.pow(Math.abs(2 * t / len - 1), 1.7)) }),
+  jump: H => { const L = 2.4, T = 2.6, D = 3.4;                 // kicker lip, tabletop, landing
+    return { len: L + T + D, type: 'built',
+      h: t => t < L ? H * Math.pow(t / L, 1.8) : t < L + T ? H : H * (1 - (t - L - T) / D) }; },
+  rocks: len => ({ len, type: 'rock', h: t => {                  // square-edged rocks with 8 cm blended edges
+    const cw = 0.42, cell = Math.floor(t / cw), f = t / cw - cell;
+    const a = 0.02 + hash(cell) * 0.10, b = 0.02 + hash(cell + 1) * 0.10;
+    const w = Math.pow(Math.sin(Math.PI * t / len), 0.35);
+    return (a + (b - a) * smooth((f - 0.81) / 0.19)) * w; } }),
+  huck: H => { const U = 3.2, P = 2.2, L = 5;                    // roll-up, ledge, sheer drop to flat
+    return { len: U + P + L, type: 'built',
+      h: t => t < U ? H * (1 - Math.cos(Math.PI * t / U)) / 2 : t < U + P ? H : 0 }; }
+};
+const COURSES = {
+  trail: [SEG.flat(3), SEG.rollers(3, 3, 0.22), SEG.flat(2), SEG.gout(4.5, 0.5), SEG.flat(2.5), SEG.rocks(6),
+          SEG.flat(2.5), SEG.jump(0.6), SEG.flat(3), SEG.rollers(2, 6, 0.45), SEG.flat(2), SEG.whoops(6, 1.15, 0.1),
+          SEG.flat(2), SEG.huck(0.9), SEG.flat(3)],
+  whoops:  [SEG.whoops(8, 1.15, 0.105)],
+  rollers: [SEG.rollers(3, 3, 0.22), SEG.rollers(1, 6, 0.45)],
+  gout:    [SEG.flat(2), SEG.gout(4.5, 0.5), SEG.flat(2)],
+  rocks:   [SEG.flat(1.5), SEG.rocks(7), SEG.flat(1.5)],
+  jump:    [SEG.flat(2), SEG.jump(0.6), SEG.flat(3)],
+  huck:    [SEG.flat(2), SEG.huck(0.9), SEG.flat(4)]
+};
+let course = COURSES.trail, courseLen = 0;
+function setCourse(name){
+  course = COURSES[name];
+  courseLen = course.reduce((s, g) => s + g.len, 0);
 }
+setCourse('trail');
+function segAt(u){
+  let p = u % courseLen; if (p < 0) p += courseLen;
+  for (const g of course){ if (p < g.len) return [g, p]; p -= g.len; }
+  return [course[0], 0];
+}
+function groundAt(u){ const [g, t] = segAt(u); return g.h(t); }
+function groundType(u){ return segAt(u)[0].type; }
 
 let scroll = 0, speed = 13 * 0.447, riding = true;
 
@@ -285,11 +317,11 @@ function stepCorner(c, dt){
   const eps = 0.01;
   const gVel = (groundAt(scroll + c.x + eps) - groundAt(scroll + c.x - eps)) / (2 * eps) * speed;
   const contactY = gx + WHEEL_R;               // axle height if the tire is on the dirt
-  let ext = c.y - contactY;                    // current strut length (vertical)
+  const ext = c.y - contactY;                  // current strut length (vertical)
   let F = -c.m * G9;
   if (ext < c.L0){                             // in contact, spring engaged
     c.airborne = false;
-    let comp = c.L0 - ext;
+    const comp = c.L0 - ext;
     const compVel = gVel - c.v;                // >0 while compressing
     F += c.k * comp;
     F += (compVel > 0 ? c.cComp : c.cReb) * compVel;
@@ -308,9 +340,8 @@ function stepCorner(c, dt){
   }
   c.v += (F / c.m) * dt;
   c.y += c.v * dt;
-  if (c.y < gx + WHEEL_R + c.L0 - c.travel - 0.05){   // hard floor safety
-    c.y = gx + WHEEL_R + c.L0 - c.travel - 0.05; c.v = Math.max(0, c.v);
-  }
+  const floor = gx + WHEEL_R + c.L0 - c.travel - 0.05;
+  if (c.y < floor){ c.y = floor; c.v = Math.max(0, c.v); }
   c.boCooldown -= dt;
   c.ema += (c.comp - c.ema) * Math.min(1, dt * 1.6);
 }
@@ -350,7 +381,7 @@ ui.rideBtn.addEventListener('click', () => {
 document.querySelectorAll('.terrain button').forEach(b => {
   b.addEventListener('click', () => {
     document.querySelectorAll('.terrain button').forEach(x => x.classList.toggle('on', x === b));
-    terrainMode = b.dataset.t;
+    setCourse(b.dataset.t);
     scroll = 0; resetCorners();
   });
 });
@@ -370,7 +401,7 @@ function updateHud(){
     pack.style.top = ema.toFixed(1) + '%';
     packV.textContent = Math.round(ema) + '%';
     packV.classList.toggle('warn', ema > c.sag * 100 + 18);
-    used.textContent = Math.round(c.comp * 1000) + ' mm';
+    used.textContent = Math.round(c.comp * 1000);
     bo.textContent = c.boCount;
     bar.classList.toggle('bo', c.boFlash > 0);
     c.boFlash -= 1 / 60;
@@ -382,12 +413,12 @@ const canvas = $('cv');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
 renderer.setSize(416, 234, false);
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x221A4E);
+scene.background = new THREE.Color(0x7FAACB);
 const camera = new THREE.PerspectiveCamera(38, 416 / 234, 0.1, 60);
-const camTarget = new THREE.Vector3(0, 0.62, 0);
-let camAz = 0.32, camEl = 0.16;
+const camTarget = new THREE.Vector3(0, 0.66, 0);
+let camAz = 0.32, camEl = 0.19;
 function placeCamera(){
-  const r = 4.0;
+  const r = 4.1;
   camera.position.set(
     camTarget.x + r * Math.sin(camAz) * Math.cos(camEl),
     camTarget.y + r * Math.sin(camEl),
@@ -402,52 +433,65 @@ canvas.addEventListener('pointermove', e => {
   if (!dragging) return;
   camAz = Math.max(-1.15, Math.min(1.15, camAz + (e.clientX - px) * 0.006));
   camEl = Math.max(0.04, Math.min(0.6,  camEl + (e.clientY - py) * 0.004));
-  px = e.clientX; py = e.clientY; placeCamera();
+  px = e.clientX; py = e.clientY;
 });
 canvas.addEventListener('pointerup', () => dragging = false);
 
-scene.add(new THREE.AmbientLight(0xbcaee0, 0.85));
-const sun = new THREE.DirectionalLight(0xffe0b0, 0.7);
+scene.add(new THREE.AmbientLight(0xdfe8f0, 0.9));
+const sun = new THREE.DirectionalLight(0xfff2d6, 0.75);
 sun.position.set(2, 4, 3);
 scene.add(sun);
 
 const mat = c => new THREE.MeshLambertMaterial({ color: c });
 const box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
 
-/* sky bands + sun + parallax mountains */
-const skyCols = [0x33235F, 0x58306E, 0x93415F, 0xC85E52];
+/* sky bands, sun, parallax hills and a tree line */
+const skyCols = [0x7FAACB, 0x9BC0D8, 0xB7D2E0, 0xD3DCD3];
 skyCols.forEach((c, i) => {
   const b = new THREE.Mesh(new THREE.PlaneGeometry(60, 1.6), new THREE.MeshBasicMaterial({ color: c }));
   b.position.set(0, 4.0 - i * 1.6, -12); scene.add(b);
 });
-const sunSq = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4), new THREE.MeshBasicMaterial({ color: 0xFFD37A }));
-sunSq.position.set(-6.5, 3.3, -11.6); scene.add(sunSq);
-function mountainLayer(z, col, h, n, seedStep){
+const sunSq = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.2), new THREE.MeshBasicMaterial({ color: 0xF6EDC2 }));
+sunSq.position.set(-6.5, 3.4, -11.6); scene.add(sunSq);
+function hillLayer(z, col, h, n, step){
   const g = new THREE.Group();
   for (let i = 0; i < n; i++){
     const m = box(h * 1.5, h * 1.5, 0.1, col);
     m.rotation.z = Math.PI / 4;
-    m.position.set(-9 + i * seedStep + (i % 3) * 0.7, -0.4 + (i % 2) * 0.25 * h, z);
+    m.position.set(-9 + i * step + (i % 3) * 0.7, -0.4 + (i % 2) * 0.25 * h, z);
     g.add(m);
   }
   scene.add(g); return g;
 }
-const mtFar  = mountainLayer(-8, 0x2A1E56, 1.9, 9, 2.4);
-const mtNear = mountainLayer(-5, 0x1E1544, 1.3, 11, 2.0);
+const hillsFar  = hillLayer(-8, 0x8AA3AE, 1.9, 9, 2.4);   // period 7.2
+const hillsNear = hillLayer(-5, 0x5F7F62, 1.3, 11, 2.0);  // period 6.0
+const trees = new THREE.Group();
+for (let i = 0; i < 11; i++){
+  const x = -8 + i * 1.6, s = 0.8 + hash(i + 40) * 0.5;
+  const trunk = box(0.12, 0.7, 0.12, 0x5C4633); trunk.position.set(x, 0.05, -2.6);
+  const crown = box(0.6 * s, 0.6 * s, 0.25, i % 2 ? 0x3E6644 : 0x35573B);
+  crown.rotation.z = Math.PI / 4; crown.position.set(x, 0.55 + 0.3 * s, -2.6);
+  const crown2 = box(0.45 * s, 0.45 * s, 0.25, i % 2 ? 0x3E6644 : 0x35573B);
+  crown2.rotation.z = Math.PI / 4; crown2.position.set(x, 0.85 + 0.45 * s, -2.6);
+  trees.add(trunk, crown, crown2);
+}
+scene.add(trees);
 
 /* terrain columns */
-const NCOL = 50, COLW = 0.18, dirtA = 0x7A4A32, dirtB = 0x6B3E2A;
+const NCOL = 50, COLW = 0.18;
+const GROUND_COLS = { dirt: [0x8B6A4A, 0x7C5D40], rock: [0x8A857B, 0x7A756C], built: [0x6F5236, 0x644928] };
 const cols = [];
 for (let i = 0; i < NCOL; i++){
-  const b = box(COLW, 2.4, 2.4, i % 2 ? dirtA : dirtB);
+  const b = box(COLW, 2.4, 2.4, 0x8B6A4A);
   b.position.set((i - NCOL / 2) * COLW + COLW / 2, -1.2, -0.2);
   scene.add(b); cols.push(b);
 }
 function updateTerrain(){
   for (let i = 0; i < NCOL; i++){
-    const x = (i - NCOL / 2) * COLW + COLW / 2;
-    const h = Math.round(groundAt(scroll + x) / 0.02) * 0.02;
+    const x = (i - NCOL / 2) * COLW + COLW / 2, u = scroll + x;
+    const h = Math.round(groundAt(u) / 0.02) * 0.02;
     cols[i].position.y = h - 1.2;
+    cols[i].material.color.setHex(GROUND_COLS[groundType(u)][i % 2]);
   }
 }
 
@@ -479,8 +523,8 @@ function ik(a, b, l1, l2, poleZ, kneeSign){        // 2-bone solve, elbow/knee p
 }
 
 /* colors */
-const C = { frame:0xFFB23E, forkUp:0xE8DFC8, forkLow:0x53D7C0, sw:0xFF7A6B, tire:0x241B2E,
-  rim:0xC9BFA8, hub:0x877E68, skin:0xE8B48C, jersey:0x4F7BD9, pants:0x2E2A3E, cap:0xE14F63, shoe:0x1B1726 };
+const C = { frame:0xC8892E, forkUp:0xD9D2C0, forkLow:0x5F8FB5, sw:0xC96B45, tire:0x2B2622,
+  rim:0xB7AE9A, hub:0x6F675A, skin:0xD8AA80, jersey:0x4E7A4F, pants:0x3A3835, helmet:0x9E3B32, shoe:0x25211E };
 
 /* frame group (sprung mass) — local origin at the bottom bracket */
 const frame = new THREE.Group(); scene.add(frame);
@@ -491,24 +535,24 @@ function tube(a, b, t, c){ const m = limb(1, t, t, c); frame.add(m); aimLimb(m, 
 tube(P(0.52, 0.38), P(-0.28, 0.30), 0.045, C.frame);          // top tube
 tube(P(0.56, 0.30), P(0.02, -0.01), 0.05, C.frame);           // down tube
 tube(P(0, 0), P(-0.28, 0.30), 0.042, C.frame);                // seat tube
-tube(P(-0.28, 0.30), P(-0.35, 0.45), 0.03, 0x877E68);         // seatpost
+tube(P(-0.28, 0.30), P(-0.35, 0.45), 0.03, C.hub);            // seatpost
 tube(P(0.60, 0.30), P(0.53, 0.42), 0.035, C.frame);           // head tube / steerer
 const saddle = box(0.25, 0.045, 0.07, C.pants); saddle.position.set(-0.36, 0.47, 0); frame.add(saddle);
-const bar = box(0.04, 0.04, 0.56, 0x2E2A3E); bar.position.set(0.55, 0.43, 0); frame.add(bar);
-const stem = tube(P(0.53, 0.42), P(0.55, 0.43), 0.03, 0x877E68);
+const bar = box(0.04, 0.04, 0.56, 0x3A3835); bar.position.set(0.55, 0.43, 0); frame.add(bar);
+tube(P(0.53, 0.42), P(0.55, 0.43), 0.03, C.hub);              // stem
 const GRIP_L = P(0.55, 0.43, 0.25), GRIP_Rt = P(0.55, 0.43, -0.25);
-const bb = box(0.09, 0.09, 0.12, 0x877E68); frame.add(bb);
+const bb = box(0.09, 0.09, 0.12, C.hub); frame.add(bb);
 /* cranks + pedals */
-const crankL = limb(0.17, 0.03, 0.025, 0x1B1726), crankR = limb(0.17, 0.03, 0.025, 0x1B1726);
+const crankL = limb(0.17, 0.03, 0.025, 0x25211E), crankR = limb(0.17, 0.03, 0.025, 0x25211E);
 frame.add(crankL, crankR);
-const pedL = box(0.09, 0.02, 0.06, 0x877E68), pedR = box(0.09, 0.02, 0.06, 0x877E68);
+const pedL = box(0.09, 0.02, 0.06, C.hub), pedR = box(0.09, 0.02, 0.06, C.hub);
 frame.add(pedL, pedR);
 /* rider (children of frame; limbs re-aimed per tick) */
 const hipsL = P(-0.22, 0.62);
 const torso = limb(0.42, 0.14, 0.20, C.jersey); frame.add(torso);
 const head = box(0.15, 0.15, 0.15, C.skin); frame.add(head);
-const capM = box(0.165, 0.055, 0.165, C.cap); frame.add(capM);
-const brim = box(0.08, 0.028, 0.15, C.cap); frame.add(brim);
+const helmet = box(0.175, 0.075, 0.175, C.helmet); frame.add(helmet);
+const visor = box(0.08, 0.028, 0.15, C.helmet); frame.add(visor);
 const hipBox = box(0.16, 0.13, 0.19, C.pants); frame.add(hipBox);
 const uArmL = limb(0.28, 0.055, 0.055, C.jersey), lArmL = limb(0.28, 0.05, 0.05, C.skin);
 const uArmR = limb(0.28, 0.055, 0.055, C.jersey), lArmR = limb(0.28, 0.05, 0.05, C.skin);
@@ -523,7 +567,7 @@ const stanchL = wsLimb(0.2, 0.045, 0.045, C.forkUp), stanchR = wsLimb(0.2, 0.045
 const lowerL = wsLimb(0.2, 0.06, 0.06, C.forkLow),  lowerR = wsLimb(0.2, 0.06, 0.06, C.forkLow);
 const chainstL = wsLimb(0.2, 0.045, 0.04, C.sw), chainstR = wsLimb(0.2, 0.045, 0.04, C.sw);
 const seatstL = wsLimb(0.2, 0.035, 0.03, C.sw), seatstR = wsLimb(0.2, 0.035, 0.03, C.sw);
-const shockBody = wsLimb(0.2, 0.06, 0.06, 0x1B1726), shockShaft = wsLimb(0.2, 0.03, 0.03, 0xC9BFA8);
+const shockBody = wsLimb(0.2, 0.06, 0.06, 0x25211E), shockShaft = wsLimb(0.2, 0.03, 0.03, 0xB7AE9A);
 const shockCoil = wsLimb(0.2, 0.075, 0.075, C.sw);
 
 /* wheels */
@@ -536,7 +580,7 @@ function wheel(){
   const hub = box(0.09, 0.09, 0.1, C.hub);
   g.add(tire, rim, hub);
   for (let i = 0; i < 3; i++){
-    const s = box(0.035, WHEEL_R * 1.35, 0.03, 0x3a3350);
+    const s = box(0.035, WHEEL_R * 1.35, 0.03, 0x4a4540);
     s.rotation.z = i * Math.PI / 3;
     g.add(s);
   }
@@ -544,11 +588,12 @@ function wheel(){
   return g;
 }
 const wF = wheel(), wR = wheel();
-const shadF = box(0.5, 0.02, 0.3, 0x120c26), shadR = box(0.5, 0.02, 0.3, 0x120c26);
+const shadF = box(0.5, 0.02, 0.3, 0x3F3226), shadR = box(0.5, 0.02, 0.3, 0x3F3226);
 scene.add(shadF, shadR);
 
 /* per-tick pose */
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+const ZAXIS = new THREE.Vector3(0, 0, 1);
 function toWorld(v){ return frame.localToWorld(v.clone()); }
 let crank = 0;
 function pose(dt){
@@ -557,21 +602,22 @@ function pose(dt){
   const theta = Math.atan2(hF - hR, WB) - THETA_L;
   frame.rotation.z = theta;
   const midT = P((XF + XR) / 2, (hF + hR) / 2);
-  const midL = P((NFl.x + NRl.x) / 2, (NFl.y + NRl.y) / 2).applyAxisAngle(new THREE.Vector3(0, 0, 1), theta);
+  const midL = P((NFl.x + NRl.x) / 2, (NFl.y + NRl.y) / 2).applyAxisAngle(ZAXIS, theta);
   frame.position.set(midT.x - midL.x, midT.y - midL.y, 0);
   frame.updateMatrixWorld(true);
 
-  /* wheels */
+  /* wheels (rolling forward = clockwise seen from the camera side) */
   wF.position.set(XF, front.axleY, 0);
   wR.position.set(XR, rear.axleY, 0);
   const spin = speed / WHEEL_R * dt;
   wF.rotation.z -= spin; wR.rotation.z -= spin;
-  shadF.position.set(XF, groundAt(scroll + XF) + 0.012, 0);
-  shadR.position.set(XR, groundAt(scroll + XR) + 0.012, 0);
-  shadF.scale.x = Math.max(0.3, 1 - (front.axleY - groundAt(scroll + XF) - WHEEL_R) * 2);
-  shadR.scale.x = Math.max(0.3, 1 - (rear.axleY - groundAt(scroll + XR) - WHEEL_R) * 2);
+  const gF = groundAt(scroll + XF), gR = groundAt(scroll + XR);
+  shadF.position.set(XF, gF + 0.012, 0);
+  shadR.position.set(XR, gR + 0.012, 0);
+  shadF.scale.x = Math.max(0.3, 1 - (front.axleY - gF - WHEEL_R) * 1.5);
+  shadR.scale.x = Math.max(0.3, 1 - (rear.axleY - gR - WHEEL_R) * 1.5);
 
-  /* fork: crown node -> front axle, telescoping at 45% */
+  /* fork: crown node -> front axle, telescoping */
   const crown = toWorld(NFl);
   for (const [st, lo, zz] of [[stanchL, lowerL, 0.09], [stanchR, lowerR, -0.09]]){
     _a.set(crown.x, crown.y, zz);
@@ -597,22 +643,23 @@ function pose(dt){
   aimLimb(shockShaft, _a.copy(mnt).lerp(_b, 0.45), _b);
   aimLimb(shockCoil, _a.copy(mnt).lerp(_b, 0.1), _c.copy(mnt).lerp(_b, 0.9));
 
-  /* cranks + rider */
+  /* cranks: pedal goes top -> forward -> bottom (forward pedaling) */
   crank += speed * 1.15 * dt;
-  const pl = P(Math.sin(crank) * 0.17, -Math.cos(crank) * 0.17, 0.13);
-  const pr = P(-Math.sin(crank) * 0.17, Math.cos(crank) * 0.17, -0.13);
+  const pl = P(Math.sin(crank) * 0.17, Math.cos(crank) * 0.17, 0.13);
+  const pr = P(-Math.sin(crank) * 0.17, -Math.cos(crank) * 0.17, -0.13);
   aimLimb(crankL, P(0, 0, 0.09), _a.set(pl.x, pl.y, 0.09));
   aimLimb(crankR, P(0, 0, -0.09), _a.set(pr.x, pr.y, -0.09));
   pedL.position.copy(pl); pedR.position.copy(pr);
   shoeL.position.set(pl.x - 0.02, pl.y + 0.035, pl.z); shoeR.position.set(pr.x - 0.02, pr.y + 0.035, pr.z);
 
+  /* rider */
   const bob = Math.sin(crank * 2) * 0.008;
   const shC = P(0.10, 0.88 + bob);
   hipBox.position.set(hipsL.x, hipsL.y + 0.02, 0);
   aimLimb(torso, shC, _a.set(hipsL.x, hipsL.y, 0));
-  head.position.set(shC.x + 0.09, shC.y + 0.11, 0);
-  capM.position.set(shC.x + 0.09, shC.y + 0.185, 0);
-  brim.position.set(shC.x + 0.195, shC.y + 0.17, 0);
+  head.position.set(shC.x + 0.09, shC.y + 0.075, 0);
+  helmet.position.set(shC.x + 0.085, shC.y + 0.16, 0);
+  visor.position.set(shC.x + 0.20, shC.y + 0.14, 0);
   for (const [ua, la, grip, zz] of [[uArmL, lArmL, GRIP_L, 0.12], [uArmR, lArmR, GRIP_Rt, -0.12]]){
     _a.set(shC.x, shC.y - 0.03, zz);
     const elbow = ik(_a, grip, 0.28, 0.28, zz > 0 ? 1 : -1, -1);
@@ -624,13 +671,17 @@ function pose(dt){
     const knee = ik(_a, _b, 0.40, 0.40, zz > 0 ? 1 : -1, 1);
     aimLimb(th, _a, knee); aimLimb(sh, knee, _b);
   }
+
+  /* camera follows the chassis up the roll-ins and off the drops */
+  camTarget.y += ((frame.position.y + 0.36) - camTarget.y) * Math.min(1, dt * 2.5);
+  placeCamera();
 }
 
 /* parallax */
 function parallax(dt){
-  for (const [g, f] of [[mtFar, 0.06], [mtNear, 0.14]]){
+  for (const [g, f, period] of [[hillsFar, 0.06, 7.2], [hillsNear, 0.14, 6.0], [trees, 0.4, 1.6]]){
     g.position.x -= speed * f * dt;
-    if (g.position.x < -4.8) g.position.x += 4.8;
+    if (g.position.x < -period) g.position.x += period;
   }
 }
 
@@ -639,7 +690,7 @@ const PDT = 1 / 360;
 let last = performance.now(), acc = 0;
 function tick(now){
   requestAnimationFrame(tick);
-  let dt = Math.min(0.05, (now - last) / 1000);
+  const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (riding){
     acc += dt;
