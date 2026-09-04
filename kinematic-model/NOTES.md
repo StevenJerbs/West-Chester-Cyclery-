@@ -42,3 +42,24 @@ cloud container and must be regenerated locally.
   footage carries them too, or the classifier learns "has tyre data = safe".
 - Quarter-view front/rear wheel labels can still swap; rear views are solid.
 - Fork/shock travel needs a closer camera to leave the saturation cap.
+
+## Regenerated locally on the GPU session (2026-09-03, RTX 3070)
+
+All gitignored artefacts above now exist on the PC (`C:\Users\nadc7\Videos\West-Chester-Cyclery-`), produced with the
+mtbkin venv (`C:\Users\nadc7\my-project\.venv`, torch 2.3.1+cu121, ultralytics 8.4, scikit-learn 1.9, imageio-ffmpeg 0.6).
+
+| Artefact | How | Time |
+|---|---|---|
+| `data/raw/goldstone/{vds,msa}_2023.mp4`, `data/raw/asa_vs_charlie/s{1,2,3}_{asa,charlie}.mp4` | ffmpeg with NVIDIA hardware decode (`-hwaccel cuda`) + `h264_nvenc` cq 19 | 15 s for all 8 |
+| `output/friday2/candidates/cand_*.mp4` + `candidates_manifest.json` | `long_video.find_candidate_clips(n=20, clip_len_s=10, min_gap_s=45)`; reproduced all 20 clip names exactly, so `data/crashes.yaml` labels apply unchanged | 64 s |
+| `output/friday2/candidates/<cand>/track.json` (20) | `track.track_video(rotate_deg=0)` on GPU | 16-20 s per 10 s clip |
+| `output/goldstone/*`, `output/asa_vs_charlie/*` (8 full `RiderFormModel.analyze` runs) | GPU | 25-60 s per short clip, 161 s (vds) / 207 s (msa) |
+| `weights/control_model_v001.joblib` | `crash_model.train()` over 20 candidates + 8 clean runs | seconds |
+
+Control model report (local): 372 windows, 349 positive, 23 negative, 28 videos, LOO AUC 0.625. The cloud v001 was
+144 windows / 23 videos / LOO AUC 0.719. The local run used 8 clean runs (both Goldstone clips and all six Asa/Charlie
+cuts) instead of 3, and GPU tracking with the zoomed retry yields more windows passing the 30% pose-coverage filter.
+With only 23 pre-crash windows the AUC is noisy either way; treat neither number as a benchmark until more crash footage
+carries windows.
+
+Pose inference with `kinematic_pose_v003.pt` at 640 px: ~22 ms/frame on the GPU vs ~250 ms on CPU on this machine.
