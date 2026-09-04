@@ -31,8 +31,8 @@
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; margin-top:-8px; background:var(--accent); border:2px solid #15170f}
   input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:0; background:var(--accent); border:2px solid #15170f}
 
-  .views{border:3px solid var(--line); background:#9FC3DC; position:relative; overflow:hidden}
-  .views canvas.gl{display:block; width:100%; height:auto; image-rendering:pixelated}
+  .views{border:3px solid var(--line); background:#C9D9E6; position:relative; overflow:hidden}
+  .views canvas.gl{display:block; width:100%; height:auto}
   .tag{position:absolute; top:8px; font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:5px 8px; background:rgba(20,24,16,.7); pointer-events:none}
   .tag.b{left:8px; color:var(--b)} .tag.a{left:8px; top:34px; color:var(--a); opacity:.85}
   .tag.a::before{content:'GHOST · '; color:var(--dim)}
@@ -83,7 +83,7 @@
   </header>
 
   <div class="views">
-    <canvas id="gl" class="gl" width="896" height="420"></canvas>
+    <canvas id="gl" class="gl" width="1344" height="630"></canvas>
     <div class="tag b" id="tagB">B</div>
     <div class="tag a" id="tagA">A</div>
     <div class="legend"><i style="background:#D9A441"></i>leg force (&times; body weight) <i style="background:#8DBF6A"></i>velocity <i style="background:#EFE8D6"></i>centre of curvature <i style="background:#D4784E"></i>CoM path</div>
@@ -316,27 +316,122 @@ function logRider(r){ if (!r.log) r.log = []; if (r.log.length === 0 || r.x - r.
 
 /* =============== 3d =============== */
 const canvas = $('gl');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: false }); renderer.setSize(896, 420, false);
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9FC3DC); scene.fog = new THREE.Fog(0xB9D0DC, 25, 90);
-scene.add(new THREE.AmbientLight(0xdfe8f0, 0.85)); const sun = new THREE.DirectionalLight(0xfff2d6, 0.8); sun.position.set(20, 50, 40); scene.add(sun);
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setSize(1344, 630, false);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xC9D9E6); scene.fog = new THREE.Fog(0xD3DCE6, 38, 230);
+scene.add(new THREE.HemisphereLight(0xD6E6F5, 0x6E7C4A, 0.5), new THREE.AmbientLight(0xFFF4E6, 0.1));
+const sun = new THREE.DirectionalLight(0xFFF0D2, 0.85); sun.position.set(-18, 42, 30); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -18, right: 18, top: 18, bottom: -18, near: 1, far: 160 }); sun.shadow.bias = -0.0012; scene.add(sun, sun.target);
 const mat = c => new THREE.MeshLambertMaterial({ color: c }), box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
-/* the two lanes: same rollers, side by side in z so each viewport shows one rider */
-const LANE_Z = [0, 0];
-for (const lz of [0]){
-  const n = Math.round(TRACK_END / 0.25) + 1, RL = [-1.4, -0.7, 0, 0.7, 1.4], nv = n * RL.length, pos = new Float32Array(nv * 3), col = new Float32Array(nv * 3), idx = [], c = new THREE.Color();
-  for (let i = 0; i < n; i++){ const x = i * 0.25, y = yS(x); for (let j = 0; j < RL.length; j++){ const k = (i * RL.length + j) * 3; pos[k] = x; pos[k + 1] = y + 0.02 - 0.03 * RL[j] * RL[j]; pos[k + 2] = lz + RL[j]; c.setHex(0x8B6A4A); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.03 : 0.02)); col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b; }
-    if (i + 1 < n) for (let j = 0; j + 1 < RL.length; j++){ const a = i * RL.length + j, b = (i + 1) * RL.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
-  scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
-  const gp = new THREE.PlaneGeometry(200, 60, 80, 24); gp.rotateX(-Math.PI / 2); const p2 = gp.attributes.position, c2 = new Float32Array(p2.count * 3);
-  for (let i = 0; i < p2.count; i++){ const x = p2.getX(i) + TRACK_END / 2, z = p2.getZ(i) + lz; const inLane = Math.abs(z - lz) < 1.6; p2.setXYZ(i, x, inLane ? yS(clamp(x, 0, TRACK_END)) - 0.05 : yS(clamp(x, 0, TRACK_END)) * (1 - smooth((Math.abs(z - lz) - 1.6) / 6)) + 0.3 * Math.sin(x * 0.2) * Math.cos(z * 0.3) * smooth((Math.abs(z - lz) - 1.6) / 6) - 0.05, z);
-    const nn = 0.5 + 0.5 * Math.sin(x * 0.7) * Math.cos(z * 0.9); c.setHSL(0.27 + 0.03 * nn, 0.38, 0.30 + 0.10 * nn); c2[i * 3] = c.r; c2[i * 3 + 1] = c.g; c2[i * 3 + 2] = c.b; }
-  gp.setAttribute('color', new THREE.BufferAttribute(c2, 3)); gp.computeVertexNormals(); scene.add(new THREE.Mesh(gp, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true })));
-  let seed = 11 + lz; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-  for (let i = 0; i < 40; i++){ const x = rnd() * TRACK_END, z = lz + (rnd() < 0.5 ? -1 : 1) * (4 + rnd() * 14), sc = 0.9 + rnd() * 0.9, t = new THREE.Group(); const tr = box(0.16, 1.2 * sc, 0.16, 0x5C4633); tr.position.y = 0.6 * sc; const c1 = box(1.1 * sc, 1.1 * sc, 1.1 * sc, rnd() < 0.5 ? 0x3E6644 : 0x35573B); c1.rotation.set(0, Math.PI / 4, Math.PI / 4); c1.position.y = 1.5 * sc; t.add(tr, c1); t.position.set(x, yS(clamp(x, 0, TRACK_END)) * 0.3 - 0.1, z); scene.add(t); }
-  /* trough / crest markers on the ground: centre-of-curvature posts are drawn live */
-  for (let i = 0; i < N_ROLL; i++){ const xt = X0 + LAM / 2 + i * LAM, xc = X0 + (i + 1) * LAM; const mt = box(0.12, 0.5, 0.12, 0x7FA6C9); mt.position.set(xt, yS(xt) + 0.25, lz - 1.8); scene.add(mt); if (xc < XEND){ const mc = box(0.12, 0.5, 0.12, 0xD4784E); mc.position.set(xc, yS(xc) + 0.25, lz - 1.8); scene.add(mc); } }
+const facet = g => { const f = g.toNonIndexed(); f.computeVertexNormals(); return f; };                 // one normal per triangle: the low-poly look
+const vcMat = extra => new THREE.MeshLambertMaterial(Object.assign({ vertexColors: true }, extra || {})), inMat = () => new THREE.MeshLambertMaterial({ color: 0xffffff });   // instanced meshes colour per instance, not per vertex
+/* ---- the valley. Rule: nothing tall between the camera (+z) and the rider. Trees, rocks and the ridge live on the far side (-z); the near side is open meadow falling away below the camera. ---- */
+let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+const hash = (i, j) => { let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+function vnoise(x, z){ const i = Math.floor(x), j = Math.floor(z), fx = smooth(x - i), fz = smooth(z - j); return lerp(lerp(hash(i, j), hash(i + 1, j), fx), lerp(hash(i, j + 1), hash(i + 1, j + 1), fx), fz); }
+const LANE_Z = [0, 0], LAKE = { x: TRACK_END + 34, z: -22, r: 19 };
+function terrainH(x, z){
+  const az = Math.abs(z), lane = yS(clamp(x, 0, TRACK_END));
+  const w = smooth((az - 2.2) / 3.5), open = smooth((az - 6) / 20);                                    // 0 on the track shoulders, 1 in the meadow, then the open hillside
+  const far = z < 0 ? smooth((az - 3) / 44) : 0, near = z > 0 ? smooth((az - 3) / 34) : 0;
+  const n = (vnoise(x * 0.12 + 3, z * 0.12) - 0.5) * 1.4 + (vnoise(x * 0.035, z * 0.035 + 9) - 0.5) * 5.0;
+  const ridge = far * far * 15 + far * 4 * vnoise(x * 0.05, z * 0.05 + 40);
+  const bowl = smooth(1 - Math.hypot(x - LAKE.x, z - LAKE.z) / LAKE.r);
+  return lane * (1 - w) + w * (AMP + n * (0.25 + 0.75 * open)) + ridge - near * 7.5 - bowl * 2.6;
 }
+const WHITE = new THREE.Color(0xF4F2EE), ROCK = new THREE.Color(), _tc = new THREE.Color();
+function terrainCol(c, x, z, y, slope){
+  const az = Math.abs(z), m = vnoise(x * 0.09 + 50, z * 0.09), m2 = vnoise(x * 0.3 + 7, z * 0.3);
+  c.setHSL(0.235 + 0.06 * m, 0.36 + 0.06 * m2, 0.27 + 0.11 * m + 0.03 * m2);                          // meadow greens
+  if (az < 2.6) c.setHSL(0.19, 0.28, 0.32 + 0.03 * m2);                                                 // trodden shoulder
+  const rock = Math.max(smooth((y - 10) / 5), smooth((slope - 0.85) / 0.4)), snow = smooth((y - 17) / 5);
+  ROCK.setHSL(0.68, 0.08, 0.50 + 0.10 * m); c.lerp(ROCK, rock); c.lerp(WHITE, snow);
+}
+/* terrain heightfield */
+(function(){
+  const W = 330, D = 190, NX = 165, NZ = 95, cx = TRACK_END / 2, cz = -55;
+  const gp = new THREE.PlaneGeometry(W, D, NX, NZ); gp.rotateX(-Math.PI / 2); const pa = gp.attributes.position, cols = new Float32Array(pa.count * 3);
+  for (let i = 0; i < pa.count; i++){ const x = pa.getX(i) + cx, z = pa.getZ(i) + cz; const jx = (hash(i, 1) - 0.5) * 1.2 * smooth((Math.abs(z) - 3) / 4), jz = (hash(i, 2) - 0.5) * 1.2 * smooth((Math.abs(z) - 3) / 4);
+    const y = terrainH(x + jx, z + jz), sl = Math.hypot(terrainH(x + jx + 1, z + jz) - y, terrainH(x + jx, z + jz + 1) - y); pa.setXYZ(i, x + jx, y - 0.04, z + jz);
+    terrainCol(_tc, x, z, y, sl); cols[i * 3] = _tc.r; cols[i * 3 + 1] = _tc.g; cols[i * 3 + 2] = _tc.b; }
+  gp.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  const ground = new THREE.Mesh(facet(gp), vcMat()); ground.receiveShadow = true; scene.add(ground);
+  /* the lake in the bowl beyond the track end, and the fall that feeds it */
+  const lake = new THREE.Mesh(new THREE.CircleGeometry(LAKE.r * 0.82, 14), new THREE.MeshLambertMaterial({ color: 0x6FB0D8, transparent: true, opacity: 0.9 })); lake.rotation.x = -Math.PI / 2; lake.position.set(LAKE.x, AMP - 1.35, LAKE.z); scene.add(lake);
+  const fx = LAKE.x + 6, fz0 = LAKE.z - LAKE.r * 0.9 - 2, top = terrainH(fx, fz0 - 6) + 0.3;
+  for (let i = 0; i < 6; i++){ const t = i / 5, y1 = lerp(top, AMP - 1.2, t), z1 = lerp(fz0 - 6, LAKE.z - LAKE.r * 0.75, t); const seg = box(1.6 - 0.6 * t, 0.25, 1.5, i < 4 ? 0xCFE6F2 : 0xE8F2F7); seg.position.set(fx, y1, z1); seg.rotation.x = 0.5; scene.add(seg); }
+  for (let i = 0; i < 4; i++){ const m = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1 + rnd(), 0), new THREE.MeshLambertMaterial({ color: 0xF1F6FA, transparent: true, opacity: 0.55 })); m.position.set(fx - 1.5 + rnd() * 3, AMP - 0.9, LAKE.z - LAKE.r * 0.72 + rnd() * 2); scene.add(m); }
+})();
+/* the track: packed dirt with a lighter centre line, tyre grooves and grassy edges */
+(function(){
+  const n = Math.round(TRACK_END / 0.25) + 1, RL = [-1.9, -1.45, -0.9, -0.45, 0, 0.45, 0.9, 1.45, 1.9], nv = n * RL.length, pos = new Float32Array(nv * 3), col = new Float32Array(nv * 3), idx = [], c = new THREE.Color();
+  for (let i = 0; i < n; i++){ const x = i * 0.25, y = yS(x); for (let j = 0; j < RL.length; j++){ const k = (i * RL.length + j) * 3, rl = RL[j], ar = Math.abs(rl); pos[k] = x; pos[k + 1] = y + 0.03 - 0.02 * rl * rl; pos[k + 2] = rl;
+      const m = vnoise(x * 0.6, rl * 2 + 3), groove = Math.abs(ar - 0.45) < 0.1 ? -0.05 : 0; c.setHSL(0.075, 0.30 + 0.05 * m, (ar > 1.6 ? 0.36 : 0.48 - 0.07 * ar) + 0.05 * m + groove); if (ar > 1.6) c.setHSL(0.2, 0.32, 0.34 + 0.04 * m);
+      col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b; }
+    if (i + 1 < n) for (let j = 0; j + 1 < RL.length; j++){ const a = i * RL.length + j, b = (i + 1) * RL.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx);
+  const track = new THREE.Mesh(facet(g), vcMat({ side: THREE.DoubleSide })); track.receiveShadow = true; scene.add(track);
+  /* trough / crest markers as little flags on the far shoulder */
+  for (let i = 0; i < N_ROLL; i++){ const xt = X0 + LAM / 2 + i * LAM, xc = X0 + (i + 1) * LAM;
+    const flag = (x, colr) => { const g2 = new THREE.Group(); const pole = box(0.04, 0.9, 0.04, 0xEFE8D6); pole.position.y = 0.45; const pen = box(0.34, 0.16, 0.02, colr); pen.position.set(0.19, 0.8, 0); g2.add(pole, pen); g2.position.set(x, yS(x), -2.3); scene.add(g2); };
+    flag(xt, 0x7FA6C9); if (xc < XEND) flag(xc, 0xD4784E); }
+})();
+/* far ridge: faceted peaks with snow above the line, two rows so the back row hazes into the fog */
+(function(){
+  const rows = [[-68, 13, 0.75], [-120, 14, 1.35]];
+  for (const [zr, cnt, sc] of rows) for (let i = 0; i < cnt; i++){
+    const r = (16 + rnd() * 22) * sc, h = (22 + rnd() * 30) * sc, segs = 5 + Math.floor(rnd() * 3), x = -120 + i * (330 / cnt) + rnd() * 14, z = zr + (rnd() - 0.5) * 30;
+    const g = new THREE.ConeGeometry(r, h, segs, 4); g.translate(0, h / 2 - 2, 0); const pa = g.attributes.position, cols = new Float32Array(pa.count * 3);
+    for (let k = 0; k < pa.count; k++){ const y = pa.getY(k); if (y > 0 && y < h - 2.5) pa.setXYZ(k, pa.getX(k) * (0.85 + hash(k, i) * 0.3), y + (hash(k, i + 9) - 0.5) * 3, pa.getZ(k) * (0.85 + hash(k, i + 3) * 0.3));
+      const t = y / h, snow = smooth((t - 0.55) / 0.2), m = hash(k, 77); _tc.setHSL(0.64, 0.10, 0.44 + 0.08 * m); _tc.lerp(WHITE, snow); cols[k * 3] = _tc.r; cols[k * 3 + 1] = _tc.g; cols[k * 3 + 2] = _tc.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); const m = new THREE.Mesh(facet(g), vcMat()); m.position.set(x, terrainH(x, Math.max(z, -140)) - 3, z); scene.add(m); }
+  /* clouds */
+  for (let i = 0; i < 8; i++){ const gr = new THREE.Group(); for (let k = 0; k < 3; k++){ const c = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), mat(0xF6F3EE)); c.scale.set(5 + rnd() * 5, 1.6 + rnd() * 1.2, 3 + rnd() * 2); c.position.set(k * 5 - 5, rnd() * 0.8, rnd() * 2); gr.add(c); }
+    gr.position.set(-100 + rnd() * 300, 42 + rnd() * 22, -70 - rnd() * 70); scene.add(gr); }
+})();
+/* trees, rocks, flowers: instanced, far side only */
+(function(){
+  const coneG = facet(new THREE.ConeGeometry(1, 1, 6).translate(0, 0.5, 0)), trunkG = facet(new THREE.CylinderGeometry(0.5, 0.6, 1, 5).translate(0, 0.5, 0));
+  const NT = 300, lo = new THREE.InstancedMesh(coneG, inMat(), NT), hi = new THREE.InstancedMesh(coneG, inMat(), NT), tr = new THREE.InstancedMesh(trunkG, inMat(), NT);
+  const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), SC = new THREE.Vector3(); let n = 0;
+  for (let tries = 0; tries < 2000 && n < NT; tries++){
+    const near = rnd() < 0.28, z = near ? -(5.5 + rnd() * 9) : -(14 + Math.pow(rnd(), 0.8) * 60), x = -70 + rnd() * (TRACK_END + 150), y = terrainH(x, z);
+    if (y > 15 || Math.hypot(x - LAKE.x, z - LAKE.z) < LAKE.r * 0.95) continue;
+    if (near ? vnoise(x * 0.06 + 11, 0.5) < 0.52 : (z > -40 && vnoise(x * 0.04, z * 0.04 + 5) < 0.45)) continue;   // clearings, so the ridge and the peaks show through
+    const s = (near ? 0.55 : 0.8) + rnd() * (near ? 0.55 : 1.1), hgt = (3.0 + rnd() * 2.2) * s, autumn = rnd() < 0.09, m = rnd();
+    _tc.setHSL(autumn ? 0.07 + 0.03 * m : 0.30 + 0.09 * m, autumn ? 0.75 : 0.42, autumn ? 0.5 : 0.27 + 0.12 * m);
+    Q.setFromAxisAngle(V.set(0, 1, 0), rnd() * 6.28);
+    M.compose(V.set(x, y - 0.1, z), Q, SC.set(0.36 * s, hgt * 0.35, 0.36 * s)); tr.setMatrixAt(n, M); tr.setColorAt(n, _tc.clone().setHSL(0.07, 0.35, 0.27));
+    M.compose(V.set(x, y + hgt * 0.22, z), Q, SC.set(1.35 * s, hgt * 0.5, 1.35 * s)); lo.setMatrixAt(n, M); lo.setColorAt(n, _tc);
+    M.compose(V.set(x, y + hgt * 0.52, z), Q, SC.set(1.0 * s, hgt * 0.48, 1.0 * s)); hi.setMatrixAt(n, M); hi.setColorAt(n, _tc.clone().offsetHSL(0, 0, 0.05)); n++; }
+  for (const im of [lo, hi, tr]){ im.count = n; im.castShadow = true; scene.add(im); }
+  /* boulders */
+  const rockG = facet(new THREE.DodecahedronGeometry(1, 0)); const NR = 90, rk = new THREE.InstancedMesh(rockG, inMat(), NR);
+  for (let i = 0; i < NR; i++){ const z = -(2.9 + Math.pow(rnd(), 1.4) * 70), x = -60 + rnd() * (TRACK_END + 130), y = terrainH(x, z), s = 0.35 + Math.pow(rnd(), 2) * 2.2;
+    Q.setFromEuler(new THREE.Euler(rnd() * 0.6, rnd() * 6.28, rnd() * 0.6)); M.compose(V.set(x, y - s * 0.35, z), Q, SC.set(s * (0.8 + rnd() * 0.6), s * (0.6 + rnd() * 0.5), s * (0.8 + rnd() * 0.6))); rk.setMatrixAt(i, M); rk.setColorAt(i, _tc.setHSL(0.68, 0.06 + 0.05 * rnd(), 0.5 + 0.15 * rnd())); }
+  rk.castShadow = true; scene.add(rk);
+  /* wildflowers: tiny, so the ones on the camera side can never get in the way */
+  const flG = facet(new THREE.TetrahedronGeometry(0.055, 0)); const NF = 1100, fl = new THREE.InstancedMesh(flG, inMat(), NF); const pal = [0x6E5BD6, 0x8E7BEA, 0xF2D35B, 0xF6F1E4, 0xE07A8C];
+  let nf = 0; for (let tries = 0; tries < 9000 && nf < NF; tries++){ const side = rnd() < 0.75 ? -1 : 1, z = side < 0 ? -(2.3 + Math.pow(rnd(), 1.3) * 14) : 2.3 + rnd() * 3.5, x = -12 + rnd() * (TRACK_END + 30), y = terrainH(x, z); if (vnoise(x * 0.22, z * 0.22 + 21) < 0.56) continue; const i = nf++;
+    Q.setFromEuler(new THREE.Euler(rnd(), rnd(), rnd())); M.compose(V.set(x, y + 0.05, z), Q, SC.set(1, 1, 1)); fl.setMatrixAt(i, M); fl.setColorAt(i, _tc.setHex(pal[Math.floor(Math.pow(rnd(), 1.5) * pal.length)])); }
+  fl.count = nf; scene.add(fl);
+  /* lupines: purple spikes on the far shoulder, like the game's */
+  const luG = facet(new THREE.ConeGeometry(0.075, 0.34, 5).translate(0, 0.17, 0)); const NL = 170, lu = new THREE.InstancedMesh(luG, inMat(), NL);
+  for (let i = 0; i < NL; i++){ const z = -(2.3 + Math.pow(rnd(), 1.4) * 10), x = -8 + rnd() * (TRACK_END + 22), y = terrainH(x, z);
+    M.compose(V.set(x, y, z), Q.setFromAxisAngle(V.set(0, 1, 0), rnd() * 6), SC.set(1, 0.8 + rnd() * 0.7, 1)); lu.setMatrixAt(i, M); lu.setColorAt(i, _tc.setHSL(0.72 + 0.04 * rnd(), 0.6, 0.55 + 0.1 * rnd())); }
+  scene.add(lu);
+})();
+/* butterflies over the far-side flowers */
+const BUTTERFLIES = [];
+for (let i = 0; i < 9; i++){ const g = new THREE.Group(), col = [0xE8862B, 0x6FA8E8, 0xF2D35B][i % 3]; const wL = box(0.12, 0.01, 0.09, col), wR = box(0.12, 0.01, 0.09, col); wL.position.x = -0.06; wR.position.x = 0.06; g.add(wL, wR);
+  const hx = 4 + rnd() * (TRACK_END - 6), hz = -(2.4 + rnd() * 3.5); g.position.set(hx, terrainH(hx, hz) + 0.7, hz); g.rotation.y = rnd() * 6; scene.add(g); BUTTERFLIES.push({ g, wL, wR, hx, hz, t: rnd() * 10, sp: 2.5 + rnd() * 2 }); }
+function animateWorld(t, dt){
+  for (const b of BUTTERFLIES){ b.t += dt; const fl = Math.sin(b.t * 24) * 0.9; b.wL.rotation.z = fl; b.wR.rotation.z = -fl; const x = b.hx + Math.sin(b.t * 0.5 * b.sp) * 1.6, z = b.hz + Math.cos(b.t * 0.37 * b.sp) * 1.2; b.g.position.set(x, terrainH(x, z) + 0.55 + 0.35 * Math.sin(b.t * 1.3) + 0.25, z); b.g.rotation.y = Math.atan2(Math.sin(b.t * 0.5 * b.sp), -Math.cos(b.t * 0.37 * b.sp)); }
+}
+/* sky dome: warm horizon to blue zenith */
+(function(){ const g = new THREE.SphereGeometry(320, 18, 10), pa = g.attributes.position, cols = new Float32Array(pa.count * 3), hz = new THREE.Color(0xE9D8C6), mid = new THREE.Color(0xB9D2E8), top = new THREE.Color(0x6FA0D8);
+  for (let i = 0; i < pa.count; i++){ const t = clamp(pa.getY(i) / 320, -0.2, 1); _tc.copy(t < 0.25 ? hz.clone().lerp(mid, clamp(t / 0.25, 0, 1)) : mid.clone().lerp(top, (t - 0.25) / 0.75)); cols[i * 3] = _tc.r; cols[i * 3 + 1] = _tc.g; cols[i * 3 + 2] = _tc.b; }
+  g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); const sky = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false })); sky.position.set(TRACK_END / 2, -40, -30); scene.add(sky); })();
 /* limbs */
 const DOWN = new THREE.Vector3(0, -1, 0), _dir = new THREE.Vector3(), P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 function limb(len, w, d, color){ const g = new THREE.BoxGeometry(w, len, d); g.translate(0, -len / 2, 0); const m = new THREE.Mesh(g, mat(color)); m.userData.len = len; return m; }
@@ -421,12 +516,13 @@ function poseRider(o, ov, r, lz, dt){
   const tp = ov.trail.geometry.attributes.position; for (let i = 0; i < 60; i++){ const q = r.trail[Math.min(i, r.trail.length - 1)] || { x: comW.x, y: comW.y }; tp.setXYZ(i, q.x, q.y, lz + 1.0); } tp.needsUpdate = true; ov.trail.geometry.setDrawRange(0, Math.max(1, r.trail.length));
 }
 const bikeA = buildBike(0xD4784E), bikeB = buildBike(0x7FA6C9), ovA = makeOverlay(), ovB = makeOverlay();
+bikeB.rig.traverse(m => { if (m.isMesh) m.castShadow = true; });
 bikeA.rig.traverse(m => { if (m.material){ m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.38; m.material.depthWrite = false; } });
 for (const k of ['arrowF', 'arrowV', 'centre', 'spoke', 'com', 'trail']) ovA[k].traverse(m => { if (m.material){ m.material = m.material.clone(); m.material.transparent = true; m.material.opacity = 0.45; } });
-const camB = new THREE.PerspectiveCamera(38, 896 / 420, 0.1, 200);
+const camB = new THREE.PerspectiveCamera(40, 1344 / 630, 0.1, 800);
 const camPosA = new THREE.Vector3(), camPosB = new THREE.Vector3(), lookA = new THREE.Vector3(), lookB = new THREE.Vector3(); let snap = true;
 function sideCam(cam, cp, lk, r, lz, dt){
-  const want = new THREE.Vector3(r.x + 0.4, r.S.y + 1.7, lz + 9.5), tgt = new THREE.Vector3(r.x + 0.4, r.S.y + 0.95, lz);
+  const want = new THREE.Vector3(r.x - 2.4, r.S.y + 2.8, lz + 12.6), tgt = new THREE.Vector3(r.x + 1.2, r.S.y + 2.1, lz);   // pulled back and a touch behind the rider, so the rollers ahead read in perspective
   if (snap){ cp.copy(want); lk.copy(tgt); } else { cp.lerp(want, Math.min(1, dt * 6)); lk.lerp(tgt, Math.min(1, dt * 8)); }
   cam.position.copy(cp); cam.lookAt(lk);
 }
@@ -439,6 +535,7 @@ function tick(now){
     if (A.done && B.done){ doneT += dt; if (doneT > 2.5){ doneT = 0; resetRider(A); resetRider(B); A.log = []; B.log = []; snap = true; } } }
   poseRider(bikeA, ovA, A, LANE_Z[0], riding ? dt : 0); poseRider(bikeB, ovB, B, LANE_Z[1], riding ? dt : 0);
   sideCam(camB, camPosB, lookB, B, LANE_Z[1], dtReal); snap = false;
+  sun.position.set(B.x - 18, B.S.y + 42, 30); sun.target.position.set(B.x, B.S.y, 0); animateWorld(now / 1000, dtReal);
   renderer.render(scene, camB);
   if ((frame++ & 1) === 0){ hud(A, 'A', $('phA')); hud(B, 'B', $('phB')); drawChart(); }
 }
