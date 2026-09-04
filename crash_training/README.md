@@ -17,7 +17,14 @@ Each video ships with its YouTube closed captions (`<id>.captions.vtt`), a clean
 
 - Asa Vermette (A, pro): light/white Fox kit, Red Bull-branded helmet, bib #3, black Fox gloves.
   Charlie / average rider (B): black kit, plain dark helmet, no gloves, wrist watch, rental bike.
-- Loic Bruni (A, pro) vs host (B, rented DH bike): visual cues not yet recorded.
+- Loic Bruni (A, pro) vs host (B, "Charlie", rented DH bike), from frame inspection of 7:06-9:29:
+  the three comparison sections are shown as split-screen POV with on-screen labels, CHARLIE on the
+  left and LOÏC on the right, with the section stats burned in (section 1 Loic 9.06 s / Charlie
+  13.02 s, 43.71%; section 2 8.00 / 12.00 s, 50%; section 3 7.00 / 12.00 s, 71%). Split screens run
+  ~7:36-7:51, ~8:26-8:36 and ~9:21-9:26; the third-person shots before each (7:16-7:31, 8:01-8:21,
+  8:46-9:16) show a single rider in dark kit whose identity the frames alone do not settle. Loic's POV
+  shows a red frame/fork under the bars and white gloves; Charlie's POV shows a dark cockpit. The host
+  is on camera at 7:56 in a black Pinkbike t-shirt.
 
 ## Segment maps
 

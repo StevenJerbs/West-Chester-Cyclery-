@@ -44,12 +44,14 @@
   {
    "t_s": null,
    "rider": "Luca Shaw",
-   "notes": "Crashed in his run (opened men's final ~29:12); exact moment not narrated in captions."
+   "notes": "Commentary at 29:12 says Shaw opens the men's final, but the start card at 29:20 is #15 Lucas Dedora, whose run is shown through the finish (~31:20), then #23 Austin Dooley starts at 31:52 -- Shaw's run is not in that window. Post-race commentary at 64:09 mentions Shaw and Gwin both crashing out; the 64:20-64:23 replay cutaway (rider at an orange banner) is a candidate for the Shaw crash but the rider is not identifiable in the frames. Treat as unlocated.",
+   "t_confidence": "not located"
   },
   {
-   "t_s": null,
+   "t_s": 2829.5,
    "rider": "Dante Silva",
-   "notes": "Crashed at top of his run (~46:59 start); referenced at 49:28, +13.6 s."
+   "notes": "Start card 47:02; riding over a rock feature at 47:08.5; camera cut at 47:09.0; going down behind the rock on the second camera at 47:09.5; on the ground at 47:10.0, bike separating at 47:10.5; back on the bike ~47:20. Referenced again at 49:28 (+13.6 s).",
+   "t_confidence": "confirmed by frame inspection"
   }
  ]
 }
