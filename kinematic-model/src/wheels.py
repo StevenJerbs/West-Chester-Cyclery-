@@ -146,16 +146,62 @@ def _pt(kps, *names):
     return np.mean(pts, axis=0) if pts else None
 
 
-def find_wheels(frame_bgr, bike_mask, bike_box, kps: dict, prev: dict | None = None):
-    """Return {"front": wheel|None, "rear": wheel|None, "method": str}."""
+def _approx_wheel(cx, cy, r):
+    """A wheel placed at a model axle when no ellipse could be fitted there."""
+    return {"cx": float(cx), "cy": float(cy), "major": 2.0 * r, "minor": 2.0 * r,
+            "angle": 0.0, "area": math.pi * r * r, "approx": True, "from_axle": True}
+
+
+def _axles(bike_kps: dict | None, min_conf: float = 0.5):
+    if not bike_kps:
+        return None
+    fa, ra = bike_kps.get("front_axle"), bike_kps.get("rear_axle")
+    if fa and ra and fa[2] >= min_conf and ra[2] >= min_conf:
+        return np.array(fa[:2], float), np.array(ra[:2], float)
+    return None
+
+
+def find_wheels(frame_bgr, bike_mask, bike_box, kps: dict, prev: dict | None = None,
+                bike_kps: dict | None = None):
+    """Return {"front": wheel|None, "rear": wheel|None, "method": str}.
+
+    When the DH bike model supplies confident front/rear axle keypoints they
+    decide which wheel is which (its front/rear naming is reliable across
+    views, unlike the hands-over-front heuristic in quarter views) and stand
+    in for a wheel no ellipse could be fitted to (flagged approx).
+    """
     if bike_box is None:
         return {"front": None, "rear": None, "method": "no_bike"}
+    axles = _axles(bike_kps)
     box_h = max(bike_box[3] - bike_box[1], 1.0)
     blobs = _wheel_blobs(bike_mask, box_h) if bike_mask is not None else []
     method = "mask"
     if len(blobs) < 2:
         blobs = blobs + _hough_wheels(frame_bgr, bike_box)
         method = "mask+hough" if blobs else "none"
+    if axles is not None:
+        fa, ra = axles
+        wb = float(np.linalg.norm(fa - ra))
+        r_prev = [prev[k]["radius_px"] for k in ("front", "rear") if prev and prev.get(k)]
+        # radius: last frame's wheels if we had them, else ~0.3 wheelbase (29" DH bike)
+        r_est = float(np.mean(r_prev)) if r_prev else 0.3 * wb
+        if wb >= 20.0 and r_est >= 6.0:
+            pool = sorted(blobs, key=lambda b: -b["area"])[:4]
+            out, used, n_fit = {}, set(), 0
+            for label, ax in (("front", fa), ("rear", ra)):
+                pick = None
+                for i, b in enumerate(pool):
+                    if i in used:
+                        continue
+                    d = math.hypot(b["cx"] - ax[0], b["cy"] - ax[1])
+                    if d < 0.7 * max(r_est, b["major"] / 2) and (pick is None or d < pick[0]):
+                        pick = (d, i)
+                if pick is not None:
+                    used.add(pick[1]); out[label] = pool[pick[1]]; n_fit += 1
+                else:
+                    out[label] = _approx_wheel(ax[0], ax[1], r_est)
+            m = ("kp_only" if n_fit == 0 else f"{method}+kp" if blobs else "kp")
+            return {"front": _pack(out["front"]), "rear": _pack(out["rear"]), "method": m}
     if not blobs:
         return {"front": None, "rear": None, "method": method}
     blobs = sorted(blobs, key=lambda b: -b["area"])[:3]
@@ -239,7 +285,8 @@ def _pack(w):
             "inplane_tilt_deg": round(inplane, 1) if inplane is not None else None,
             "outplane_deg": round(math.degrees(math.acos(min(1.0, w["minor"] / max(w["major"], 1e-6)))), 1),
             "bottom_y": round(w["cy"] + drop, 1),
-            "hough": bool(w.get("hough", False)), "approx": bool(w.get("approx", False))}
+            "hough": bool(w.get("hough", False)), "approx": bool(w.get("approx", False)),
+            "from_axle": bool(w.get("from_axle", False))}
 
 
 # ------------------------------------------------------ contact heuristic
@@ -300,12 +347,14 @@ def wheel_series(track_frames: list[dict], fps: float, specs: dict | None = None
         kps = f.get("keypoints", {})
         F, R = wh.get("front"), wh.get("rear")
         scale = []
+        # axle-placed wheels have a guessed radius: use them for position,
+        # never for the mm/px scale
         if F:
             fx[i], fy[i], fr[i] = F["cx"], F["cy"], F["radius_px"]
-            if od_f: scale.append(od_f / max(F["major_px"], 1e-6))
+            if od_f and not F.get("from_axle"): scale.append(od_f / max(F["major_px"], 1e-6))
         if R:
             rx[i], ry[i], rr[i] = R["cx"], R["cy"], R["radius_px"]
-            if od_r: scale.append(od_r / max(R["major_px"], 1e-6))
+            if od_r and not R.get("from_axle"): scale.append(od_r / max(R["major_px"], 1e-6))
         if scale:
             mmpp[i] = float(np.mean(scale))
         c = f.get("bike_box")

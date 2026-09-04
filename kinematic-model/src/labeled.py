@@ -19,6 +19,7 @@ import cv2
 from track import SKELETON_EDGES, _side_avg
 
 CYAN = (255, 220, 60)
+MAGENTA = (255, 0, 255)
 GREEN = (80, 220, 80)
 YELLOW = (60, 230, 230)
 WHITE = (240, 240, 240)
@@ -54,6 +55,20 @@ def annotate_labeled(frame, rec: dict | None):
         cv2.putText(frame, f"bike frame  conf {rec.get('bike_conf', 0):.2f}",
                     (x1, max(15, y1 - 8)), cv2.FONT_HERSHEY_SIMPLEX,
                     0.55, CYAN, 2, cv2.LINE_AA)
+
+    bk = rec.get("bike_kps") or {}
+    if bk:
+        for a, b in (("front_axle", "fork_crown"), ("fork_crown", "bottom_bracket"),
+                     ("bottom_bracket", "rear_axle"), ("front_axle", "rear_axle")):
+            if a in bk and b in bk:
+                cv2.line(frame, (int(bk[a][0]), int(bk[a][1])), (int(bk[b][0]), int(bk[b][1])),
+                         MAGENTA, 1, cv2.LINE_AA)
+        short = {"front_axle": "FA", "rear_axle": "RA", "fork_crown": "CR", "bottom_bracket": "BB"}
+        for name, p in bk.items():
+            x, y = int(p[0]), int(p[1])
+            cv2.circle(frame, (x, y), 4, MAGENTA, -1, cv2.LINE_AA)
+            cv2.putText(frame, short.get(name, name), (x + 5, y + 4), cv2.FONT_HERSHEY_SIMPLEX,
+                        0.4, MAGENTA, 1, cv2.LINE_AA)
 
     box = _rider_bbox(kps)
     if box:

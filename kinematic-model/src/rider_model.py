@@ -229,7 +229,8 @@ class RiderFormModel:
                 masks[i] = bike_mask
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             if rec is not None:
-                wh = find_wheels(frame, bike_mask, rec.get("bike_box"), rec.get("keypoints", {}), prev=prev_wheels)
+                wh = find_wheels(frame, bike_mask, rec.get("bike_box"), rec.get("keypoints", {}), prev=prev_wheels,
+                                 bike_kps=rec.get("bike_kps"))
                 F, R = wh.get("front"), wh.get("rear")
                 if F and R:
                     dx, dy = F["cx"] - R["cx"], F["cy"] - R["cy"]
