@@ -74,6 +74,7 @@
       <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
       <div class="hs"><label class="lbl" for="v0">ENTRY MPH</label><input id="v0" type="range" min="8" max="16" step="1" value="11"><output id="v0Out">11 mph</output></div>
       <div class="hs"><label class="lbl" for="amp">PUMP RANGE</label><input id="amp" type="range" min="0.10" max="0.30" step="0.02" value="0.22"><output id="ampOut">22 cm</output></div>
+      <div class="hs"><label class="lbl" for="tscale">PLAYBACK</label><input id="tscale" type="range" min="0.1" max="1.5" step="0.1" value="1"><output id="tscaleOut">1.0×</output></div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
       <button type="button" class="btn alt" id="restartBtn">RESTART</button>
     </div>
@@ -102,6 +103,8 @@
         <div class="read"><div class="k">WORK DONE</div><div class="v" id="wkA">–</div></div>
         <div class="read"><div class="k">GROUND CURVATURE</div><div class="v" id="kA">–</div></div>
         <div class="read"><div class="k">m·v·r (local)</div><div class="v" id="lA">–</div></div>
+        <div class="read"><div class="k">SUSPENSION</div><div class="v" id="suA">–</div></div>
+        <div class="read"><div class="k">DAMPER LOSS</div><div class="v" id="dpA">–</div></div>
       </div>
       <div class="bars"><span>EXTENSION</span><div class="bar t"><i id="exA"></i></div><span>LEG LOAD</span><div class="bar f"><i id="ldbA"></i></div></div>
     </section>
@@ -117,6 +120,8 @@
         <div class="read"><div class="k">WORK DONE</div><div class="v" id="wkB">–</div></div>
         <div class="read"><div class="k">GROUND CURVATURE</div><div class="v" id="kB">–</div></div>
         <div class="read"><div class="k">m·v·r (local)</div><div class="v" id="lB">–</div></div>
+        <div class="read"><div class="k">SUSPENSION</div><div class="v" id="suB">–</div></div>
+        <div class="read"><div class="k">DAMPER LOSS</div><div class="v" id="dpB">–</div></div>
       </div>
       <div class="bars"><span>EXTENSION</span><div class="bar t"><i id="exB"></i></div><span>LEG LOAD</span><div class="bar f"><i id="ldbB"></i></div></div>
     </section>
@@ -126,6 +131,7 @@
 
   <p class="note"><b>The model.</b> The bike follows the surface; the rider's mass sits a distance <i>h</i> above it along the surface normal, on legs the rider drives. The only forces are gravity, the legs, and the ground pushing back along the normal. Energy is tracked exactly: the legs add energy at the rate <i>force &times; extension speed</i>, so the rider gains speed only when extending against a big load or compressing under a small one. In a trough the load is body weight <i>plus</i> the centripetal load <i>m&middot;v&sup2;&middot;&kappa;</i>; over a crest it is body weight <i>minus</i> it. That is the whole trick: extend where the ground curves up (&kappa; &gt; 0), compress where it curves down. On the straight part of a slope &kappa; = 0, so a push there only lifts your own weight and gives it straight back.
   <br><b>Angular momentum.</b> In the trough the ground is an arc around a centre above you. Extending moves your mass toward that centre; with <i>m&middot;v&middot;r</i> conserved about it, a smaller <i>r</i> means a faster <i>v</i>. The readout shows <i>m&middot;v&middot;r</i> of the rider's mass about the current centre of curvature while the ground is curved.
+  <br><b>The suspension is in the loop.</b> The frame rides on the Bullit's two springs (21 kN/m together at the wheels, mid-clicks damping) between the ground and the rider's legs. The trough load compresses it, the damper turns part of every stroke into heat (the DAMPER LOSS readout), and only what the spring stored comes back. That is why scenario 4 locks it out: the same leg motion buys more speed on a rigid bike. Use the PLAYBACK slider to slow the transitions down and watch the arrows.
   <br><b>The transition taketh away.</b> A passive rider (or a soft suspension) does the opposite: the centripetal load in the trough compresses the legs, work flows out, and the bike slows. Pumping is not free speed; it is the work the rider does against that load.</p>
 </div>
 
@@ -175,8 +181,9 @@ function rearTravelFor(load){ let lo = 0, hi = GEO.travelR; for (let i = 0; i < 
 
 
 /* =============== masses =============== */
-const M_BIKE = 22.7, M_RIDER = 90.7;
+const M_BIKE = 22.7, M_RIDER = 90.7, M_UNSPRUNG = 6.2, M_SPRUNG = M_BIKE - M_UNSPRUNG;
 const H0 = 1.02, H_MIN = 0.70, H_MAX = 1.32;                                        // rider CoM height above the surface: rest, crouched, extended
+const Z0 = 0.62, K_SUS = 21000, C_SUS = 3000, U_MAX = 0.11;                        // frame height at sag; the Bullit's two ends together (wheel rate), mid-clicks damping, travel left to bottom-out
 
 /* =============== the rollers =============== */
 const LAM = 8, AMP = 0.55, N_ROLL = 5, X0 = 8, XEND = X0 + N_ROLL * LAM, TRACK_END = XEND + 8;
@@ -190,23 +197,23 @@ function surf(x){                                                               
 /* each returns the leg force F (N, along the normal, >= 0) given the rider state; load = what holding still would take */
 function ctlTrough(r, load){   // push in the trough (k>0), compress over the crest (k<0): the article's timing
   const S = r.S; const inR = r.x > X0 - 1 && r.x < XEND + 1;
-  const ht = inR ? H0 + PUMP * (-Math.cos(S.u + 0.35)) : H0;                          // slightly ahead of the geometry, like a good rider
+  const ht = (inR ? H0 + PUMP * (-Math.cos(S.u + 0.35)) : H0) - r.u;                 // slightly ahead of the geometry, like a good rider; the target is a leg length, so the frame's dip is added
   r.phase = !inR ? 'FLAT · coasting' : S.k > 0.02 ? 'TROUGH · extending against the load' : S.k < -0.02 ? 'CREST · pulling the bike up, light' : (S.th < 0 ? 'DOWN-SLOPE · waiting for the curve' : 'UP-SLOPE · staying tall');
-  return clamp(load + M_RIDER * (60 * (ht - r.h) - 12 * r.hd), 0, 3.0 * M_RIDER * G9);
+  return clamp(load + M_RIDER * (60 * (ht - r.h) - 12 * (r.hd + r.ud)), 0, 3.0 * M_RIDER * G9);
 }
 function ctlDownslope(r, load){   // pumps early: starts the push on the down-slope, 45 degrees ahead of the curve, the way the coach in the article said not to
   const S = r.S; const inR = r.x > X0 - 1 && r.x < XEND + 1;
-  const ht = inR ? H0 + PUMP * (-Math.cos(S.u + 0.35 + 0.8)) : H0;
+  const ht = (inR ? H0 + PUMP * (-Math.cos(S.u + 0.35 + 0.8)) : H0) - r.u;
   r.phase = !inR ? 'FLAT · coasting' : (S.th < -0.15 && S.k > -0.02) ? 'DOWN-SLOPE · pushing early, ground still straight' : S.k > 0.02 ? 'TROUGH · already extended, load arrives late' : S.k < -0.02 ? 'CREST · compressing late' : 'UP-SLOPE · already low';
-  return clamp(load + M_RIDER * (60 * (ht - r.h) - 12 * r.hd), 0, 3.0 * M_RIDER * G9);
+  return clamp(load + M_RIDER * (60 * (ht - r.h) - 12 * (r.hd + r.ud)), 0, 3.0 * M_RIDER * G9);
 }
 function ctlPassive(r, load){     // soft legs and suspension: the load compresses them in the trough and they spring back on the crest
   r.phase = r.S.k > 0.02 ? 'TROUGH · load squashes the legs, work flows out' : r.S.k < -0.02 ? 'CREST · legs spring back, little to gain' : 'coasting, legs soft';
-  return clamp(M_RIDER * G9 + 9000 * (H0 - r.h) - 900 * r.hd, 0, 3.0 * M_RIDER * G9);
+  return clamp(M_RIDER * G9 + 9000 * (H0 - r.u - r.h) - 900 * (r.hd + r.ud), 0, 3.0 * M_RIDER * G9);
 }
 function ctlRigid(r, load){       // locked out: no leg motion, no work either way
   r.phase = 'RIGID · absorbing nothing, gaining nothing';
-  r.hd = 0; return load;
+  r.hd = -r.ud; return load;
 }
 const SCENARIOS = [
   { title: 'DOWN-SLOPE PUSH vs TROUGH PUSH',
@@ -217,37 +224,54 @@ const SCENARIOS = [
     b: { name: 'B · PUMP THE TRANSITIONS', desc: 'Same rollers, same entry speed, the rider works the transitions. The energy comes from the legs pushing against the trough load and letting the bike rise on the crest.', ctl: ctlTrough } },
   { title: 'RIGID vs PUMP',
     a: { name: 'A · RIGID (LOCKED OUT)', desc: 'Legs held stiff, mass rides at a constant height above the ground. No work in, none out: the bike neither gains nor loses beyond drag. A baseline for what the pump adds.', ctl: ctlRigid },
-    b: { name: 'B · PUMP THE TRANSITIONS', desc: 'Same entry speed, pumping the curves. Every trough is a chance to spend leg work against a heavy load and get it back as speed.', ctl: ctlTrough } }
+    b: { name: 'B · PUMP THE TRANSITIONS', desc: 'Same entry speed, pumping the curves. Every trough is a chance to spend leg work against a heavy load and get it back as speed.', ctl: ctlTrough } },
+  { title: 'FULL SUSPENSION vs HARDTAIL',
+    a: { name: 'A · BULLIT, SUSPENSION OPEN', desc: 'Same pump, same rider. The trough load compresses the suspension before the rider can push against it, the damper turns part of every stroke into heat, and the rebound gives back only what the spring kept.', ctl: ctlTrough, sus: true },
+    b: { name: 'B · SAME PUMP, LOCKED OUT', desc: 'Suspension locked (a hardtail, or a lockout lever). Every newton the legs push goes straight to the ground, so the same leg motion buys more speed. The article\'s point: on a full-suspension bike you have to work harder to pump.', ctl: ctlTrough, sus: false } }
 ];
-let scenario = 0, PUMP = 0.22, V0 = 11 * 0.447, riding = true;
+let scenario = 0, PUMP = 0.22, V0 = 11 * 0.447, riding = true, TSCALE = 1;
 
 /* =============== physics: bike on the surface, rider mass on legs along the normal, exact energy bookkeeping =============== */
-function makeRider(ctl){ return { ctl, x: 0, v: V0, h: H0, hd: 0, F: 0, E: 0, W: 0, S: surf(0), phase: '', v0: V0, trail: [], lastX: 0, travF: 0.04, travR: 0.05, L: 0, done: false }; }
-function resetRider(r){ r.x = 0; r.v = V0; r.v0 = V0; r.h = H0; r.hd = 0; r.F = M_RIDER * G9; r.W = 0; r.S = surf(0); r.trail.length = 0; r.done = false;
-  r.E = 0.5 * M_BIKE * r.v * r.v + 0.5 * M_RIDER * r.v * r.v + M_BIKE * G9 * r.S.y + M_RIDER * G9 * (r.S.y + r.h); }
+function makeRider(ctl, sus = true){ return { ctl, sus, x: 0, v: V0, h: H0, hd: 0, u: 0, ud: 0, udd: 0, F: 0, E: 0, W: 0, D: 0, S: surf(0), phase: '', v0: V0, trail: [], lastX: 0, travF: 0.04, travR: 0.05, L: 0, done: false }; }
+function resetRider(r){ r.x = 0; r.v = V0; r.v0 = V0; r.h = H0; r.hd = 0; r.u = 0; r.ud = 0; r.udd = 0; r.F = M_RIDER * G9; r.W = 0; r.D = 0; r.S = surf(0); r.trail.length = 0; r.done = false;
+  r.E = 0.5 * M_BIKE * r.v * r.v + 0.5 * M_RIDER * r.v * r.v + M_UNSPRUNG * G9 * r.S.y + M_SPRUNG * G9 * (r.S.y + Z0) + M_RIDER * G9 * (r.S.y + r.h); }
 function step(r, dt){
   if (r.done) return;
   const S = r.S = surf(r.x), c = Math.cos(S.th);
-  const cen = r.v * r.v * S.k * (1 - S.k * r.h);                                    // centripetal acceleration the rider's mass needs along the normal
-  const load = M_RIDER * (G9 * c + cen);                                             // leg force that holds h constant
-  let F = r.ctl(r, load);
-  const hdd = F / M_RIDER - (G9 * c + cen);
-  r.hd += hdd * dt; r.h += r.hd * dt;
-  if (r.h < H_MIN){ r.h = H_MIN; if (r.hd < 0){ r.hd = 0; } F = Math.max(F, load); }     // leg stops
-  if (r.h > H_MAX){ r.h = H_MAX; if (r.hd > 0){ r.hd = 0; } }
+  /* three masses stacked along the surface normal: unsprung on the ground, the sprung frame on the suspension (compression u),
+     the rider on driven legs above the frame. Only the legs add energy; the damper only removes it. */
+  const z = Z0 - r.u;                                                                 // frame height above the surface
+  const cenR = r.v * r.v * S.k * (1 - S.k * r.h), cenB = r.v * r.v * S.k * (1 - S.k * z);
+  const load = M_RIDER * (G9 * c + cenR);                                             // leg force that holds the rider still relative to the ground
+  let F;
+  const Fsus = r.sus ? (M_SPRUNG + M_RIDER) * G9 + K_SUS * r.u + C_SUS * r.ud + (r.u > U_MAX ? 250000 * (r.u - U_MAX) : 0) : 0;
+  if (r.ctl === ctlRigid){                                                             // rider locked to the frame: one sprung mass on the suspension, legs do no work
+    r.ctl(r, load);
+    if (r.sus){ const Mc = M_SPRUNG + M_RIDER; r.udd = -(Fsus / Mc - (G9 * c + cenR)); r.ud += r.udd * dt; r.u += r.ud * dt; if (r.u < -0.03){ r.u = -0.03; r.ud = Math.max(0, r.ud); } }
+    r.h = (Z0 - r.u) + (H0 - Z0); r.hd = -r.ud; F = load - M_RIDER * r.udd;
+  } else {
+    F = r.ctl(r, load);
+    const hdd = F / M_RIDER - (G9 * c + cenR);
+    r.hd += hdd * dt; r.h += r.hd * dt;
+    if (r.sus){ r.udd = -((Fsus - F) / M_SPRUNG - (G9 * c + cenB)); r.ud += r.udd * dt; r.u += r.ud * dt; if (r.u < -0.03){ r.u = -0.03; r.ud = Math.max(0, r.ud); } }   // top-out
+  }
+  const Lmin = H_MIN - Z0, Lmax = H_MAX - Z0, Lleg = r.h - z;                          // leg stops are relative to the frame
+  if (r.ctl !== ctlRigid && Lleg < Lmin){ r.h = z + Lmin; if (r.hd < -r.ud){ r.hd = -r.ud; } F = Math.max(F, load); }
+  if (r.ctl !== ctlRigid && Lleg > Lmax){ r.h = z + Lmax; if (r.hd > -r.ud){ r.hd = -r.ud; } }
   r.F = F;
   const Fdrag = 0.5 * 1.2 * 0.55 * r.v * r.v + 0.005 * (M_BIKE + M_RIDER) * G9;    // aero + a pump-track rolling resistance
-  const P = F * r.hd;                                                                 // leg power: positive when extending under load
-  r.E += (P - Fdrag * r.v) * dt; r.W += P * dt;
-  const Vpot = M_BIKE * G9 * S.y + M_RIDER * G9 * (S.y + r.h * c);
-  const mEff = M_BIKE + M_RIDER * Math.pow(1 - S.k * r.h, 2);
-  const T = r.E - Vpot - 0.5 * M_RIDER * r.hd * r.hd;
+  const P = r.ctl === ctlRigid ? 0 : F * (r.hd + r.ud);                              // leg power: force x the rate the legs extend relative to the frame
+  const Pd = r.sus ? C_SUS * r.ud * r.ud : 0;                                         // damper turns motion into heat
+  r.E += (P - Pd - Fdrag * r.v) * dt; r.W += P * dt; r.D += Pd * dt;
+  const Vpot = M_UNSPRUNG * G9 * S.y + M_SPRUNG * G9 * (S.y + z * c) + M_RIDER * G9 * (S.y + r.h * c) + (r.sus ? 0.5 * K_SUS * r.u * r.u + (M_SPRUNG + M_RIDER) * G9 * r.u : 0);
+  const mEff = M_UNSPRUNG + M_SPRUNG * Math.pow(1 - S.k * z, 2) + M_RIDER * Math.pow(1 - S.k * r.h, 2);
+  const T = r.E - Vpot - 0.5 * M_RIDER * r.hd * r.hd - 0.5 * M_SPRUNG * r.ud * r.ud;
   r.v = Math.sqrt(Math.max(0.3, 2 * T / mEff));
   r.x += r.v * c * dt;
   r.L = Math.abs(S.k) > 0.01 ? M_RIDER * r.v * (1 - S.k * r.h) * Math.abs(1 / S.k - r.h) : 0;   // m·v·r of the rider about the centre of curvature
   if (r.x - r.lastX > 0.15){ r.lastX = r.x; const n = normalAt(S); r.trail.push({ x: r.x + n.x * r.h, y: S.y + n.y * r.h }); if (r.trail.length > 60) r.trail.shift(); }
   if (r.x > TRACK_END) r.done = true;
-  const NF = F * 0.42, NR = F * 0.58; r.travF += (forkTravelFor(NF) - r.travF) * Math.min(1, dt * 9); r.travR += (rearTravelFor(NR) - r.travR) * Math.min(1, dt * 9);
+  const sagF = 0.036, sagR = 0.041; r.travF = clamp(sagF + 0.9 * r.u, 0, GEO.forkTravel); r.travR = clamp(sagR + 1.1 * r.u, 0, GEO.travelR);
 }
 function normalAt(S){ return { x: -Math.sin(S.th), y: Math.cos(S.th) }; }
 const A = makeRider(ctlDownslope), B = makeRider(ctlTrough); resetRider(A); resetRider(B);
@@ -257,7 +281,8 @@ const $ = id => document.getElementById(id);
 $('v0').addEventListener('input', e => { V0 = +e.target.value * 0.447; $('v0Out').textContent = e.target.value + ' mph'; });
 $('amp').addEventListener('input', e => { PUMP = +e.target.value; $('ampOut').textContent = Math.round(PUMP * 100) + ' cm'; });
 $('rideBtn').addEventListener('click', () => { riding = !riding; $('rideBtn').textContent = riding ? 'PAUSE' : 'RIDE'; });
-function loadScenario(i){ scenario = i; const sc = SCENARIOS[i]; A.ctl = sc.a.ctl; B.ctl = sc.b.ctl; resetRider(A); resetRider(B);
+$('tscale').addEventListener('input', e => { TSCALE = +e.target.value; $('tscaleOut').textContent = TSCALE.toFixed(1) + '×'; });
+function loadScenario(i){ scenario = i; const sc = SCENARIOS[i]; A.ctl = sc.a.ctl; B.ctl = sc.b.ctl; A.sus = sc.a.sus !== false; B.sus = sc.b.sus !== false; resetRider(A); resetRider(B);
   $('tagA').textContent = sc.a.name; $('tagB').textContent = sc.b.name; $('hA').textContent = sc.a.name; $('hB').textContent = sc.b.name; $('dA').textContent = sc.a.desc; $('dB').textContent = sc.b.desc;
   document.querySelectorAll('#scSeg button').forEach((x, j) => x.classList.toggle('on', j === i)); snap = true; }
 SCENARIOS.forEach((sc, i) => { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = (i + 1) + ' · ' + sc.title; bt.addEventListener('click', () => loadScenario(i)); $('scSeg').appendChild(bt); });
@@ -271,6 +296,8 @@ function hud(r, k, ph){
   txt('pw' + k, Math.round(r.F * r.hd) + ' W', r.F * r.hd > 200 ? 'good' : r.F * r.hd < -200 ? 'warn' : ''); txt('wk' + k, Math.round(r.W) + ' J', r.W > 50 ? 'good' : r.W < -50 ? 'warn' : '');
   txt('k' + k, Math.abs(r.S.k) < 0.01 ? 'straight' : (r.S.k > 0 ? 'trough  R ' : 'crest  R ') + (1 / Math.abs(r.S.k)).toFixed(1) + ' m');
   txt('l' + k, r.L ? r.L.toFixed(0) + ' kg·m²/s' : '–');
+  txt('su' + k, r.sus ? (r.u * 1000).toFixed(0) + ' mm' + (r.u > U_MAX ? ' · BOTTOMED' : '') : 'locked out', r.u > U_MAX ? 'warn' : '');
+  txt('dp' + k, r.sus ? '−' + Math.round(r.D) + ' J' : '0 J', r.D > 100 ? 'warn' : '');
   $('ex' + k).style.width = ((r.h - H_MIN) / (H_MAX - H_MIN) * 100) + '%'; $('ldb' + k).style.width = clamp(r.F / (M_RIDER * G9) / 3 * 100, 0, 100) + '%';
   ph.innerHTML = '<b>' + (r.done ? 'FINISHED' : 'ROLLER ' + clamp(Math.floor((r.x - X0) / LAM) + 1, 0, N_ROLL) + ' / ' + N_ROLL) + '</b>' + r.phase;
 }
@@ -403,11 +430,11 @@ function sideCam(cam, cp, lk, r, lz, dt){
 const PDT = 1 / 600; let last = performance.now(), acc = 0, frame = 0, doneT = 0;
 function tick(now){
   requestAnimationFrame(tick);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 60){ step(A, PDT); step(B, PDT); logRider(A); logRider(B); acc -= PDT; n++; }
+  const dtReal = Math.min(0.05, (now - last) / 1000); last = now; const dt = dtReal * TSCALE;
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 90){ step(A, PDT); step(B, PDT); logRider(A); logRider(B); acc -= PDT; n++; }
     if (A.done && B.done){ doneT += dt; if (doneT > 2.5){ doneT = 0; resetRider(A); resetRider(B); A.log = []; B.log = []; snap = true; } } }
   poseRider(bikeA, ovA, A, LANE_Z[0], riding ? dt : 0); poseRider(bikeB, ovB, B, LANE_Z[1], riding ? dt : 0);
-  sideCam(camA, camPosA, lookA, A, LANE_Z[0], dt); sideCam(camB, camPosB, lookB, B, LANE_Z[1], dt); snap = false;
+  sideCam(camA, camPosA, lookA, A, LANE_Z[0], dtReal); sideCam(camB, camPosB, lookB, B, LANE_Z[1], dtReal); snap = false;
   renderer.setViewport(0, 0, 448, 300); renderer.setScissor(0, 0, 448, 300); renderer.render(scene, camA);
   renderer.setViewport(448, 0, 448, 300); renderer.setScissor(448, 0, 448, 300); renderer.render(scene, camB);
   if ((frame++ & 1) === 0){ hud(A, 'A', $('phA')); hud(B, 'B', $('phB')); drawChart(); }

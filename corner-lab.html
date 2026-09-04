@@ -72,6 +72,7 @@
       <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
       <div class="hs"><label class="lbl" for="vin">STRAIGHT MPH</label><input id="vin" type="range" min="22" max="32" step="1" value="28"><output id="vinOut">28 mph</output></div>
       <div class="hs"><label class="lbl" for="mu">GRIP &mu;</label><input id="mu" type="range" min="0.55" max="0.95" step="0.05" value="0.8"><output id="muOut">0.80</output></div>
+      <div class="hs"><label class="lbl" for="tscale">PLAYBACK</label><input id="tscale" type="range" min="0.1" max="1.5" step="0.1" value="1"><output id="tscaleOut">1.0×</output></div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
       <button type="button" class="btn alt" id="restartBtn">RESTART</button>
     </div>
@@ -135,7 +136,7 @@
 
   <div class="chart"><canvas id="chart" width="1120" height="260"></canvas></div>
 
-  <p class="note"><b>What the friction circle shows.</b> The dot is the tyres' total demand: sideways for cornering (from the lean), fore-aft for braking or drive. The ring is what the surface can give (&mu;&middot;load). Every newton spent braking is a newton not available for cornering, so braking while leaned pushes the dot to the edge, the tyres slide, and the bike runs wide.
+  <p class="note"><b>What the friction circle shows.</b> Two dots, one per tyre (F front, R rear), each scaled to its own tyre's grip: sideways for cornering (from the lean, shared by load), fore-aft for that tyre's braking or drive. Whichever dot crosses its ring is the end that lets go: front-heavy braking while leaned pushes F over first (a wash-out), a dragged rear brake pushes R (the rear steps out). A dot is a tyre's demand: sideways for cornering (from the lean), fore-aft for braking or drive. The ring is what the surface can give (&mu;&middot;load). Every newton spent braking is a newton not available for cornering, so braking while leaned pushes the dot to the edge, the tyres slide, and the bike runs wide.
   <br><b>What fights the lean.</b> A leaned front wheel's contact patch sits behind and to the side of the steering axis (trail), so front brake force twists the bars into the turn; through counter-steering that rolls the bike upright: the <i>stand-up</i> moment, proportional to front brake force &times; sin(lean). The spinning wheels add a gyroscopic righting moment (wheel angular momentum &times; yaw rate) that also lifts a turning bike, and gyroscopic damping that slows every roll change; braking spins the wheels down and so <i>reduces</i> that righting help while adding stand-up. The rider's counter-steer authority is finite, so when stand-up plus grip loss exceed it the lean collapses and the line opens.
   <br><b>Slow in, fast out.</b> Brake in a straight line where the whole circle is available and the front tyre is loaded by weight transfer; bleed pressure off as lean comes on (trail braking) so the dot tracks the ring instead of crossing it; shift bias to the rear as the front's cornering load grows; be off the brakes at the apex so the lean can be at maximum where the corner is tightest; open the throttle as the bike stands up. Exit speed carries down the whole next straight.</p>
 </div>
@@ -204,7 +205,7 @@ function pathAt(s){ let sp = s % LOOP; if (sp < 0) sp += LOOP; const f = sp / PA
   return { x: lerp(PATH.x[i], PATH.x[j], t), z: lerp(PATH.z[i], PATH.z[j], t), theta: lerp(th0, th1, t) }; }
 
 /* =============== rider strategies =============== */
-let vStraight = 28 * 0.447, MU = 0.80, riding = true;
+let vStraight = 28 * 0.447, MU = 0.80, riding = true, TSCALE = 1;
 function cornerLimit(){ return Math.sqrt(MU * G9 * R_TURN); }
 /* Each strategy returns { pF, pR (0..1 of max brake force), thr (0..1), phase }.
    A scenario pairs a "not that" (A) with a "do this" (B); add more to SCENARIOS to build the series. */
@@ -218,7 +219,7 @@ function strategyA(b){                                  // brake in the turn
     if (demand > 0.92 || b.panic){ b.panic = true; pF = 0.48; pR = 0.20; phase = 'IN THE TURN · braking, front-biased'; }
     else phase = 'IN THE TURN · leaning';
     if (b.panic && b.v < cornerLimit() * 0.86){ pF = 0; pR = 0; phase = 'IN THE TURN · over-slowed, rolling'; if (u > 0.6){ thr = 1; phase = 'EXIT · back on the power late'; } }
-    if (b.slide) phase = 'IN THE TURN · SLIDING wide';
+    if (b.slide) phase = 'IN THE TURN · ' + (b.washF ? 'FRONT WASHING OUT' : 'REAR STEPPING OUT') + ', running wide';
   }
   return { pF, pR, thr, phase };
 }
@@ -236,7 +237,7 @@ function strategyB(b){                                  // slow in, fast out
     if (u < 0.28){ const w = 1 - u / 0.28; pF = 0.12 * w * (0.4 + 0.6 * w); pR = 0.09 * w; phase = 'ENTRY · trailing off, bias to the rear'; }
     else if (u < 0.42){ phase = 'APEX · brakes off, max lean'; }
     else { thr = smooth((u - 0.42) / 0.22); phase = 'EXIT · standing up, on the power'; }
-    if (b.slide) phase += ' (sliding)';
+    if (b.slide) phase += b.washF ? ' (front washing)' : ' (rear sliding)';
   }
   return { pF, pR, thr, phase };
 }
@@ -253,7 +254,7 @@ function strategyRearOnly(b){                           // brake for the corner 
     const u = t / seg.len;
     if (u < 0.45) phase = b.v > vE * 1.04 ? 'IN THE TURN · arrived too fast, nothing left' : 'IN THE TURN · leaning';
     else { thr = smooth((u - 0.45) / 0.2); phase = 'EXIT · on the power'; }
-    if (b.slide) phase += ' (sliding wide)';
+    if (b.slide) phase += b.washF ? ' (front washing out)' : ' (rear stepping out)';
   }
   return { pF, pR, thr, phase };
 }
@@ -273,7 +274,7 @@ const SCENARIOS = [
 let scenario = 0;
 /* =============== bike physics instance =============== */
 function makeBike(strategy, color){
-  return { strategy, color, lapT: 0, lastLap: null, minCorner: null, maxWide: 0, s: 0, v: vStraight, lean: 0, leanVel: 0, e: 0, ev: 0, omF: 0, omR: 0, fx: 0, fy: 0, pF: 0, pR: 0, thr: 0, phase: '', slide: false,
+  return { strategy, color, lapT: 0, lastLap: null, minCorner: null, maxWide: 0, useF: 0, useR: 0, washF: false, slideR: false, s: 0, v: vStraight, lean: 0, leanVel: 0, e: 0, ev: 0, omF: 0, omR: 0, fx: 0, fy: 0, pF: 0, pR: 0, thr: 0, phase: '', slide: false,
     standUp: 0, gyroRight: 0, barTq: 0, use: 0, NF: 0, NR: 0, travF: 0.04, travR: 0.05, panic: false, lastExit: null, lap: 0, log: [], off: false };
 }
 const BRAKE_MAX = 0.85 * M * G9;                                                    // total brake force at full lever
@@ -299,12 +300,15 @@ function step(b, dt){
   const Td = b.thr > 0 ? Math.min(P / Math.max(b.omR, 2), 165) : 0;
   b.omF = Math.max(0, b.omF + ((-TbF - fxF * GEO.rF) / IW_F) * dt);
   b.omR = Math.max(0, b.omR + ((Td - TbR - fxR * GEO.rR) / IW_R) * dt);
-  b.fx = fxF + fxR;
-  /* lateral: what the tyres can still give sideways after the fore-aft use */
-  const longFrac = clamp(Math.abs(b.fx) / Math.max(1, capTot), 0, 1);
-  const latAvail = capTot * Math.sqrt(Math.max(0, 1 - longFrac * longFrac));
-  b.fy = Math.min(latDemand, latAvail); b.slide = latDemand > latAvail * 1.02;
-  b.use = Math.hypot(b.fx, latDemand) / Math.max(1, capTot);
+  b.fx = fxF + fxR; b.fxFv = fxF; b.fxRv = fxR;
+  /* lateral, per axle: each tyre's sideways share is what its own circle has left after its fore-aft force */
+  const shF = b.NF / Math.max(1, b.NF + b.NR), latF = latDemand * shF, latR = latDemand * (1 - shF);
+  const availF = Math.sqrt(Math.max(0, (mu * b.NF) ** 2 - fxF * fxF)), availR = Math.sqrt(Math.max(0, (mu * b.NR) ** 2 - fxR * fxR));
+  b.useF = Math.hypot(fxF, latF) / Math.max(1, mu * b.NF); b.useR = Math.hypot(fxR, latR) / Math.max(1, mu * b.NR);
+  b.washF = latF > availF * 1.02; b.slideR = latR > availR * 1.02;
+  const latAvail = availF + availR;
+  b.fy = Math.min(latDemand, latAvail); b.slide = b.washF || b.slideR;
+  b.use = Math.max(b.useF, b.useR);
   const ayAct = b.fy / M * Math.sign(b.lean === 0 ? 1 : -b.lean);                  // right turn: lean negative, acceleration to the right (+)
   /* line: drift outward when the achieved curvature is short of the path's */
   const kapAhead = kappaAt(b.s + b.v * 0.35);                                       // the rider sets up for the curvature a third of a second ahead
@@ -354,6 +358,7 @@ const $ = id => document.getElementById(id);
 $('vin').addEventListener('input', e => { vStraight = +e.target.value * 0.447; $('vinOut').textContent = e.target.value + ' mph'; });
 $('mu').addEventListener('input', e => { MU = +e.target.value; $('muOut').textContent = MU.toFixed(2); });
 $('rideBtn').addEventListener('click', () => { riding = !riding; $('rideBtn').textContent = riding ? 'PAUSE' : 'RIDE'; });
+$('tscale').addEventListener('input', e => { TSCALE = +e.target.value; $('tscaleOut').textContent = TSCALE.toFixed(1) + '×'; });
 $('restartBtn').addEventListener('click', () => { resetBike(A); resetBike(B); });
 function loadScenario(i){
   scenario = i; const sc = SCENARIOS[i];
@@ -370,17 +375,19 @@ function drawCircle(cv, b){
   c.clearRect(0, 0, W, W); c.fillStyle = '#262A20'; c.fillRect(0, 0, W, W);
   c.strokeStyle = '#484D3C'; c.lineWidth = 1; c.beginPath(); c.moveTo(cx, 8); c.lineTo(cx, W - 8); c.moveTo(8, cy); c.lineTo(W - 8, cy); c.stroke();
   c.strokeStyle = '#A39F88'; c.lineWidth = 2; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.stroke();
-  const cap = Math.max(1, MU * (b.NF + b.NR));
-  const px = cx + R * clamp(Math.tan(Math.abs(b.lean)) * M * G9 / cap, 0, 1.5) * (b.lean < 0 ? 1 : -1), py = cy - R * clamp(b.fx / cap, -1.5, 1.5);
-  c.strokeStyle = '#484D3C'; c.beginPath(); c.moveTo(cx, cy); c.lineTo(px, py); c.stroke();
-  c.fillStyle = b.use > 1 ? '#D9534F' : b.use > 0.85 ? '#D9A441' : '#8DBF6A'; c.fillRect(px - 4, py - 4, 8, 8);
+  const dir = b.lean < 0 ? 1 : -1, latD = M * G9 * Math.tan(Math.abs(b.lean)), shF = b.NF / Math.max(1, b.NF + b.NR);
+  for (const [nm, N, fx, lat, use, sz] of [['F', b.NF, b.fxFv || 0, latD * shF, b.useF, 9], ['R', b.NR, b.fxRv || 0, latD * (1 - shF), b.useR, 6]]){
+    const cap = Math.max(1, MU * N), px = cx + R * clamp(lat / cap, 0, 1.5) * dir, py = cy - R * clamp(fx / cap, -1.5, 1.5);
+    c.strokeStyle = '#484D3C'; c.beginPath(); c.moveTo(cx, cy); c.lineTo(px, py); c.stroke();
+    c.fillStyle = use > 1 ? '#D9534F' : use > 0.85 ? '#D9A441' : '#8DBF6A'; c.fillRect(px - sz / 2, py - sz / 2, sz, sz);
+    c.fillStyle = '#EFE8D6'; c.font = '9px monospace'; c.fillText(nm, px + sz / 2 + 2, py + 3); }
   c.fillStyle = '#A39F88'; c.font = '9px monospace'; c.fillText('BRAKE', cx - 16, W - 4); c.fillText('DRIVE', cx - 16, 12); c.fillText('CORNER', W - 44, cy - 4);
 }
 function txt(id, s, cls){ const el = $(id); el.textContent = s; if (cls !== undefined) el.className = 'v ' + cls; }
 function hud(b, k, ph){
   txt('sp' + k, (b.v / 0.447).toFixed(1) + ' mph');
   txt('ln' + k, Math.abs(Math.round(b.lean / D2R)) + '°');
-  txt('gp' + k, Math.round(b.use * 100) + '%', b.use > 1 ? 'warn' : b.use > 0.85 ? '' : 'good');
+  txt('gp' + k, 'F ' + Math.round(b.useF * 100) + '% · R ' + Math.round(b.useR * 100) + '%', b.use > 1 ? 'warn' : b.use > 0.85 ? '' : 'good');
   txt('of' + k, b.e < 0.1 ? 'on line' : (b.e.toFixed(1) + ' m wide' + (b.off ? ' · OFF TRAIL' : '')), b.off ? 'warn' : b.e > 0.4 ? '' : 'good');
   txt('su' + k, Math.round(b.standUp) + ' N·m', b.standUp > 150 ? 'warn' : '');
   txt('gy' + k, Math.round(b.gyroRight) + ' N·m');
@@ -536,10 +543,10 @@ function chase(cam, cp, lk, b, dt){
 const PDT = 1 / 300; let last = performance.now(), acc = 0, frame = 0;
 function tick(now){
   requestAnimationFrame(tick);
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 30){ step(A, PDT); step(B, PDT); acc -= PDT; n++; } }
+  const dtReal = Math.min(0.05, (now - last) / 1000); last = now; const dt = dtReal * TSCALE;   // slow motion: same physics step, fewer of them per frame
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 45){ step(A, PDT); step(B, PDT); acc -= PDT; n++; } }
   poseBike(bikeA, A, riding ? dt : 0); poseBike(bikeB, B, riding ? dt : 0);
-  chase(camA, camPosA, lookA, A, dt); chase(camB, camPosB, lookB, B, dt); snap = false;
+  chase(camA, camPosA, lookA, A, dtReal); chase(camB, camPosB, lookB, B, dtReal); snap = false;
   renderer.setViewport(0, 0, 448, 300); renderer.setScissor(0, 0, 448, 300); renderer.render(scene, camA);
   renderer.setViewport(448, 0, 448, 300); renderer.setScissor(448, 0, 448, 300); renderer.render(scene, camB);
   if ((frame++ & 1) === 0){ hud(A, 'A', $('phA')); hud(B, 'B', $('phB')); drawCircle($('fcA'), A); drawCircle($('fcB'), B); drawChart(); }
