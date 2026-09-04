@@ -93,6 +93,10 @@ class RiderFormModel:
         track_video(video, track_json, rotate_deg=rot)
         track = json.loads(track_json.read_text())
         fps = track["fps"]
+        # temporal refinement of the bike keypoints (LK between detections) before anything reads them
+        from bike_kp_track import refine_bike_kps
+        kp_track_stats = refine_bike_kps(video, track, rot)
+        track_json.write_text(json.dumps(track))
 
         sus_times, sus_scores = suspension_score(track_json, out_dir / "suspension.json")
         analysis = joint_analyze(track_json, out_dir / "analysis.json")
@@ -104,6 +108,9 @@ class RiderFormModel:
         attitude_series(track["frames"], masks)
         specs = load_bike_specs((metadata or {}).get("bike_id"))
         wheels_summary = wheel_series(track["frames"], fps, specs)
+        from wheels import kp_travel_series
+        wheels_summary["kp_travel"] = kp_travel_series(track["frames"], fps, specs)
+        wheels_summary["kp_tracking"] = kp_track_stats
         tire_env = load_envelope()
         tire = tire_summary(track["frames"], fps, tire_env)
         from kinematics import rotation_rates, speed_series
@@ -277,6 +284,12 @@ class RiderFormModel:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (60, 220, 255), 1, cv2.LINE_AA)
         cv2.putText(frame, "ground-flow estimate, not GPS", (x0, y + 22),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, (160, 160, 160), 1, cv2.LINE_AA)
+        g = (rec or {}).get("bike_geom") or {}
+        ft, rc = g.get("fork_travel_kp_mm"), g.get("rear_center_delta_kp_mm")
+        cv2.rectangle(frame, (x0 - 10, y + 30), (w - 10, y + 56), (0, 0, 0), -1)
+        cv2.putText(frame, f"fork {ft:5.0f} mm   rear-centre {rc:+5.0f} mm" if ft is not None and rc is not None
+                    else (f"fork {ft:5.0f} mm" if ft is not None else "fork   -- mm"), (x0, y + 48),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 200, 80), 1, cv2.LINE_AA)
 
     def _render_labeled(self, video, track, rot, sus_times, sus_scores, grading, cornering, out_path):
         self._hud_max = {"pitch": 0.0, "roll": 0.0, "yaw": 0.0}

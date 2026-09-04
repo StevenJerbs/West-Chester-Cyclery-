@@ -497,6 +497,128 @@ def wheel_series(track_frames: list[dict], fps: float, specs: dict | None = None
     return summary
 
 
+def kp_travel_series(track_frames: list[dict], fps: float, specs: dict | None = None,
+                     window_s: float = 0.25, baseline_pct: float = 90.0, max_gap: int = 6,
+                     min_seg_s: float = 0.6, min_conf: float = 0.5, side_only: bool = True) -> dict:
+    """Fork and rear-suspension travel from the DH bike keypoints, the way
+    the mtbkin project measures it:
+
+        fork_len  = |fork_crown - front_axle|     shrinks as the fork compresses
+        rear_len  = |bottom_bracket - rear_axle|  shrinks as the rear compresses
+                    (straight-line BB-to-axle, which moves ~1/3 of the wheel's
+                    travel on a typical DH linkage; reported as rear-centre
+                    delta, not as travel)
+        wheelbase = |front_axle - rear_axle|
+
+    The series is cut into segments at gaps and at shot changes (wheelbase
+    jumping > 30% between consecutive frames). Inside a segment the scale
+    is CONSTANT: the bike's known wheelbase over the 97th-percentile
+    wheelbase in px (i.e. at full extension, before the fork shortens it),
+    so image scale cancels and fork motion cannot leak into rear metrics.
+    Lengths are Savitzky-Golay smoothed (~0.15 s) before the extended
+    baseline (97th pct) is subtracted. Static sag is unknown from video, so
+    "travel" is compression from the run's most-extended state.
+    Mutates `bike_geom` in each frame; returns a summary."""
+    from scipy.signal import savgol_filter
+    specs = specs or {}
+    wb_mm = float(specs.get("wheelbase_mm") or 1250.0)
+    fork_t, rear_t = specs.get("fork_travel_mm"), specs.get("rear_travel_mm")
+    n = len(track_frames)
+    P = {k: np.full((n, 2), np.nan) for k in ("front_axle", "rear_axle", "fork_crown", "bottom_bracket")}
+    n_side = 0
+    for i, f in enumerate(track_frames):
+        # a fork foreshortens differently from the wheelbase in rear/quarter views, so the
+        # length ratio drifts with viewing angle; only side views measure travel
+        view = (f.get("attitude") or {}).get("view")
+        if side_only and view not in (None, "side"):
+            continue
+        n_side += 1
+        for k, v in (f.get("bike_kps") or {}).items():
+            if k in P and v[2] >= min_conf:
+                P[k][i] = v[:2]
+    def dist(a, b):
+        return np.hypot(P[a][:, 0] - P[b][:, 0], P[a][:, 1] - P[b][:, 1])
+    fork_len, rear_len, wb = dist("fork_crown", "front_axle"), dist("bottom_bracket", "rear_axle"), dist("front_axle", "rear_axle")
+
+    # segments over frames with a wheelbase
+    valid = ~np.isnan(wb)
+    segs, start, last = [], None, None
+    for i in range(n):
+        if valid[i]:
+            if start is None:
+                start = i
+            elif (i - last > max_gap) or abs(wb[i] - wb[last]) > 0.3 * wb[last]:
+                segs.append((start, last)); start = i
+            last = i
+    if start is not None:
+        segs.append((start, last))
+    segs = [(a, b) for a, b in segs if (b - a + 1) / fps >= min_seg_s]
+
+    def smooth(x):
+        idx = np.arange(len(x)); ok = ~np.isnan(x)
+        if ok.sum() < 5:
+            return np.full_like(x, np.nan)
+        y = np.interp(idx, idx[ok], x[ok])
+        win = max(5, int(window_s * fps) | 1)
+        win = min(win, len(y) if len(y) % 2 else len(y) - 1)
+        if win < 5:
+            return y
+        return savgol_filter(y, win, 2)
+
+    fork_mm = np.full(n, np.nan); rear_mm = np.full(n, np.nan); seg_id = np.full(n, -1); scale_seg = np.full(n, np.nan)
+    noise_mm = []; n_bad = 0; n_all = 0
+    for si, (a, b) in enumerate(segs):
+        sl = slice(a, b + 1)
+        wb_s = wb[sl]
+        scale = wb_mm / float(np.nanpercentile(wb_s, 97))
+        scale_seg[sl] = scale; seg_id[sl] = si
+        for arr, out, cap in ((fork_len, fork_mm, fork_t), (rear_len, rear_mm, None)):
+            raw = arr[sl]
+            if (~np.isnan(raw)).sum() < 5:
+                continue
+            sm = smooth(raw)
+            base = float(np.nanpercentile(sm, baseline_pct))
+            t = (base - sm) * scale
+            if cap:
+                bad = (t < -30) | (t > 1.25 * cap)
+                n_bad += int(bad.sum()); n_all += int((~np.isnan(t)).sum())
+                t[bad] = np.nan
+            else:
+                t[np.abs(t) > 150] = np.nan
+            out[sl] = t
+            d = np.abs(np.diff((raw - sm))) * scale
+            noise_mm += list(d[~np.isnan(d)])
+    for i, f in enumerate(track_frames):
+        g = f.setdefault("bike_geom", {})
+        g["fork_travel_kp_mm"] = _r(fork_mm[i]); g["rear_center_delta_kp_mm"] = _r(rear_mm[i])
+        g["wheelbase_kp_px"] = _r(wb[i]); g["kp_segment"] = int(seg_id[i]); g["kp_scale_mm_per_px"] = _r(scale_seg[i], 3)
+
+    def stat(x):
+        v = x[~np.isnan(x)]
+        return {"p50": _r(float(np.percentile(v, 50))), "p95": _r(float(np.percentile(v, 95))), "max": _r(float(v.max()))} if len(v) else None
+    # compression events: local maxima of fork travel above 30% of travel, >= 0.3 s apart
+    events = []
+    if fork_t and (~np.isnan(fork_mm)).any():
+        x = np.where(np.isnan(fork_mm), -1e9, fork_mm); gap = max(1, int(0.3 * fps))
+        for i in range(1, n - 1):
+            if x[i] >= 0.3 * fork_t and x[i] >= x[max(0, i - gap): i + gap + 1].max():
+                events.append({"t_s": _r(i / fps, 2), "fork_travel_mm": _r(x[i]), "pct": _r(100 * x[i] / fork_t)})
+    return {
+        "coverage": _r(float(np.mean(~np.isnan(fork_mm))), 2),
+        "side_view_frames": _r(n_side / max(n, 1), 2),
+        "out_of_range_dropped": _r(n_bad / n_all, 2) if n_all else None,
+        "segments": len(segs),
+        "fork_travel_mm": stat(fork_mm), "rear_center_delta_mm": stat(rear_mm),
+        "fork_travel_pct_p95": _r(100 * float(np.nanpercentile(fork_mm, 95)) / fork_t) if fork_t and (~np.isnan(fork_mm)).any() else None,
+        "noise_floor_mm": _r(float(np.median(noise_mm))) if noise_mm else None,
+        "compression_events": events[:20], "n_events": len(events),
+        "note": ("crown-to-axle (fork) and BB-to-rear-axle (rear centre) lengths from the DH bike keypoints, scaled by "
+                 "the known wheelbase at full extension per segment; compression relative to the segment's 97th-pct "
+                 "extended state, sag unknown. noise_floor_mm = median frame-to-frame residual after smoothing: travel "
+                 "readings below ~2x it are jitter, not suspension"),
+    }
+
+
 def _contact_summary(frames):
     out = {}
     for side in ("front", "rear"):

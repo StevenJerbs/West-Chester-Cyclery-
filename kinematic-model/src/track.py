@@ -123,9 +123,12 @@ class BikeRiderTracker:
         self.bike_kp = None
         self.bike_kp_crop = None
         if bike_kp_weights == "auto":
+            import os
             wdir = Path(__file__).resolve().parents[1] / "weights"
             full, crop = wdir / "bikekp_v4_fullframe.pt", wdir / "bikekp_v4_crop.pt"
-            bike_kp_weights = str(full) if full.exists() else None
+            # BIKEKP_WEIGHTS=<path> swaps in a candidate checkpoint without renaming files (used for A/B evals)
+            env = os.environ.get("BIKEKP_WEIGHTS")
+            bike_kp_weights = env if env and Path(env).exists() else (str(full) if full.exists() else None)
             if crop.exists():
                 self.bike_kp_crop = YOLO(str(crop))
         if bike_kp_weights:
