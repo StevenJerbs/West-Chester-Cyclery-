@@ -104,6 +104,7 @@
     <div class="ctl">
       <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">PRO</button><button type="button" data-v="avg">AVERAGE</button></div></div>
       <div><div class="lbl">EP8 ASSIST</div><div class="seg" id="assistSeg"><button type="button" data-v="eco">ECO</button><button type="button" data-v="trail" class="on">TRAIL</button><button type="button" data-v="boost">BOOST</button></div></div>
+      <div class="hs"><label class="lbl" for="rlb">RIDER LB</label><input id="rlb" type="range" min="120" max="260" step="5" value="200"><output id="rlbOut">200 lb</output></div>
       <div class="hs"><label class="lbl" for="effort">RIDER W</label><input id="effort" type="range" min="100" max="400" step="10" value="220"><output id="effortOut">220 W</output></div>
       <div class="hs"><label class="lbl" for="vcap">MAX MPH</label><input id="vcap" type="range" min="12" max="34" step="1" value="26"><output id="vcapOut">26 mph</output></div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
@@ -129,7 +130,7 @@
       <h2><span class="name">REAR SHOCK</span><span class="seg mini" id="shockSeg"><button type="button" data-v="coil" class="on">COIL</button><button type="button" data-v="air">AIR</button></span><span class="spec">VPP 170 mm &middot; 230&times;65 &middot; LR 3.05&rarr;2.47</span></h2>
       <div class="desk">
         <div class="ch"><div class="val" id="rUsed">0</div><div class="bar" id="barR"><div class="bo-zone"></div><div class="fill" id="fillR"></div><div class="sag" id="sagR"></div><div class="pack" id="packR"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
-        <div class="ch"><output class="val" id="rSpringOut">500</output><div class="fader"><input id="rSpring" type="range" min="300" max="650" step="25" value="500" aria-label="Rear coil spring lb/in"></div><label class="lbl2" for="rSpring" id="rSpringLbl"><u>COIL</u><br>lb/in</label></div>
+        <div class="ch"><output class="val" id="rSpringOut">625</output><div class="fader"><input id="rSpring" type="range" min="300" max="700" step="25" value="625" aria-label="Rear coil spring lb/in"></div><label class="lbl2" for="rSpring" id="rSpringLbl"><u>COIL</u><br>lb/in</label></div>
         <div class="ch"><output class="val" id="rLscOut">8</output><div class="fader"><input id="rLsc" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed compression clicks"></div><label class="lbl2" for="rLsc"><u>LSC</u><br>/16</label></div>
         <div class="ch"><output class="val" id="rHscOut">4</output><div class="fader"><input id="rHsc" type="range" min="0" max="8" step="1" value="4" aria-label="Rear high-speed compression clicks"></div><label class="lbl2" for="rHsc"><u>HSC</u><br>/8</label></div>
         <div class="ch"><output class="val" id="rLsrOut">8</output><div class="fader"><input id="rLsr" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed rebound clicks"></div><label class="lbl2" for="rLsr"><u>LSR</u><br>/16</label></div>
@@ -146,8 +147,8 @@
       <h2><span class="name">FRONT FORK</span><span class="spec">170 mm &middot; 64&deg; HTA &middot; 44 mm offset &middot; air + 4-way</span></h2>
       <div class="desk">
         <div class="ch"><div class="val" id="fUsed">0</div><div class="bar" id="barF"><div class="bo-zone"></div><div class="fill" id="fillF"></div><div class="sag" id="sagF"></div><div class="pack" id="packF"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
-        <div class="ch"><output class="val" id="fSpringOut">82</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="82" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
-        <div class="ch"><output class="val" id="fVolOut">2</output><div class="fader"><input id="fVol" type="range" min="0" max="5" step="1" value="2" aria-label="Fork volume spacers"></div><label class="lbl2" for="fVol"><u>TOKENS</u><br>vol.</label></div>
+        <div class="ch"><output class="val" id="fSpringOut">104</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="104" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
+        <div class="ch"><output class="val" id="fVolOut">3</output><div class="fader"><input id="fVol" type="range" min="0" max="5" step="1" value="3" aria-label="Fork volume spacers"></div><label class="lbl2" for="fVol"><u>TOKENS</u><br>vol.</label></div>
         <div class="ch"><output class="val" id="fLscOut">5</output><div class="fader"><input id="fLsc" type="range" min="0" max="16" step="1" value="5" aria-label="Fork low-speed compression clicks"></div><label class="lbl2" for="fLsc"><u>LSC</u><br>/16</label></div>
         <div class="ch"><output class="val" id="fHscOut">3</output><div class="fader"><input id="fHsc" type="range" min="0" max="8" step="1" value="3" aria-label="Fork high-speed compression clicks"></div><label class="lbl2" for="fHsc"><u>HSC</u><br>/8</label></div>
         <div class="ch"><output class="val" id="fLsrOut">6</output><div class="fader"><input id="fLsr" type="range" min="0" max="16" step="1" value="6" aria-label="Fork low-speed rebound clicks"></div><label class="lbl2" for="fLsr"><u>LSR</u><br>/16</label></div>
@@ -162,7 +163,7 @@
     </section>
   </div>
 
-  <p class="note"><b>What is simulated.</b> A planar rigid chassis (19 kg sprung, pitch inertia), two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping), a 78 kg rider on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 3.05&rarr;2.47 (19% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
+  <p class="note"><b>What is simulated.</b> A 50 lb bike built from its parts (frame, EP8 motor, 630 Wh battery, fork, cockpit, shock and links, post) so the sprung centre of mass and pitch inertia follow from them; two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping) with rotational inertia and their own spin state; a 200 lb rider whose centre of mass is built from body segments (torso 50%, legs 32%, arms 10%, head 8%) at wherever the current pose puts them, on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). Braking and drive go through the wheels: brake torque (65/35 front/rear) and pedal/motor torque spin the wheels against a longitudinal slip curve that peaks near 15% slip and slides at ~72% of peak, so an over-braked wheel locks (the PRO rider modulates, the AVERAGE rider does not); the tyre forces at the ground pitch the mass above them, the front tyre force also pushes the wheel up the 64&deg; fork axis (brake dive), spinning wheels add to the mass to accelerate and resist being rolled (gyroscopic damping), and in the air brake and pedal torques react on the frame, which the PRO rider uses to level the bike. The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 3.05&rarr;2.47 (19% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
   <br><b>Sources in the repo's uploads.</b> Pinkbike's 2021 Bullit review (Kazimer): 29/27.5, 170 mm, 64&deg; HTA, 449 mm stays, 22.3 kg size L, 475 reach on the L, Fox 38 E-Tune 170 and a RockShox Super Deluxe; his setup was 175 psi in the shock for 30% sag and 100 psi + 3 tokens in the fork at 72.6 kg. The Loam Wolf shootout bike ran the Super Deluxe Coil Ultimate (51.7 lb). Pinkbike's Megatower "Behind the Numbers" scan gives the lower-link VPP family its shape: a near-linear falling leverage curve with an end-stroke shoulder, ~2 mm rearward then forward axle path, anti-squat ~110% falling off late in the travel, anti-rise 85%&rarr;&minus;25%. The linkage here is fitted to those outputs with the pivots and shock placed where the photos show them.
   <br><b>Rider posture.</b> PRO targets come from side-on frames in <code>crash_training/asa_vermette_vs_avg_rider_Y50K3ZZEdVY.mp4</code> (Asa at 185.5 s and 208.7 s: torso near trail-parallel, front knee ~135&ndash;140&deg;, elbows ~120&ndash;150&deg;) and the Goldstone FPV run; AVERAGE mirrors Charlie at 160.5 s and 194.5 s (upright torso, knee ~165&deg;, stiff legs). Hip height is solved from a target knee angle and torso angle from a target elbow angle, knees always bend forward and elbows down, and caps (knee &le;165&deg;, elbow &le;160&deg; for PRO) stop any lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.
   <br><b>World.</b> The trail is generated from the course: every segment is a constant-curvature arc, a Hermite curve closes the loop into a ~9% return climb, a hill heightfield is bench-cut to the trail's elevation profile, and a 0.25 m trail ribbon carries the rocks, logs, washboard and the banked berm. The bike yaws with the tangent, pitches with the profile, and rolls to the lateral acceleration with a second-order response; a friction circle (&mu; 0.75 on dirt, more on the bank) limits cornering, braking and drive, and the tyres scrub when the lateral demand exceeds grip. Minimap bottom-left; drag to orbit the chase camera.
@@ -331,7 +332,7 @@ function terrainAt(u){ const [g, t] = segAt(u); return g.base + g.grade * t + g.
 const OBST = [];
 function addObst(segName, t, o){ const g = COURSE.find(x => x.name === segName); OBST.push(Object.assign({ u: g.start + t }, o)); }
 addObst('CLIMB 11%', 12, { type: 'log', r: 0.09 });                 // root-log on the climb
-addObst('CLIMB 11%', 26, { type: 'rock', h: 0.22, w: 0.55 });
+addObst('CLIMB 11%', 26, { type: 'rock', h: 0.16, w: 0.55 });
 addObst('ROLLERS', 9.5, { type: 'log', r: 0.13 });
 addObst('ROCK GARDEN 16%', 4, { type: 'rock', h: 0.26, w: 0.6 });
 addObst('ROCK GARDEN 16%', 9, { type: 'rock', h: 0.33, w: 0.75 });
@@ -395,11 +396,27 @@ function coilSpring(S, k){                             // S = shaft stroke (m); 
 }
 
 /* =============== bodies =============== */
-const M_SPRUNG = 16.8, I_SPRUNG = 3.0, M_RIDER = 78, M_UF = 2.4, M_UR = 3.1;   // 22.3 kg bike (Pinkbike, size L) less the wheels
-const COM = V2(0.03, 0.22);                           // sprung-mass CoM (motor + battery low), frame-local
+/* 50 lb (22.7 kg) bike built from its parts, frame-local (m, kg): sprung CoM and pitch inertia follow from them */
+const PARTS = [[4.6, 0.12, 0.34], [2.9, -0.01, -0.02], [3.6, 0.30, 0.30], [2.3, 0.62, 0.42], [1.2, 0.50, 0.66], [1.4, 0.0, 0.14], [0.5, -0.15, 0.55]];   // frame, EP8 motor, 630 Wh battery, fork, cockpit, shock+links, post+saddle
+const M_UF = 2.6, M_UR = 3.6;                                                 // 29 DD front wheel; 27.5 DD rear with cassette and rotor
+const IW_F = 0.72 * M_UF * GEO.rF * GEO.rF, IW_R = 0.70 * M_UR * GEO.rR * GEO.rR;   // most wheel mass sits at the rim and tyre
+const M_SPRUNG = PARTS.reduce((a, q) => a + q[0], 0);
+const COM = V2(PARTS.reduce((a, q) => a + q[0] * q[1], 0) / M_SPRUNG, PARTS.reduce((a, q) => a + q[0] * q[2], 0) / M_SPRUNG);
+const I_SPRUNG = PARTS.reduce((a, q) => a + q[0] * ((q[1] - COM.x) ** 2 + (q[2] - COM.y) ** 2), 0) + 0.9;      // + the parts' own inertia
+let M_RIDER = 200 * 0.4536;
+/* rider body-segment masses (fraction of body mass) and where they sit for the current pose */
+function riderCoM(){
+  const hips = V2(cur.hx, cur.hy + rider.u), tor = cur.torso * D2R;
+  const sh = V2(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor));
+  const head = V2(sh.x + 0.17 * Math.cos(tor + 35 * D2R), sh.y + 0.17 * Math.sin(tor + 35 * D2R));
+  const pedal = V2(0, -0.05);
+  const x = 0.50 * (hips.x + sh.x) / 2 + 0.08 * head.x + 0.10 * (sh.x + BAR.x) / 2 + 0.32 * (hips.x + pedal.x) / 2;   // torso 50%, head 8%, arms 10%, legs 32%
+  const y = 0.50 * (hips.y + sh.y) / 2 + 0.08 * head.y + 0.10 * (sh.y + BAR.y) / 2 + 0.32 * (hips.y + pedal.y) / 2;
+  return V2(x, y);
+}
 const chassis = { y: 0, vy: 0, phi: 0, w: 0 };
-const wheelF = { y: 0, vy: 0, x: 0, s: 0, sv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rF, kT: 55000, cT: 350 };
-const wheelR = { y: 0, vy: 0, x: 0, t: 0, tv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rR, kT: 65000, cT: 400, st: 0, lr: 2.95 };
+const wheelF = { y: 0, vy: 0, x: 0, s: 0, sv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rF, kT: 55000, cT: 350, om: 0, slip: 0, fx: 0, tb: 0, I: IW_F };
+const wheelR = { y: 0, vy: 0, x: 0, t: 0, tv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rR, kT: 65000, cT: 400, st: 0, lr: 2.95, om: 0, slip: 0, fx: 0, tb: 0, td: 0, I: IW_R };
 const rider = { y: 0, vy: 0, u: 0, k: 9000, c: 900, hx: -0.40, hy: 0.62, xTarget: -0.40, yTarget: 0.62, pop: 0 };
 let v = 3.0, scroll = 0, riding = true, lap = 1;
 const MU_DIRT = 0.75;
@@ -448,7 +465,7 @@ function applyTuning(){
 /* static sag: solve each end against its static load with the rider in the attack position */
 function computeSag(){
   const Wtot = (M_SPRUNG + M_RIDER) * G9;
-  const rx = -0.22 + 0.275 * Math.cos(37 * D2R) + 0.10;                               // rider CoM in the balanced attack position
+  const rx = -0.22 + 0.29;                                                            // rider CoM in the balanced attack position
   const xCom = (M_SPRUNG * COM.x + M_RIDER * rx) / (M_SPRUNG + M_RIDER);
   const xF = axleFLocal(0).x, xR = VT.ax[0];
   const Wf = Wtot * (xCom - xR) / (xF - xR), Wr = Wtot - Wf;
@@ -547,6 +564,7 @@ function reset(){
   wheelF.y = g0 + wheelF.r; wheelR.y = g0 + wheelR.r; wheelF.vy = wheelR.vy = 0;
   wheelF.x = af.x; wheelR.x = ar.ax;
   wheelF.bo = wheelR.bo = 0; wheelF.ema = wheelF.sag; wheelR.ema = wheelR.sag;
+  wheelF.om = v / wheelF.r; wheelR.om = v / wheelR.r; wheelF.tb = wheelR.tb = wheelR.td = 0;
   poseState = 'seated'; const p0 = solvePose(POSE[riderMode].seated, 0, true); cur.hx = p0.hx; cur.hy = p0.hy; cur.torso = p0.torso; cur.kneeMax = p0.kneeMax; cur.elbowMax = p0.elbowMax;
   rider.u = 0; rider.vy = 0; rider.y = toWorld(V2(cur.hx, cur.hy)).y;
   rider.xTarget = cur.hx; rider.yTarget = cur.hy;
@@ -590,6 +608,23 @@ function step(dt){
     f = clamp(f, 0, 20000); w.tire = f; return f;
   }
   const tF = tyre(wheelF, gF, slF), tR = tyre(wheelR, gR, slR);
+  /* --- wheel spin and longitudinal tyre forces (slip curve peaks near 15% slip, slides at ~72% of peak) --- */
+  const fCirc = Math.sqrt(Math.max(0, 1 - Math.min(1, corner.usage) ** 2));
+  const muX = sl => MU_DIRT * Math.sin(1.6 * Math.atan(9 * sl));
+  wheelF.slip = (wheelF.om * wheelF.r - v) / Math.max(v, 1.0); wheelR.slip = (wheelR.om * wheelR.r - v) / Math.max(v, 1.0);
+  wheelF.fx = muX(wheelF.slip) * tF * fCirc; wheelR.fx = muX(wheelR.slip) * tR * fCirc;
+  const airNow = tF <= 0 && tR <= 0;
+  // brakes: 65/35 front/rear; the PRO rider modulates a locking wheel, the AVERAGE rider does not
+  let TbF = brakeF * 0.65 * wheelF.r, TbR = brakeF * 0.35 * wheelR.r;
+  if (riderMode === 'pro'){ if (wheelF.slip < -0.30) TbF *= 0.45; if (wheelR.slip < -0.30) TbR *= 0.45; }
+  if (airNow && riderMode === 'pro'){ if (chassis.phi > 0.10) TbR = Math.max(TbR, 90); }          // nose high in the air: tap the rear brake
+  let Td = pedaling ? Math.min(hudPower / Math.max(wheelR.om, 2.0), 240) : 0;
+  if (airNow) Td = (riderMode === 'pro' && chassis.phi < -0.14 && wheelR.om * wheelR.r < 1.4 * v) ? 80 : 0;   // nose low in the air: a pedal stroke lifts it (until the wheel is spun up)
+  wheelF.tb = TbF; wheelR.tb = TbR; wheelR.td = Td;
+  wheelF.om = Math.max(0, wheelF.om + ((-TbF - wheelF.fx * wheelF.r) / wheelF.I) * dt);
+  wheelR.om = Math.max(0, wheelR.om + ((Td - TbR - wheelR.fx * wheelR.r) / wheelR.I) * dt);
+  if (airNow) chassis.w += ((Td - TbF - TbR) / (I_SPRUNG + 0.55 * M_RIDER * 0.36 * 0.36)) * dt;                                         // in the air the brake and drive torques react on the frame
+  const Fdive = -wheelF.fx * Math.cos(GEO.hta) * Math.sin(GEO.hta);                                   // braking pushes the front wheel up the 64-degree fork axis
   /* --- suspension forces (positive = pushing wheel down / chassis up) --- */
   const fAxis = forkSpring(wheelF.s, tune.fPsi, tune.fTok) + damper(wheelF.sv, tune.fLsC, tune.fHsC, tune.fLsR, tune.fHsR);
   const Ff = fAxis * (-axisDown.y);
@@ -611,7 +646,7 @@ function step(dt){
     w.boCd -= dt; w.ema += (Math.max(0, comp) - w.ema) * Math.min(1, dt * 1.6);
   }
   /* --- rider on legs --- */
-  const comX = rider.xTarget + 0.275 * Math.cos(cur.torso * D2R) + 0.10;             // torso, arms and head sit forward of the hips
+  const rcm = riderCoM(), comX = rcm.x;                                              // rider CoM from the body segments in the current pose
   const hipsW = toWorld(V2(rider.xTarget, rider.yTarget)), hipsV = worldVel(V2(rider.xTarget, rider.yTarget));
   rider.u = rider.y - hipsW.y;
   let Frider = -rider.k * rider.u - rider.c * (rider.vy - hipsV) + M_RIDER * G9;    // legs hold body weight at u = 0
@@ -627,15 +662,21 @@ function step(dt){
   let Tz = (armF.x - comW.x) * Ff + (armR.x - comW.x) * Fr - (armH.x - comW.x) * Frider;
   const inAir = tF <= 0 && tR <= 0;
   const phiRef = inAir ? -0.10 : clamp(Math.atan(gradeS), -0.35, 0.35);
-  const kp = inAir ? 900 : 350, cp = inAir ? 220 : 150;
+  const mScale = M_RIDER / 78;                                                        // a heavier rider has more authority over the bars, and more mass to move
+  const kp = (inAir ? 900 : 350) * mScale, cp = (inAir ? 220 : 150) * mScale;
   Tz += -kp * (chassis.phi - phiRef) - cp * chassis.w;
   if (tF <= 0 && tR > 0 && v > 2) Tz += riderMode === 'pro' ? 320 : 120;              // front wheel off the ledge: the rider pushes the bars forward and shifts back                               // the rider's arms hold the bars level with the trail; in the air they set the bike up for the landing
-  Tz += (M_SPRUNG + M_RIDER) * accelX * 0.75;                                        // braking dives the nose, accel lifts it
+  const hCg = (M_SPRUNG * COM.y + M_RIDER * rcm.y) / (M_SPRUNG + M_RIDER) + Math.max(0, chassis.y - gF);   // combined CoM height above the ground
+  // longitudinal forces at the ground pitch the mass above them: tyre slip forces plus the push-back of bump faces (base grade excluded: that moment is already in the geometry)
+  const NcapT = 1.6 * (M_SPRUNG + M_RIDER + M_UF + M_UR) * G9;
+  const bumpX = -(Math.min(tF, NcapT) * clamp(slFx - baseGrade(scroll + wheelF.x), -0.7, 0.7) + Math.min(tR, NcapT) * clamp(slRx - baseGrade(scroll + wheelR.x), -0.7, 0.7));
+  Tz += (wheelF.fx + wheelR.fx + bumpX) * hCg;
   chassis.vy += (Fy / M_SPRUNG) * dt; chassis.y += chassis.vy * dt;
-  chassis.w += (Tz / I_SPRUNG) * dt; chassis.phi += chassis.w * dt;
+  const I_EFF = I_SPRUNG + 0.55 * M_RIDER * 0.36 * 0.36;                            // the rider's body pitches with the bike through stiff arms and legs
+  chassis.w += (Tz / I_EFF) * dt; chassis.phi += chassis.w * dt;
   chassis.phi = clamp(chassis.phi, -0.9, 0.9);
   /* --- wheels --- */
-  wheelF.vy += ((tF - Ff) / M_UF - GL) * dt; wheelF.y += wheelF.vy * dt;
+  wheelF.vy += ((tF - Ff + Fdive) / M_UF - GL) * dt; wheelF.y += wheelF.vy * dt;
   wheelR.vy += ((tR - Fr) / M_UR - GL) * dt; wheelR.y += wheelR.vy * dt;
   /* hard stops: an inelastic catch at the end of travel so nothing tunnels */
   {
@@ -658,8 +699,7 @@ function step(dt){
   const Prider = pedaling ? effortW * (poseState === 'climb' ? 1.25 : 1) : 0;
   const Pmotor = (pedaling && v < 8.9) ? Math.min(500, Prider * ASSIST[assistMode]) * clamp((8.9 - v) / 1.5, 0, 1) : 0;
   hudPower = Prider + Pmotor;
-  const Fprop = Math.min((Prider + Pmotor) / Math.max(v, 1.2), 900, MU_DIRT * tR * Math.sqrt(Math.max(0, 1 - Math.min(1, corner.usage) ** 2)) + 50);   // rear-tyre traction limits drive
-  const Mt = M_SPRUNG + M_RIDER + M_UF + M_UR;
+  const Mt = M_SPRUNG + M_RIDER + M_UF + M_UR, MtEff = Mt + IW_F / (wheelF.r * wheelF.r) + IW_R / (wheelR.r * wheelR.r);   // spinning wheels add to the mass to accelerate
   const Fdrag = 0.5 * 1.2 * 0.62 * v * v, Froll = 0.018 * Mt * G9 * (airborne ? 0 : 1);
   // the ground pushes along its own normal: a tilted contact turns tyre load into drive (downhill) or drag (uphill, bump faces)
   // a real tyre wraps a log or a rock edge, and the rider unweights over it: cap the tilt and the load that go into the drag term
@@ -671,9 +711,9 @@ function step(dt){
   const fCircle = Math.sqrt(Math.max(0, 1 - Math.min(1, corner.usage) * Math.min(1, corner.usage)));
   brakeF = (!airborne && v > vCap) ? Math.min(0.55 * Mt * G9, Mt * (v - vCap) * 2.5) : 0;
   if (corner.braking) brakeF = Math.max(brakeF, Mt * 4.5);
-  brakeF = Math.min(brakeF, MU_DIRT * (tF + tR) * fCircle);
+  brakeF = Math.min(brakeF, 1.15 * MU_DIRT * (tF + tR));                             // brake demand; lock-up is decided by the slip curve
   if (corner.sliding) v = Math.max(1, v - 2.5 * (corner.usage - 1) * dt);      // the tyres scrub when the lateral demand exceeds the grip
-  accelX = (Fprop - Fdrag - Froll + Fground - brakeF) / Mt;
+  accelX = (wheelF.fx + wheelR.fx - Fdrag - Froll + Fground) / MtEff;
   v = Math.max(0.5, v + accelX * dt);
   scroll += v * dt;
   crank += (pedaling ? 82 / 60 * 2 * Math.PI : 0) * dt;
@@ -689,6 +729,8 @@ for (const id of ['rSpring','rLsc','rHsc','rLsr','rHsr','fSpring','fVol','fLsc',
   { ui[id] = $(id); ui[id + 'Out'] = $(id + 'Out'); ui[id].addEventListener('input', applyTuning); }
 for (const id of ['fSag','rSag','sagF','sagR','fillF','fillR','packF','packR','barF','barR','fPack','rPack','fUsed','rUsed','fBo','rBo','rLR','fAx',
   'effort','effortOut','vcap','vcapOut','rideBtn','restartBtn','hudSec','hudSpd','hudGrade','hudState','hudPower','vKnee','vHip','vElbow','vTorso','bKnee','bHip','bElbow','bTorso']) ui[id] = $(id);
+ui.rlb = $('rlb'); ui.rlbOut = $('rlbOut');
+ui.rlb.addEventListener('input', () => { M_RIDER = +ui.rlb.value * 0.4536; ui.rlbOut.textContent = ui.rlb.value + ' lb'; applyTuning(); });
 ui.effort.addEventListener('input', () => { effortW = +ui.effort.value; ui.effortOut.textContent = effortW + ' W'; });
 ui.vcap.addEventListener('input', () => { vCap = +ui.vcap.value * 0.447; ui.vcapOut.textContent = ui.vcap.value + ' mph'; });
 ui.rideBtn.addEventListener('click', () => { riding = !riding; ui.rideBtn.textContent = riding ? 'PAUSE' : 'RIDE'; ui.rideBtn.dataset.riding = riding ? '' : '1'; });
@@ -698,8 +740,8 @@ segButtons('riderSeg', vv => { riderMode = vv; });
 segButtons('assistSeg', vv => { assistMode = vv; });
 segButtons('shockSeg', vv => {
   shockType = vv;
-  if (vv === 'air'){ ui.rSpring.min = 120; ui.rSpring.max = 260; ui.rSpring.step = 5; ui.rSpring.value = 175; $('rSpringLbl').innerHTML = '<u>AIR</u><br>psi'; }
-  else { ui.rSpring.min = 300; ui.rSpring.max = 650; ui.rSpring.step = 25; ui.rSpring.value = 500; $('rSpringLbl').innerHTML = '<u>COIL</u><br>lb/in'; }
+  if (vv === 'air'){ ui.rSpring.min = 120; ui.rSpring.max = 260; ui.rSpring.step = 5; ui.rSpring.value = 205; $('rSpringLbl').innerHTML = '<u>AIR</u><br>psi'; }
+  else { ui.rSpring.min = 300; ui.rSpring.max = 650; ui.rSpring.step = 25; ui.rSpring.value = 625; $('rSpringLbl').innerHTML = '<u>COIL</u><br>lb/in'; }
   applyTuning();
 });
 /* DH envelope bands from kinematic-model/src/disciplines.py */
@@ -733,7 +775,8 @@ function updateHud(joints){
   ui.hudSpd.textContent = (v / 0.447).toFixed(0) + ' mph';
   ui.hudGrade.textContent = (gradeS * 100).toFixed(0) + '%';
   ui.hudState.textContent = { seated: 'SEATED PEDAL', climb: gradeS > 0.045 ? 'STANDING CLIMB' : 'STANDING PEDAL', attack: 'ATTACK', pop: 'PRELOAD / POP', air: 'AIRBORNE', land: 'ABSORB LANDING', huck: 'HUCK: WEIGHT BACK' }[poseState];
-  ui.hudPower.textContent = corner.sliding ? ('SLIDING · grip ' + Math.round(corner.usage * 100) + '%') : corner.active ? ((corner.lean > 0 ? 'LEFT ' : 'RIGHT ') + corner.g.toFixed(2) + ' g · lean ' + Math.abs(Math.round(corner.lean / D2R)) + '° · grip ' + Math.round(corner.usage * 100) + '%' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider+motor)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
+  const lockF = wheelF.tire > 0 && wheelF.om * wheelF.r < 0.35 * v, lockR = wheelR.tire > 0 && wheelR.om * wheelR.r < 0.35 * v;
+  ui.hudPower.textContent = (brakeF > 50 && !corner.sliding) ? ('BRAKING ' + Math.round(brakeF) + ' N · slip F ' + Math.round(wheelF.slip * 100) + '% R ' + Math.round(wheelR.slip * 100) + '%' + (lockF ? ' · FRONT LOCKED' : lockR ? ' · REAR LOCKED' : '') + (corner.braking ? ' · for corner' : '')) : corner.sliding ? ('SLIDING · grip ' + Math.round(corner.usage * 100) + '%') : corner.active ? ((corner.lean > 0 ? 'LEFT ' : 'RIGHT ') + corner.g.toFixed(2) + ' g · lean ' + Math.abs(Math.round(corner.lean / D2R)) + '° · grip ' + Math.round(corner.usage * 100) + '%' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider+motor)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
   for (const k of ['knee', 'hip', 'elbow', 'torso']) setJoint(k, joints[k]);
 }
 
@@ -976,7 +1019,7 @@ function pose(dt){
   /* wheels in world */
   wF.position.set(axF.x * c - axF.y * s, chassis.y - gy + axF.x * s + axF.y * c, 0);
   wR.position.set(axR.x * c - axR.y * s, chassis.y - gy + axR.x * s + axR.y * c, 0);
-  const spin = v / GEO.rR * dt; wF.rotation.z -= spin * GEO.rR / GEO.rF; wR.rotation.z -= spin;
+  wF.rotation.z -= wheelF.om * dt; wR.rotation.z -= wheelR.om * dt;
   const gFv = groundAt(scroll + wF.position.x), gRv = groundAt(scroll + wR.position.x);
   shadF.position.set(wF.position.x, gFv - gy + 0.012, 0); shadR.position.set(wR.position.x, gRv - gy + 0.012, 0);
   shadF.scale.x = clamp(1 - (wF.position.y + gy - gFv - GEO.rF) * 1.2, 0.25, 1); shadR.scale.x = clamp(1 - (wR.position.y + gy - gRv - GEO.rR) * 1.2, 0.25, 1);
@@ -1025,7 +1068,8 @@ function pose(dt){
   jointsOut.knee = kneeAng; jointsOut.elbow = elbowAng; jointsOut.torso = cur.torso - Math.atan(gradeS) / D2R + chassis.phi / D2R;
   /* camera & backdrop follow */
   /* roll: a second-order response to the lean the corner asks for (the rider steers into it) */
-  leanAcc = 60 * (corner.lean - leanVis) - 14 * leanVel; leanVel += leanAcc * dt; leanVis += leanVel * dt;
+  const gyro = 0.9 * (wheelF.I * wheelF.om + wheelR.I * wheelR.om);                // spinning wheels resist being rolled
+  leanAcc = 60 * (corner.lean - leanVis) - (14 + gyro) * leanVel; leanVel += leanAcc * dt; leanVis += leanVel * dt;
   const av = Math.min(1, dt * 5);
   steerVis += (clamp(-PW.kappa * 2.2, -0.5, 0.5) - steerVis) * av; headTurnVis += (clamp(-pathAt(scroll + 6).kappa * 3, -0.7, 0.7) - headTurnVis) * av;
   /* chase camera: behind and to the right, orbitable by drag */
