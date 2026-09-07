@@ -998,7 +998,7 @@ const RIB_L = [-1.4, -1.0, -0.65, -0.35, -0.12, 0, 0.12, 0.35, 0.65, 1.0, 1.4], 
     const i2 = (i + 1) % RIB_N;
     for (let j = 0; j + 1 < RIB_L.length; j++){ const a = i * RIB_L.length + j, b = i2 * RIB_L.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); }
   }
-  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals();
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals(); window.RIBBON_GEO = g;
   { const rb = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide, roughness: 0.95 })); rb.receiveShadow = true; scene.add(rb); }
 }
 
@@ -1036,6 +1036,7 @@ for (const o of OBST){
   for (let i = 0; i < 90; i++){ const q = at(2.2, 7.0); if (q) put(P.salal, q.x, q.z, worldHeight(q.x, q.z, q.ti) - 0.03, 0.8, 1.6); }
   for (let i = 0; i < 34; i++){ const q = at(2.6, 1e9); if (q) put(P.boulder, q.x, q.z, worldHeight(q.x, q.z, q.ti) - 0.06, 0.6, 2.2); }
   for (let i = 0; i < 14; i++){ const q = at(3.2, 12); if (q) put(P.stump, q.x, q.z, worldHeight(q.x, q.z, q.ti) - 0.05, 0.8, 1.5); }
+  window.PNW_PLACEMENTS = P;
   PNW.instanced(scene, 'cedar', P.cedar, 1.0); PNW.instanced(scene, 'cedar3', P.cedar3, 1.0);
   PNW.instanced(scene, 'fir', P.fir, 0.8); PNW.instanced(scene, 'hemlock', P.hemlock, 0.9);
   PNW.instanced(scene, 'maple', P.maple, 1.6);
@@ -1055,6 +1056,16 @@ for (const o of OBST){
   PNW.sky(scene, WCX, WCZ, WSIZE * 0.95);
 }
 window.WORLD_BUILD_MS = performance.now() - _tBuild;
+/* world export for the Blender render pipeline (tools/render_trail.py): terrain, ribbon, obstacles, flora, path */
+window.WORLD_EXPORT = () => {
+  const tp = terrainGeo.attributes.position.array, tc = terrainGeo.attributes.color.array, ti = terrainGeo.index.array;
+  const rib = window.RIBBON_GEO;
+  const obst = OBST.map(o => { const P = pathAt(o.u); return Object.assign({ x: P.x, z: P.z, y: terrainAt(o.u), theta: P.theta }, o); });
+  const path = []; for (let i = 0; i < PATH.n; i += 2) path.push([PATH.x[i], groundAt(i * PATH.ds), PATH.z[i]]);
+  return { terrain: { pos: Array.from(tp), col: Array.from(tc), idx: Array.from(ti) },
+           ribbon: rib ? { pos: Array.from(rib.attributes.position.array), col: Array.from(rib.attributes.color.array), idx: Array.from(rib.index.array) } : null,
+           obst, flora: window.PNW_PLACEMENTS, path, center: [WCX, WCZ], size: WSIZE, course: COURSE.map(g => ({ name: g.name, start: g.start, len: g.len })) };
+};
 /* ---- minimap ---- */
 const mm = $('mm'), mmc = mm.getContext('2d');
 function drawMinimap(){
