@@ -54,3 +54,25 @@ pass ground the physics further instead of guessing:
 No urgency -- the labs are functional and cited as best-effort estimates
 either way; this is only to flag what's next in line if that export
 happens.
+
+## PC session response (2026-09-07)
+
+1. **G-out fork-travel series delivered**: `tools/gout_travel_series.json` — per-frame
+   (t, fork_travel_mm) through the comparison_3 G-out for both riders, from the
+   keypoint-travel layer on the refined tracks. Asa: 15 samples over 0.56 s, peak 53 mm,
+   a single smooth compression. Charlie: 18 samples over 0.68 s, peak 98 mm, with the
+   ramp-up visible (10 -> 30 -> 106 mm across ~0.8 s in the coarse profile). Noise floor
+   ~6-12 mm. Ignore `rear_center_delta_mm` (documented as unusable at this resolution).
+   Each window is under a second of measurable side-view footage, so treat the curves as
+   shape references for the scenario, not calibration targets.
+
+2. **Rotation-rate maxima: ridden dynamics, not landings.** At every recorded maximum the
+   contact heuristic shows both wheels grounded or nearly so in a +/-0.5 s window
+   (airborne fraction 0.00-0.18). The roll maxima (245-270 deg/s) occur at ~10 s into both
+   clips at 10-31 km/h with the highest airborne fraction (0.14-0.18) -- rough-ground
+   cornering, not clean lean transitions, so treat them as an upper bound for the Corner
+   Lab as you suspected; a clean-cornering roll rate is likely well below. One artifact:
+   the MSA yaw maximum sits at t=0.5 s at 3 km/h (start of clip, rider barely moving) --
+   disregard that one entirely. Caveat: this re-analysis used the PC session's re-tracked
+   runs, so the at_s values differ by a few seconds from the videos.yaml notes; the
+   character of each maximum is what matters.

@@ -1,0 +1,176 @@
+{
+ "source": "kinematic-model branch claude/downhill-bike-kinematic-training-105gzd, output/asa_vs_charlie/s3_*/track_refined.json",
+ "method": "fork_travel_kp_mm = (97th-pct extended crown-to-front-axle length - current, Savitzky-Golay 0.25 s) x per-segment scale from known wheelbase; side-view frames only; noise floor ~6-12 mm. rear_center_delta_kp_mm = BB-to-rear-axle change, TOO NOISY to use (reads beyond linkage range); included for completeness only.",
+ "video": "Y50K3ZZEdVY comparison_3 G-out (Asa Vermette pro vs Charlie host), 25 fps",
+ "series": {
+  "s3_asa": [
+   {
+    "t_s": 1.0,
+    "fork_travel_mm": 0.7,
+    "rear_center_delta_mm": 7.6
+   },
+   {
+    "t_s": 1.04,
+    "fork_travel_mm": 0.7,
+    "rear_center_delta_mm": 0.5
+   },
+   {
+    "t_s": 1.08,
+    "fork_travel_mm": 0.7,
+    "rear_center_delta_mm": -2.1
+   },
+   {
+    "t_s": 1.12,
+    "fork_travel_mm": 0.7,
+    "rear_center_delta_mm": -0.4
+   },
+   {
+    "t_s": 1.16,
+    "fork_travel_mm": 0.7,
+    "rear_center_delta_mm": 3.1
+   },
+   {
+    "t_s": 1.2,
+    "fork_travel_mm": 0.7,
+    "rear_center_delta_mm": 10.0
+   },
+   {
+    "t_s": 1.24,
+    "fork_travel_mm": -0.5,
+    "rear_center_delta_mm": 34.5
+   },
+   {
+    "t_s": 1.28,
+    "fork_travel_mm": -0.5,
+    "rear_center_delta_mm": 73.4
+   },
+   {
+    "t_s": 1.32,
+    "fork_travel_mm": 6.8,
+    "rear_center_delta_mm": 120.3
+   },
+   {
+    "t_s": 1.36,
+    "fork_travel_mm": 14.4,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 1.4,
+    "fork_travel_mm": 19.2,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 1.44,
+    "fork_travel_mm": 21.7,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 1.48,
+    "fork_travel_mm": 30.2,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 1.52,
+    "fork_travel_mm": 40.5,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 1.56,
+    "fork_travel_mm": 52.8,
+    "rear_center_delta_mm": null
+   }
+  ],
+  "s3_charlie": [
+   {
+    "t_s": 2.0,
+    "fork_travel_mm": 26.7,
+    "rear_center_delta_mm": -74.0
+   },
+   {
+    "t_s": 2.04,
+    "fork_travel_mm": 18.0,
+    "rear_center_delta_mm": -30.7
+   },
+   {
+    "t_s": 2.08,
+    "fork_travel_mm": 15.9,
+    "rear_center_delta_mm": 13.1
+   },
+   {
+    "t_s": 2.12,
+    "fork_travel_mm": 20.3,
+    "rear_center_delta_mm": 57.4
+   },
+   {
+    "t_s": 2.16,
+    "fork_travel_mm": 31.7,
+    "rear_center_delta_mm": 102.7
+   },
+   {
+    "t_s": 2.2,
+    "fork_travel_mm": 49.1,
+    "rear_center_delta_mm": 147.5
+   },
+   {
+    "t_s": 2.24,
+    "fork_travel_mm": 65.6,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.28,
+    "fork_travel_mm": 80.5,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.32,
+    "fork_travel_mm": 95.1,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.36,
+    "fork_travel_mm": 98.2,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.4,
+    "fork_travel_mm": 95.0,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.44,
+    "fork_travel_mm": 78.0,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.48,
+    "fork_travel_mm": 50.9,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.52,
+    "fork_travel_mm": 24.7,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.56,
+    "fork_travel_mm": 16.3,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.6,
+    "fork_travel_mm": 3.4,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.64,
+    "fork_travel_mm": -7.8,
+    "rear_center_delta_mm": null
+   },
+   {
+    "t_s": 2.68,
+    "fork_travel_mm": -17.2,
+    "rear_center_delta_mm": null
+   }
+  ]
+ }
+}
