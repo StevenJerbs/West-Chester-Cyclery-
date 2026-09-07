@@ -100,7 +100,7 @@
   <header>
     <div>
       <h1>SUSPENSION LAB</h1>
-      <div class="sub">West Chester Cyclery &mdash; 2021 Santa Cruz Bullit CC (size L, low), 170 mm lower-link VPP + 170 mm fork &middot; rider posture fitted to Asa Vermette / Jackson Goldstone frames &middot; clicks from fully open<br><b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
+      <div class="sub">West Chester Cyclery &mdash; 2021 Santa Cruz Bullit CC (size L, low), 170 mm lower-link VPP + 170 mm fork &middot; rider posture fitted to Asa Vermette / Jackson Goldstone frames &middot; chassis pitch-rate capped at 360&deg;/s (measured pro DH peak 279&ndash;284&deg;/s, FPV chase footage) &middot; clicks from fully open<br><b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">PRO</button><button type="button" data-v="avg">AVERAGE</button></div></div>
@@ -674,7 +674,7 @@ function step(dt){
   Tz += (wheelF.fx + wheelR.fx + bumpX) * hCg;
   chassis.vy += (Fy / M_SPRUNG) * dt; chassis.y += chassis.vy * dt;
   const I_EFF = I_SPRUNG + 0.55 * M_RIDER * 0.36 * 0.36;                            // the rider's body pitches with the bike through stiff arms and legs
-  chassis.w += (Tz / I_EFF) * dt; chassis.phi += chassis.w * dt;
+  chassis.w += (Tz / I_EFF) * dt; chassis.w = clamp(chassis.w, -6.3, 6.3); chassis.phi += chassis.w * dt;   // 6.3 rad/s = 360 deg/s: a stiff-armed rider caps the frame's pitch rate through a hard hit; measured pro DH pitch rate (FPV chase footage, kinematic-model/data/videos.yaml) peaks at 279-284 deg/s
   chassis.phi = clamp(chassis.phi, -0.9, 0.9);
   /* --- wheels --- */
   wheelF.vy += ((tF - Ff + Fdive) / M_UF - GL) * dt; wheelF.y += wheelF.vy * dt;

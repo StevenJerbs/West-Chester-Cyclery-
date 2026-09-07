@@ -68,7 +68,7 @@
   <header>
     <div>
       <h1>CORNER LAB</h1>
-      <div class="sub">Two identical Bullits, one fast right-hander (R 10 m), two ways to use the brakes, one view: the solid rider does it right, the translucent ghost is the other technique on the same trail at the same moment. The ghost brakes <i>in</i> the turn; the solid rider rides <i>slow in, fast out</i>: brake in a straight line, trail off into the entry while the bias moves rearward, off by the apex, on the power out. Same bike, rider and physics as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>.</div>
+      <div class="sub">Two identical Bullits, one fast right-hander (R 10 m), two ways to use the brakes, one view: the solid rider does it right, the translucent ghost is the other technique on the same trail at the same moment. The ghost brakes <i>in</i> the turn; the solid rider rides <i>slow in, fast out</i>: brake in a straight line, trail off into the entry while the bias moves rearward, off by the apex, on the power out. Same bike, rider and physics as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>. Counter-steer authority raised to give a hard correction headroom toward measured pro DH roll rates (245&ndash;270&deg;/s, FPV chase footage of a World Cup run).</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
@@ -328,7 +328,7 @@ function step(b, dt){
   const Lw = IW_F * b.omF + IW_R * b.omR;
   b.gyroRight = Lw * yawRate * 1.0;                                                 // N·m, toward upright
   const gyroDamp = 0.9 * Lw;
-  const rider = clamp(I_ROLL * (16 * (target - b.lean) - 7 * b.leanVel), -260, 260);  // finite counter-steer authority (~3.1 rad/s²)
+  const rider = clamp(I_ROLL * (16 * (target - b.lean) - 7 * b.leanVel), -420, 420);  // finite counter-steer authority (~5.1 rad/s²); measured pro DH roll rate (FPV chase footage, kinematic-model/data/videos.yaml) peaks near 245-270 deg/s, well above a mild-cornering counter-steer alone -- raised from an earlier, sluggish 260 N·m so a hard correction can approach that
   b.barTq = rider;
   const upright = -Math.sign(b.lean);
   const acc = (rider + upright * (b.standUp + b.gyroRight) - gyroDamp * b.leanVel) / I_ROLL;
