@@ -101,13 +101,12 @@
   <header>
     <div>
       <h1>SUSPENSION LAB</h1>
-      <div class="sub">West Chester Cyclery &mdash; 2021 Santa Cruz Bullit CC (size L, low), 170 mm lower-link VPP + 170 mm fork &middot; rider posture fitted to Asa Vermette / Jackson Goldstone frames &middot; chassis pitch-rate capped at 360&deg;/s (measured pro DH peak 279&ndash;284&deg;/s, FPV chase footage) &middot; clicks from fully open<br><b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
+      <div class="sub">West Chester Cyclery &mdash; Jackson Goldstone's Santa Cruz V10 CC MX (size M, low), 208 mm lower-link VPP + 200 mm Fox 40 &middot; rider posture from his Val di Sole 2023 chase footage &middot; chassis pitch-rate capped at 360&deg;/s (measured pro DH peak 279&ndash;284&deg;/s, FPV chase footage) &middot; clicks from fully open<br><b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
     </div>
     <div class="ctl">
-      <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">PRO</button><button type="button" data-v="avg">AVERAGE</button></div></div>
-      <div><div class="lbl">EP8 ASSIST</div><div class="seg" id="assistSeg"><button type="button" data-v="eco">ECO</button><button type="button" data-v="trail" class="on">TRAIL</button><button type="button" data-v="boost">BOOST</button></div></div>
-      <div class="hs"><label class="lbl" for="rlb">RIDER LB</label><input id="rlb" type="range" min="120" max="260" step="5" value="200"><output id="rlbOut">200 lb</output></div>
-      <div class="hs"><label class="lbl" for="effort">RIDER W</label><input id="effort" type="range" min="100" max="400" step="10" value="220"><output id="effortOut">220 W</output></div>
+      <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">GOLDSTONE</button><button type="button" data-v="avg">AVERAGE</button></div></div>
+      <div class="hs"><label class="lbl" for="rlb">RIDER LB</label><input id="rlb" type="range" min="120" max="260" step="5" value="150"><output id="rlbOut">150 lb</output></div>
+      <div class="hs"><label class="lbl" for="effort">RIDER W</label><input id="effort" type="range" min="100" max="400" step="10" value="300"><output id="effortOut">300 W</output></div>
       <div class="hs"><label class="lbl" for="vcap">MAX MPH</label><input id="vcap" type="range" min="12" max="34" step="1" value="26"><output id="vcapOut">26 mph</output></div>
       <button type="button" class="btn" id="rideBtn">PAUSE</button>
       <button type="button" class="btn alt" id="restartBtn">RESTART</button>
@@ -129,10 +128,10 @@
 
   <div class="bench">
     <section class="card rear">
-      <h2><span class="name">REAR SHOCK</span><span class="seg mini" id="shockSeg"><button type="button" data-v="coil" class="on">COIL</button><button type="button" data-v="air">AIR</button></span><span class="spec">VPP 170 mm &middot; 230&times;65 &middot; LR 3.05&rarr;2.47</span></h2>
+      <h2><span class="name">REAR SHOCK</span><span class="seg mini" id="shockSeg"><button type="button" data-v="coil" class="on">COIL</button><button type="button" data-v="air">AIR</button></span><span class="spec">VPP 208 mm &middot; 250&times;75 &middot; LR 2.86&rarr;2.59</span></h2>
       <div class="desk">
         <div class="ch"><div class="val" id="rUsed">0</div><div class="bar" id="barR"><div class="bo-zone"></div><div class="fill" id="fillR"></div><div class="sag" id="sagR"></div><div class="pack" id="packR"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
-        <div class="ch"><output class="val" id="rSpringOut">625</output><div class="fader"><input id="rSpring" type="range" min="300" max="700" step="25" value="625" aria-label="Rear coil spring lb/in"></div><label class="lbl2" for="rSpring" id="rSpringLbl"><u>COIL</u><br>lb/in</label></div>
+        <div class="ch"><output class="val" id="rSpringOut">475</output><div class="fader"><input id="rSpring" type="range" min="300" max="700" step="25" value="475" aria-label="Rear coil spring lb/in"></div><label class="lbl2" for="rSpring" id="rSpringLbl"><u>COIL</u><br>lb/in</label></div>
         <div class="ch"><output class="val" id="rLscOut">8</output><div class="fader"><input id="rLsc" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed compression clicks"></div><label class="lbl2" for="rLsc"><u>LSC</u><br>/16</label></div>
         <div class="ch"><output class="val" id="rHscOut">4</output><div class="fader"><input id="rHsc" type="range" min="0" max="8" step="1" value="4" aria-label="Rear high-speed compression clicks"></div><label class="lbl2" for="rHsc"><u>HSC</u><br>/8</label></div>
         <div class="ch"><output class="val" id="rLsrOut">8</output><div class="fader"><input id="rLsr" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed rebound clicks"></div><label class="lbl2" for="rLsr"><u>LSR</u><br>/16</label></div>
@@ -146,10 +145,10 @@
       </div>
     </section>
     <section class="card front">
-      <h2><span class="name">FRONT FORK</span><span class="spec">170 mm &middot; 64&deg; HTA &middot; 44 mm offset &middot; air + 4-way</span></h2>
+      <h2><span class="name">FRONT FORK</span><span class="spec">200 mm &middot; 63.5&deg; HTA &middot; 52 mm offset &middot; Fox 40, air + 4-way</span></h2>
       <div class="desk">
         <div class="ch"><div class="val" id="fUsed">0</div><div class="bar" id="barF"><div class="bo-zone"></div><div class="fill" id="fillF"></div><div class="sag" id="sagF"></div><div class="pack" id="packF"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
-        <div class="ch"><output class="val" id="fSpringOut">104</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="104" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
+        <div class="ch"><output class="val" id="fSpringOut">72</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="72" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
         <div class="ch"><output class="val" id="fVolOut">3</output><div class="fader"><input id="fVol" type="range" min="0" max="5" step="1" value="3" aria-label="Fork volume spacers"></div><label class="lbl2" for="fVol"><u>TOKENS</u><br>vol.</label></div>
         <div class="ch"><output class="val" id="fLscOut">5</output><div class="fader"><input id="fLsc" type="range" min="0" max="16" step="1" value="5" aria-label="Fork low-speed compression clicks"></div><label class="lbl2" for="fLsc"><u>LSC</u><br>/16</label></div>
         <div class="ch"><output class="val" id="fHscOut">3</output><div class="fader"><input id="fHsc" type="range" min="0" max="8" step="1" value="3" aria-label="Fork high-speed compression clicks"></div><label class="lbl2" for="fHsc"><u>HSC</u><br>/8</label></div>
@@ -165,11 +164,9 @@
     </section>
   </div>
 
-  <p class="note"><b>What is simulated.</b> A 50 lb bike built from its parts (frame, EP8 motor, 630 Wh battery, fork, cockpit, shock and links, post) so the sprung centre of mass and pitch inertia follow from them; two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping) with rotational inertia and their own spin state; a 200 lb rider whose centre of mass is built from body segments (torso 50%, legs 32%, arms 10%, head 8%) at wherever the current pose puts them, on a leg spring&ndash;damper, and speed from rider power + Shimano EP8 assist against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). Braking and drive go through the wheels: brake torque (65/35 front/rear) and pedal/motor torque spin the wheels against a longitudinal slip curve that peaks near 15% slip and slides at ~72% of peak, so an over-braked wheel locks (the PRO rider modulates, the AVERAGE rider does not); the tyre forces at the ground pitch the mass above them, the front tyre force also pushes the wheel up the 64&deg; fork axis (brake dive), spinning wheels add to the mass to accelerate and resist being rolled (gyroscopic damping), and in the air brake and pedal torques react on the frame, which the PRO rider uses to level the bike. The rear wheel rides a solved four-bar VPP: lower-link-driven 230&times;65 shock, 170 mm at the axle, leverage ratio 3.05&rarr;2.47 (19% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
-  <br><b>Sources in the repo's uploads.</b> Pinkbike's 2021 Bullit review (Kazimer): 29/27.5, 170 mm, 64&deg; HTA, 449 mm stays, 22.3 kg size L, 475 reach on the L, Fox 38 E-Tune 170 and a RockShox Super Deluxe; his setup was 175 psi in the shock for 30% sag and 100 psi + 3 tokens in the fork at 72.6 kg. The Loam Wolf shootout bike ran the Super Deluxe Coil Ultimate (51.7 lb). Pinkbike's Megatower "Behind the Numbers" scan gives the lower-link VPP family its shape: a near-linear falling leverage curve with an end-stroke shoulder, ~2 mm rearward then forward axle path, anti-squat ~110% falling off late in the travel, anti-rise 85%&rarr;&minus;25%. The linkage here is fitted to those outputs with the pivots and shock placed where the photos show them.
-  <br><b>Rider posture.</b> PRO targets come from side-on frames in <code>crash_training/asa_vermette_vs_avg_rider_Y50K3ZZEdVY.mp4</code> (Asa at 185.5 s and 208.7 s: torso near trail-parallel, front knee ~135&ndash;140&deg;, elbows ~120&ndash;150&deg;) and the Goldstone FPV run; AVERAGE mirrors Charlie at 160.5 s and 194.5 s (upright torso, knee ~165&deg;, stiff legs). Hip height is solved from a target knee angle and torso angle from a target elbow angle, knees always bend forward and elbows down, and caps (knee &le;165&deg;, elbow &le;160&deg; for PRO) stop any lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.
-  <br><b>World.</b> The trail is generated from the course: every segment is a constant-curvature arc, a Hermite curve closes the loop into a ~9% return climb, a hill heightfield is bench-cut to the trail's elevation profile, and a 0.25 m trail ribbon carries the rocks, logs, washboard and the banked berm. The bike yaws with the tangent, pitches with the profile, and rolls to the lateral acceleration with a second-order response; a friction circle (&mu; 0.75 on dirt, more on the bank) limits cornering, braking and drive, and the tyres scrub when the lateral demand exceeds grip. Minimap bottom-left; drag to orbit the chase camera.
-  <br><b>Course.</b> Modelled on <b>Ladies Only</b> (Mt Fromme, North Vancouver), from ride guides and POV footage: fireroad drop-in &rarr; interlaced upper roots at 14% &rarr; tight tree-gate left &rarr; root staircase at 18% &rarr; cedar ladder bridge &rarr; off-camber root traverse &rarr; 26% rock roll into a catch berm &rarr; braking-rut chute &rarr; tree-gate right-left &rarr; mid root web &rarr; second ladder into a step-down &rarr; loam hips &rarr; lower slab &rarr; compression &rarr; final 30&deg; berm and sprint out. Grades and feature spacing are plausible-scale reconstructions, not survey data; the loop closes over the fireroad return climb, as ridden on Fromme.</p>
+  <p class="note"><b>What is simulated.</b> A 37 lb V10 built from its parts (frame and links, Fox 40, cockpit, DHX2 coil, post, drivetrain, brakes) so the sprung centre of mass and pitch inertia follow from them; two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping) with rotational inertia and their own spin state; a 150 lb rider whose centre of mass is built from body segments (torso 50%, legs 32%, arms 10%, head 8%) at wherever the current pose puts them, on a leg spring&ndash;damper, and speed from rider power alone (no motor) against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). Braking and drive go through the wheels: brake torque (65/35 front/rear) and pedal/motor torque spin the wheels against a longitudinal slip curve that peaks near 15% slip and slides at ~72% of peak, so an over-braked wheel locks (the PRO rider modulates, the AVERAGE rider does not); the tyre forces at the ground pitch the mass above them, the front tyre force also pushes the wheel up the 63.5&deg; fork axis (brake dive), spinning wheels add to the mass to accelerate and resist being rolled (gyroscopic damping), and in the air brake and pedal torques react on the frame, which the PRO rider uses to level the bike. The rear wheel rides a solved four-bar VPP: lower-link-driven 250&times;75 shock, 208 mm at the axle, leverage ratio 2.86&rarr;2.59 (9% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
+  <br><b>Sources.</b> Bike: <code>kinematic-model/data/bike_specs.yaml</code> (Goldstone's Santa Cruz V10 CC MX from the owner-supplied Pinkbike bike check: Fox 40 RAD 200 mm, Fox DHX2 with a 475 lb spring, 208 mm rear, 29/27.5 with 746/708 mm tyre ODs, reach 447, chainstay 455) plus the published V10 chart for stack, 63.5&deg; HTA and BB; 37 lb from the parts list. The linkage is the lower-link VPP four-bar refitted with <code>tools/vpp_fit.py</code> to 208 mm over 250&times;75 (LR 2.86&rarr;2.59); the VPP family's shape (near-linear falling leverage, slight rearward-then-forward axle path) comes from Pinkbike's Megatower "Behind the Numbers" scan. Rider: 150 lb. Kinematics: <code>kinematic-model/output/goldstone/vds_2023</code>, the Val di Sole 2023 FPV chase run tracked with the DH bike-keypoint model (pose on 84% of frames, 239 side-view frames used for posture; pitch/roll/yaw rate maxima 279/245/258 deg/s set the chassis caps; ground-speed estimate p95 64 km/h).
+  <br><b>Rider posture.</b> GOLDSTONE targets are percentiles of the 2D joint angles on the side-view frames of the Val di Sole run: knee p10/p25/p50 127/158/170&deg;, elbow 117/141/156&deg;. A chase drone films from above and behind, which reads joint angles tall, so the cruising attack stance uses p25 (knee 150, elbow 138), the deep absorb p10 (127/117) and the pop p75&ndash;p90 (168/152); his measured knee angular speed (p90 330&deg;/s) sets the absorb time constant, and knees and elbows move independently in the data (r = 0.03) while torso tracks the knees (r = 0.82), which is what the solver does. AVERAGE mirrors Charlie at 160.5 s and 194.5 s of the Asa comparison (upright torso, knee ~165&deg;, stiff legs). Knees always bend forward and elbows down; caps (knee &le;178&deg;, elbow &le;175&deg; for GOLDSTONE, his side-view p90) stop lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -278,9 +275,11 @@ const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
 function hash(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
-/* =============== 2021 Bullit CC, size L, low setting (published geometry) =============== */
-const GEO = { reach: 0.475, stack: 0.636, hta: 64 * D2R, sta: 77.1 * D2R, cs: 0.449, wb: 1.268, bb: 0.348,
-  rF: 0.373, rR: 0.354, forkTravel: 0.170, offset: 0.044, ht: 0.120, stroke: 0.065, e2e: 0.230, travelR: 0.170 };
+/* =============== Santa Cruz V10 CC 29/27.5 MX, size M, low -- Jackson Goldstone's 2023 Syndicate race bike.
+   Travel, spring, wheels, reach and chainstay from kinematic-model/data/bike_specs.yaml (owner-supplied Pinkbike bike check);
+   stack / HTA / STA / BB / wheelbase from the published V10 geometry chart. =============== */
+const GEO = { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350,
+  rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, e2e: 0.250, travelR: 0.208 };
 const V2 = (x, y) => ({ x, y });
 const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta));          // down the steering axis
 const dFwd  = V2(Math.sin(GEO.hta),  Math.cos(GEO.hta));          // perpendicular, forward
@@ -296,9 +295,10 @@ const dUp = V2(-dDown.x, -dDown.y);
 const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035);
 const GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
 
-/* =============== VPP four-bar (lower-link driven), fitted to 170 mm / 230x65 / LR 3.05->2.47 with pivots and shock placed as in the Bullit photo =============== */
-const VPP = { P1: V2(-0.02241, 0.07347), L1: 0.04607, P3: V2(-0.11195, 0.32914), L2: 0.14507, D: 0.17165,
-  AX: V2(0.35125, 0.32061), S: V2(-0.07583, 0.00725), F: V2(0.08155, 0.19481), th0: 0.47391 };
+/* =============== VPP four-bar (lower-link driven), refitted to the V10: 208 mm over a 250x75 shock, LR 2.86->2.59 (9% progressive),
+   axle at the 455 mm chainstay with the 27.5 rear wheel, lower pivot behind the BB and the shock driven off the lower link as on the V10 =============== */
+const VPP = { P1: V2(-0.03703, 0.08419), L1: 0.07216, P3: V2(-0.09307, 0.29010), L2: 0.15568, D: 0.12988,
+  AX: V2(0.46254, 0.17557), S: V2(-0.10098, 0.02219), F: V2(0.02571, 0.24762), th0: 0.47243 };
 function vppSolve(th, prevP4){
   const P1 = VPP.P1, P3 = VPP.P3;
   const P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));
@@ -526,14 +526,14 @@ function coilSpring(S, k){                             // S = shaft stroke (m); 
 }
 
 /* =============== bodies =============== */
-/* 50 lb (22.7 kg) bike built from its parts, frame-local (m, kg): sprung CoM and pitch inertia follow from them */
-const PARTS = [[4.6, 0.12, 0.34], [2.9, -0.01, -0.02], [3.6, 0.30, 0.30], [2.3, 0.62, 0.42], [1.2, 0.50, 0.66], [1.4, 0.0, 0.14], [0.5, -0.15, 0.55]];   // frame, EP8 motor, 630 Wh battery, fork, cockpit, shock+links, post+saddle
+/* 37 lb (17 kg) V10 built from its parts, frame-local (m, kg): sprung CoM and pitch inertia follow from them */
+const PARTS = [[3.6, 0.12, 0.34], [2.9, 0.62, 0.42], [0.9, 0.50, 0.66], [1.2, 0.0, 0.14], [0.3, -0.15, 0.55], [1.2, 0.02, 0.02], [0.8, 0.30, 0.20]];   // frame+links, Fox 40, cockpit, DHX2 coil, post+saddle, cranks+drivetrain+pedals, brakes
 const M_UF = 2.6, M_UR = 3.6;                                                 // 29 DD front wheel; 27.5 DD rear with cassette and rotor
 const IW_F = 0.72 * M_UF * GEO.rF * GEO.rF, IW_R = 0.70 * M_UR * GEO.rR * GEO.rR;   // most wheel mass sits at the rim and tyre
 const M_SPRUNG = PARTS.reduce((a, q) => a + q[0], 0);
 const COM = V2(PARTS.reduce((a, q) => a + q[0] * q[1], 0) / M_SPRUNG, PARTS.reduce((a, q) => a + q[0] * q[2], 0) / M_SPRUNG);
 const I_SPRUNG = PARTS.reduce((a, q) => a + q[0] * ((q[1] - COM.x) ** 2 + (q[2] - COM.y) ** 2), 0) + 0.9;      // + the parts' own inertia
-let M_RIDER = 200 * 0.4536;
+let M_RIDER = 150 * 0.4536;                                                       // Goldstone, ~68 kg
 /* rider body-segment masses (fraction of body mass) and where they sit for the current pose */
 function riderCoM(){
   const hips = V2(cur.hx, cur.hy + rider.u), tor = cur.torso * D2R;
@@ -572,8 +572,8 @@ function updateCorner(){
   }
 }
 const tune = {};
-let riderMode = 'pro', assistMode = 'trail', effortW = 220, vCap = 26 * 0.447, shockType = 'coil';
-const ASSIST = { eco: 0.6, trail: 1.5, boost: 3.0 };
+let riderMode = 'pro', assistMode = 'none', effortW = 300, vCap = 26 * 0.447, shockType = 'coil';
+const ASSIST = { none: 0 };                                                        // DH bike: no motor
 
 /* world transform helpers */
 function toWorld(p){ const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi); return V2(p.x * c - p.y * s, chassis.y + p.x * s + p.y * c); }
@@ -615,16 +615,19 @@ function computeSag(){
 /* Each pose is a hip x position plus TARGET joint angles: the hip height is solved so the leading knee sits at `knee`
    (measured against the bottom pedal when pedaling, the level front pedal when coasting) and the torso angle is solved
    so the elbow sits at `elbow` with the hands on the grips. PRO numbers are from the Asa Vermette / Goldstone frames,
-   AVERAGE from Charlie; k/c are the leg spring-damper. */
+   GOLDSTONE numbers are the side-view frames of his Val di Sole 2023 chase run (kinematic-model/output/goldstone/vds_2023,
+   238 frames): knee p10 127 / p25 158 / p50 170, elbow p10 117 / p25 141 / p50 156. A chase drone sits above and behind the
+   rider, so 2D angles read tall; p25 is used as the cruising attack stance, p10 as the deep absorb, p75-p90 as the pop.
+   Measured knee angular speed p90 330 deg/s sets the pro absorb time constant. AVERAGE from Charlie; k/c are the leg spring-damper. */
 const POSE = {
-  pro: {
-    seated:  { hx: -0.15, knee: 148, elbow: 130, k: 30000, c: 1500 },
+  pro: {                                                                    // GOLDSTONE (Val di Sole 2023 chase footage)
+    seated:  { hx: -0.15, knee: 148, elbow: 130, k: 30000, c: 1500 },        // fireroad return
     climb:   { hx: -0.22, knee: 152, elbow: 122, k: 12000, c: 1000 },
-    attack:  { hx: -0.22, knee: 122, elbow: 98,  k: 9000,  c: 950  },
-    pop:     { hx: -0.20, knee: 156, elbow: 138, k: 14000, c: 1100 },
-    air:     { hx: -0.22, knee: 114, elbow: 95,  k: 7000,  c: 800  },
-    land:    { hx: -0.24, knee: 115, elbow: 92,  k: 8000,  c: 1100 },
-    huck:    { hx: -0.36, knee: 126, elbow: 106, k: 9000,  c: 1000 }
+    attack:  { hx: -0.21, knee: 150, elbow: 138, k: 8500,  c: 900  },        // tall, loose DH cruise: side-view p25
+    pop:     { hx: -0.20, knee: 168, elbow: 152, k: 14000, c: 1100 },        // extension at the lip: p75-p90
+    air:     { hx: -0.22, knee: 160, elbow: 146, k: 7000,  c: 800  },        // legs long in the air, arms working (airborne frames)
+    land:    { hx: -0.24, knee: 127, elbow: 117, k: 8000,  c: 1000 },        // deep absorb: side-view p10
+    huck:    { hx: -0.34, knee: 138, elbow: 124, k: 9000,  c: 1000 }
   },
   avg: {
     seated:  { hx: -0.14, knee: 152, elbow: 148, k: 34000, c: 1700 },
@@ -636,7 +639,7 @@ const POSE = {
     huck:    { hx: -0.28, knee: 155, elbow: 145, k: 22000, c: 1400 }
   }
 };
-const KNEE_CAP = { pro: 165, avg: 166 }, ELBOW_CAP = { pro: 160, avg: 164 };
+const KNEE_CAP = { pro: 178, avg: 166 }, ELBOW_CAP = { pro: 175, avg: 164 };                   // Goldstone caps = his side-view p90
 function solvePose(P, hxShift, usesBottomPedal){
   const hx = P.hx + hxShift;
   const refX = usesBottomPedal ? 0 : CRANK, refY = (usesBottomPedal ? -CRANK : 0) + 0.04;
@@ -867,7 +870,6 @@ ui.rideBtn.addEventListener('click', () => { riding = !riding; ui.rideBtn.textCo
 ui.restartBtn.addEventListener('click', () => reset());
 function segButtons(id, cb){ const el = $(id); el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(b.dataset.v); })); }
 segButtons('riderSeg', vv => { riderMode = vv; });
-segButtons('assistSeg', vv => { assistMode = vv; });
 segButtons('shockSeg', vv => {
   shockType = vv;
   if (vv === 'air'){ ui.rSpring.min = 120; ui.rSpring.max = 260; ui.rSpring.step = 5; ui.rSpring.value = 205; $('rSpringLbl').innerHTML = '<u>AIR</u><br>psi'; }
@@ -906,7 +908,7 @@ function updateHud(joints){
   ui.hudGrade.textContent = (gradeS * 100).toFixed(0) + '%';
   ui.hudState.textContent = { seated: 'SEATED PEDAL', climb: gradeS > 0.045 ? 'STANDING CLIMB' : 'STANDING PEDAL', attack: 'ATTACK', pop: 'PRELOAD / POP', air: 'AIRBORNE', land: 'ABSORB LANDING', huck: 'HUCK: WEIGHT BACK' }[poseState];
   const lockF = wheelF.tire > 0 && wheelF.om * wheelF.r < 0.35 * v, lockR = wheelR.tire > 0 && wheelR.om * wheelR.r < 0.35 * v;
-  ui.hudPower.textContent = (brakeF > 50 && !corner.sliding) ? ('BRAKING ' + Math.round(brakeF) + ' N · slip F ' + Math.round(wheelF.slip * 100) + '% R ' + Math.round(wheelR.slip * 100) + '%' + (lockF ? ' · FRONT LOCKED' : lockR ? ' · REAR LOCKED' : '') + (corner.braking ? ' · for corner' : '')) : corner.sliding ? ('SLIDING · grip ' + Math.round(corner.usage * 100) + '%') : corner.active ? ((corner.lean > 0 ? 'LEFT ' : 'RIGHT ') + corner.g.toFixed(2) + ' g · lean ' + Math.abs(Math.round(corner.lean / D2R)) + '° · grip ' + Math.round(corner.usage * 100) + '%' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider+motor)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
+  ui.hudPower.textContent = (brakeF > 50 && !corner.sliding) ? ('BRAKING ' + Math.round(brakeF) + ' N · slip F ' + Math.round(wheelF.slip * 100) + '% R ' + Math.round(wheelR.slip * 100) + '%' + (lockF ? ' · FRONT LOCKED' : lockR ? ' · REAR LOCKED' : '') + (corner.braking ? ' · for corner' : '')) : corner.sliding ? ('SLIDING · grip ' + Math.round(corner.usage * 100) + '%') : corner.active ? ((corner.lean > 0 ? 'LEFT ' : 'RIGHT ') + corner.g.toFixed(2) + ' g · lean ' + Math.abs(Math.round(corner.lean / D2R)) + '° · grip ' + Math.round(corner.usage * 100) + '%' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
   for (const k of ['knee', 'hip', 'elbow', 'torso']) setJoint(k, joints[k]);
 }
 
@@ -1100,20 +1102,19 @@ function ik(a, b, l1, l2, prefer, maxAngleDeg){
 }
 const angleAt = (a, b, c) => { const v1 = a.clone().sub(b), v2 = c.clone().sub(b); return Math.acos(clamp(v1.dot(v2) / (v1.length() * v2.length()), -1, 1)) / D2R; };
 
-/* colours (Bullit: gloss black / yellow) */
-const C = { frame: 0x8A5A3A, frame2: 0x6E4630, decal: 0x1E1A18, forkUp: 0xC8952A, forkLow: 0x1E1E1E, sw: 0x8A5A3A, link: 0x1E1E1E, coil: 0x1E1E1E, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
-  skin: 0xD8AA80, jersey: 0xE9E4DC, pants: 0xE9E4DC, helmet: 0x1E3F8F, shoe: 0x25211E, motor: 0x1B1B1B };
+/* colours: Syndicate V10 (gloss black, team blue, white logo band), Fox 40 Kashima, Red Bull helmet */
+const C = { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, sw: 0x14161C, link: 0x1F3B7A, coil: 0x111111, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
+  skin: 0xD8AA80, jersey: 0x1F3B7A, pants: 0x15161A, helmet: 0xF2F2F0, shoe: 0x25211E, motor: 0x1B1B1B };
 const P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const rig = new THREE.Group(); rig.rotation.order = 'YXZ'; scene.add(rig);
 const frame = new THREE.Group(); rig.add(frame);
 function tube(a, b, t, c, d){ const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; }
 tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), 0.055, C.frame, 0.06);    // top tube, nearly straight
-tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.115, C.frame, 0.085);                                            // battery down tube
+tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.062, C.frame, 0.062);                                            // down tube
 tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);                                      // SANTA CRUZ decal band
 tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame);                                            // seat tube
 tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);                                                 // shock mount strut off the down tube
 tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);              // head tube
-const motor = box(0.27, 0.19, 0.16, C.motor); motor.position.set(-0.01, -0.03, 0); frame.add(motor);
 const chainring = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12), mat(0x3A3A3A)); chainring.rotation.x = Math.PI / 2; chainring.position.set(0, 0, 0.09); frame.add(chainring);
 const brace = limb(1, 0.03, 0.15, C.sw); frame.add(brace);
 const upperLink = limb(1, 0.03, 0.09, C.link); frame.add(upperLink);

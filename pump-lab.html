@@ -71,7 +71,7 @@
   <header>
     <div>
       <h1>PUMP LAB</h1>
-      <div class="sub">Where the speed in a pump actually comes from, animated on the Bullit model: the solid rider does it right, the translucent ghost is the other technique on the same rollers, released at the same instant. After Seb Stott's <i>How to Pump Your Bike, According to Physics</i> (Pinkbike, 2021): it isn't pushing on the down-slope, it's moving your mass toward the centre of curvature where the ground curves. Same rider and bike as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a> and <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a>.</div>
+      <div class="sub">Where the speed in a pump actually comes from, animated on Goldstone's V10: the solid rider does it right, the translucent ghost is the other technique on the same rollers, released at the same instant. After Seb Stott's <i>How to Pump Your Bike, According to Physics</i> (Pinkbike, 2021): it isn't pushing on the down-slope, it's moving your mass toward the centre of curvature where the ground curves. Same rider and bike as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a> and <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a>.</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
@@ -133,7 +133,7 @@
 
   <p class="note"><b>The model.</b> The bike follows the surface; the rider's mass sits a distance <i>h</i> above it along the surface normal, on legs the rider drives. The only forces are gravity, the legs, and the ground pushing back along the normal. Energy is tracked exactly: the legs add energy at the rate <i>force &times; extension speed</i>, so the rider gains speed only when extending against a big load or compressing under a small one. In a trough the load is body weight <i>plus</i> the centripetal load <i>m&middot;v&sup2;&middot;&kappa;</i>; over a crest it is body weight <i>minus</i> it. That is the whole trick: extend where the ground curves up (&kappa; &gt; 0), compress where it curves down. On the straight part of a slope &kappa; = 0, so a push there only lifts your own weight and gives it straight back.
   <br><b>Angular momentum.</b> In the trough the ground is an arc around a centre above you. Extending moves your mass toward that centre; with <i>m&middot;v&middot;r</i> conserved about it, a smaller <i>r</i> means a faster <i>v</i>. The readout shows <i>m&middot;v&middot;r</i> of the rider's mass about the current centre of curvature while the ground is curved.
-  <br><b>The suspension is in the loop.</b> The frame rides on the Bullit's two springs (21 kN/m together at the wheels, mid-clicks damping) between the ground and the rider's legs. The trough load compresses it, the damper turns part of every stroke into heat (the DAMPER LOSS readout), and only what the spring stored comes back. That is why scenario 4 locks it out: the same leg motion buys more speed on a rigid bike. Use the PLAYBACK slider to slow the transitions down and watch the arrows.
+  <br><b>The suspension is in the loop.</b> The frame rides on the V10's two springs (21 kN/m together at the wheels, mid-clicks damping) between the ground and the rider's legs. The trough load compresses it, the damper turns part of every stroke into heat (the DAMPER LOSS readout), and only what the spring stored comes back. That is why scenario 4 locks it out: the same leg motion buys more speed on a rigid bike. Use the PLAYBACK slider to slow the transitions down and watch the arrows.
   <br><b>The transition taketh away.</b> A passive rider (or a soft suspension) does the opposite: the centripetal load in the trough compresses the legs, work flows out, and the bike slows. Pumping is not free speed; it is the work the rider does against that load.</p>
 </div>
 
@@ -240,8 +240,8 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + 
 const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
 const V2 = (x, y) => ({ x, y });
-/* =============== the Bullit (same numbers as the Suspension Lab) =============== */
-const GEO = { reach: 0.475, stack: 0.636, hta: 64 * D2R, sta: 77.1 * D2R, cs: 0.449, wb: 1.268, bb: 0.348, rF: 0.373, rR: 0.354, forkTravel: 0.170, offset: 0.044, ht: 0.120, stroke: 0.065, travelR: 0.170 };
+/* =============== the V10 (same numbers as the Suspension Lab: Goldstone's Santa Cruz V10 CC MX, size M) =============== */
+const GEO = { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350, rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, travelR: 0.208 };
 const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta)), dFwd = V2(Math.sin(GEO.hta), Math.cos(GEO.hta)), dUp = V2(-dDown.x, -dDown.y);
 const HEAD_TOP = V2(GEO.reach, GEO.stack), HEAD_BOT = V2(HEAD_TOP.x + GEO.ht * dDown.x, HEAD_TOP.y + GEO.ht * dDown.y);
 const CROWN = V2(HEAD_BOT.x + 0.022 * dDown.x, HEAD_BOT.y + 0.022 * dDown.y);
@@ -278,9 +278,9 @@ function rearTravelFor(load){ let lo = 0, hi = GEO.travelR; for (let i = 0; i < 
 
 
 /* =============== masses =============== */
-const M_BIKE = 22.7, M_RIDER = 90.7, M_UNSPRUNG = 6.2, M_SPRUNG = M_BIKE - M_UNSPRUNG;
+const M_BIKE = 17.0, M_RIDER = 68.0, M_UNSPRUNG = 6.2, M_SPRUNG = M_BIKE - M_UNSPRUNG;
 const H0 = 1.02, H_MIN = 0.70, H_MAX = 1.32;                                        // rider CoM height above the surface: rest, crouched, extended
-const Z0 = 0.62, K_SUS = 21000, C_SUS = 3000, U_MAX = 0.11;                        // frame height at sag; the Bullit's two ends together (wheel rate), mid-clicks damping, travel left to bottom-out
+const Z0 = 0.62, K_SUS = 21000, C_SUS = 3000, U_MAX = 0.11;                        // frame height at sag; the V10's two ends together (wheel rate), mid-clicks damping, travel left to bottom-out
 
 /* =============== the rollers =============== */
 const LAM = 8, AMP = 0.55, N_ROLL = 5, X0 = 8, XEND = X0 + N_ROLL * LAM, TRACK_END = XEND + 8;
@@ -548,7 +548,7 @@ function ik(a, b, l1, l2, prefer, maxDeg){ const bb = b.clone(); let dx = bb.x -
   if (d > dMax || d < dMin){ const f = clamp(d, dMin, dMax) / d; dx *= f; dy *= f; bb.x = a.x + dx; bb.y = a.y + dy; d = Math.hypot(dx, dy); }
   const ux = dx / d, uy = dy / d, al = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - al * al)); let px = uy, py = -ux;
   if ((prefer === 'fwd' && px < 0) || (prefer === 'down' && py > 0)){ px = -px; py = -py; } return { joint: new THREE.Vector3(a.x + ux * al + px * h, a.y + uy * al + py * h, (a.z + bb.z) / 2), end: bb }; }
-const C = { frame: 0x8A5A3A, frame2: 0x6E4630, decal: 0x1E1A18, forkUp: 0xC8952A, forkLow: 0x1E1E1E, sw: 0x8A5A3A, link: 0x1E1E1E, coil: 0x1E1E1E, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, pants: 0xE9E4DC, shoe: 0x25211E, motor: 0x1B1B1B };
+const C = { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, sw: 0x14161C, link: 0x1F3B7A, coil: 0x111111, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, pants: 0x15161A, shoe: 0x25211E, motor: 0x1B1B1B };
 function wheel(r){ const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.TorusGeometry(r - 0.033, 0.036, 6, 16), mat(C.tire)), new THREE.Mesh(new THREE.TorusGeometry(r - 0.075, 0.014, 5, 16), mat(C.rim)), box(0.07, 0.07, 0.11, C.hub));
   for (let i = 0; i < 6; i++){ const s = box(0.008, (r - 0.075) * 2, 0.008, 0xC9C2B0); s.rotation.z = i * Math.PI / 6; s.position.z = (i % 2 ? 0.02 : -0.02); g.add(s); } return g; }
 function buildBike(jersey){
@@ -558,7 +558,6 @@ function buildBike(jersey){
   tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.115, C.frame, 0.085); tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);
   tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame); tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);
   tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);
-  const motor = box(0.27, 0.19, 0.16, C.motor); motor.position.set(-0.01, -0.03, 0); frame.add(motor);
   const o = { rig, frame, wF: wheel(GEO.rF), wR: wheel(GEO.rR), lowerLink: limb(1, 0.035, 0.10, C.link), lowerArm: limb(1, 0.03, 0.08, C.link), upperLink: limb(1, 0.03, 0.09, C.link),
     shockBody: limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil: limb(1, 0.072, 0.072, C.coil), shockShaft: limb(1, 0.026, 0.026, 0xC9C2B0), brace: limb(1, 0.03, 0.15, C.sw),
     chainL: limb(1, 0.05, 0.04, C.sw), chainR: limb(1, 0.05, 0.04, C.sw), seatL: limb(1, 0.038, 0.032, C.sw), seatR: limb(1, 0.038, 0.032, C.sw),

@@ -69,7 +69,7 @@
   <header>
     <div>
       <h1>CORNER LAB</h1>
-      <div class="sub">Two identical Bullits, one fast right-hander (R 10 m), two ways to use the brakes, one view: the solid rider does it right, the translucent ghost is the other technique on the same trail at the same moment. The ghost brakes <i>in</i> the turn; the solid rider rides <i>slow in, fast out</i>: brake in a straight line, trail off into the entry while the bias moves rearward, off by the apex, on the power out. Same bike, rider and physics as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>. Counter-steer authority raised to give a hard correction headroom toward measured pro DH roll rates (245&ndash;270&deg;/s, FPV chase footage of a World Cup run).</div>
+      <div class="sub">Two identical V10s (Goldstone's Santa Cruz V10 CC MX, 200/208 mm), one fast right-hander (R 10 m), two ways to use the brakes, one view: the solid rider does it right, the translucent ghost is the other technique on the same trail at the same moment. The ghost brakes <i>in</i> the turn; the solid rider rides <i>slow in, fast out</i>: brake in a straight line, trail off into the entry while the bias moves rearward, off by the apex, on the power out. Same bike, rider and physics as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>. Counter-steer authority raised to give a hard correction headroom toward measured pro DH roll rates (245&ndash;270&deg;/s, FPV chase footage of a World Cup run).</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">DO THIS, NOT THAT</div><div class="seg" id="scSeg"></div></div>
@@ -247,8 +247,8 @@ const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
 const V2 = (x, y) => ({ x, y });
 
-/* =============== the Bullit (same numbers as the Suspension Lab) =============== */
-const GEO = { reach: 0.475, stack: 0.636, hta: 64 * D2R, sta: 77.1 * D2R, cs: 0.449, wb: 1.268, bb: 0.348, rF: 0.373, rR: 0.354, forkTravel: 0.170, offset: 0.044, ht: 0.120, stroke: 0.065, travelR: 0.170 };
+/* =============== the V10 (same numbers as the Suspension Lab: Goldstone's Santa Cruz V10 CC MX, size M) =============== */
+const GEO = { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350, rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, travelR: 0.208 };
 const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta)), dFwd = V2(Math.sin(GEO.hta), Math.cos(GEO.hta)), dUp = V2(-dDown.x, -dDown.y);
 const HEAD_TOP = V2(GEO.reach, GEO.stack), HEAD_BOT = V2(HEAD_TOP.x + GEO.ht * dDown.x, HEAD_TOP.y + GEO.ht * dDown.y);
 const CROWN = V2(HEAD_BOT.x + 0.022 * dDown.x, HEAD_BOT.y + 0.022 * dDown.y);
@@ -283,8 +283,8 @@ const FORK_PSI = 104, FORK_TOK = 3, COIL_K = 625 * 175.13;
 function forkTravelFor(load){ let lo = 0, hi = GEO.forkTravel; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; (forkSpring(m, FORK_PSI, FORK_TOK) * Math.sin(GEO.hta) < load) ? lo = m : hi = m; } return lo; }
 function rearTravelFor(load){ let lo = 0, hi = GEO.travelR; for (let i = 0; i < 30; i++){ const m = (lo + hi) / 2; const k = vtLookup(m); (coilSpring(k.st, COIL_K) / k.lr < load) ? lo = m : hi = m; } return lo; }
 
-/* =============== masses (50 lb bike, 200 lb rider) =============== */
-const M_BIKE = 22.7, M_RIDER = 90.7, M = M_BIKE + M_RIDER;
+/* =============== masses (37 lb V10, 150 lb rider) =============== */
+const M_BIKE = 17.0, M_RIDER = 68.0, M = M_BIKE + M_RIDER;
 const IW_F = 0.72 * 2.6 * GEO.rF * GEO.rF, IW_R = 0.70 * 3.6 * GEO.rR * GEO.rR;
 const H_CG = 1.02, B_REAR = 0.62;                                                  // combined CoM height; distance from rear axle to CoM (attack position)
 const I_ROLL = M * H_CG * H_CG * 0.7;                                             // roll inertia the rider steers against
@@ -393,7 +393,7 @@ function step(b, dt){
   const latFrac = clamp(latDemand / Math.max(1, capTot), 0, 1), fCirc = Math.sqrt(Math.max(0, 1 - latFrac * latFrac));
   let fxF = mu * muX(slipF) * b.NF * fCirc, fxR = mu * muX(slipR) * b.NR * fCirc;
   const TbF = b.pF * BRAKE_MAX * 0.7 * GEO.rF * (b.NF > 0 ? 1 : 0) * 1.0, TbR = b.pR * BRAKE_MAX * 0.7 * GEO.rR;
-  const P = b.thr * 950;                                                            // rider + EP8 in Boost
+  const P = b.thr * 700;                                                            // rider sprint, no motor
   const Td = b.thr > 0 ? Math.min(P / Math.max(b.omR, 2), 165) : 0;
   b.omF = Math.max(0, b.omF + ((-TbF - fxF * GEO.rF) / IW_F) * dt);
   b.omR = Math.max(0, b.omR + ((Td - TbR - fxR * GEO.rR) / IW_R) * dt);
@@ -589,7 +589,7 @@ function ik(a, b, l1, l2, prefer, maxDeg){ const bb = b.clone(); let dx = bb.x -
   if (d > dMax || d < dMin){ const f = clamp(d, dMin, dMax) / d; dx *= f; dy *= f; bb.x = a.x + dx; bb.y = a.y + dy; d = Math.hypot(dx, dy); }
   const ux = dx / d, uy = dy / d, al = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - al * al)); let px = uy, py = -ux;
   if ((prefer === 'fwd' && px < 0) || (prefer === 'down' && py > 0)){ px = -px; py = -py; } return { joint: new THREE.Vector3(a.x + ux * al + px * h, a.y + uy * al + py * h, (a.z + bb.z) / 2), end: bb }; }
-const C = { frame: 0x8A5A3A, frame2: 0x6E4630, decal: 0x1E1A18, forkUp: 0xC8952A, forkLow: 0x1E1E1E, sw: 0x8A5A3A, link: 0x1E1E1E, coil: 0x1E1E1E, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, pants: 0xE9E4DC, shoe: 0x25211E, motor: 0x1B1B1B };
+const C = { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, sw: 0x14161C, link: 0x1F3B7A, coil: 0x111111, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, pants: 0x15161A, shoe: 0x25211E, motor: 0x1B1B1B };
 function wheel(r){ const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.TorusGeometry(r - 0.033, 0.036, 6, 16), mat(C.tire)), new THREE.Mesh(new THREE.TorusGeometry(r - 0.075, 0.014, 5, 16), mat(C.rim)), box(0.07, 0.07, 0.11, C.hub));
   for (let i = 0; i < 6; i++){ const s = box(0.008, (r - 0.075) * 2, 0.008, 0xC9C2B0); s.rotation.z = i * Math.PI / 6; s.position.z = (i % 2 ? 0.02 : -0.02); g.add(s); } return g; }
 function buildBike(jersey){
@@ -599,7 +599,6 @@ function buildBike(jersey){
   tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.115, C.frame, 0.085); tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);
   tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame); tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);
   tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);
-  const motor = box(0.27, 0.19, 0.16, C.motor); motor.position.set(-0.01, -0.03, 0); frame.add(motor);
   const o = { rig, frame, wF: wheel(GEO.rF), wR: wheel(GEO.rR), lowerLink: limb(1, 0.035, 0.10, C.link), lowerArm: limb(1, 0.03, 0.08, C.link), upperLink: limb(1, 0.03, 0.09, C.link),
     shockBody: limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil: limb(1, 0.072, 0.072, C.coil), shockShaft: limb(1, 0.026, 0.026, 0xC9C2B0), brace: limb(1, 0.03, 0.15, C.sw),
     chainL: limb(1, 0.05, 0.04, C.sw), chainR: limb(1, 0.05, 0.04, C.sw), seatL: limb(1, 0.038, 0.032, C.sw), seatR: limb(1, 0.038, 0.032, C.sw),
