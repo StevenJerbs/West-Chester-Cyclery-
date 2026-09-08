@@ -10,15 +10,24 @@ random.seed(83)
 # ---- the lab's track profile (must match pump-lab.html) ----
 LAM, AMP, N_ROLL, X0 = 8.0, 0.55, 5, 8.0
 XEND = X0 + N_ROLL * LAM
-LAM2, N2, X1 = 3.0, 3, XEND + 7
-L_IN = LAM / 2; XT = X1 + L_IN
-XEND2 = XT + (N2 - 0.5) * LAM2; TRACK_END = XEND2 + 9
+X1 = XEND + 7
+TB = dict(H=0.70, lipDeg=22, R=3.5, deck=2.7, landDeg=24)
+TB_TH = math.radians(TB["lipDeg"]); TB_XA = TB["R"] * math.sin(TB_TH); TB_YA = TB["R"] * (1 - math.cos(TB_TH))
+TB_LIP = TB_XA + (TB["H"] - TB_YA) / math.tan(TB_TH); TB_LAND = TB["H"] / math.tan(math.radians(TB["landDeg"])) + 2.2
+X_LIP = X1 + TB_LIP; X_DECK = X_LIP + TB["deck"]; XEND2 = X_DECK + TB_LAND; TRACK_END = XEND2 + 10
+def tableH(t):
+    if t < 0: return 0.0
+    if t < TB_XA: return TB["R"] - math.sqrt(max(0.0, TB["R"] ** 2 - t * t))
+    if t < TB_LIP: return TB_YA + (t - TB_XA) * math.tan(TB_TH)
+    if t < TB_LIP + TB["deck"]: return TB["H"]
+    if t < TB_LIP + TB["deck"] + TB_LAND:
+        u = (t - TB_LIP - TB["deck"]) / TB_LAND; return TB["H"] * (1 - u * u * (3 - 2 * u))
+    return 0.0
 def yS(x):
     if x < X0: return AMP
     if x <= XEND: return AMP * (1 + math.cos(2 * math.pi * (x - X0) / LAM)) / 2
     if x < X1: return AMP
-    if x <= XT: return AMP * (1 + math.cos(math.pi * (x - X1) / L_IN)) / 2
-    if x <= XEND2: return AMP * (1 - math.cos(2 * math.pi * (x - XT) / LAM2)) / 2
+    if x <= XEND2: return AMP + tableH(x - X1)
     return AMP
 def smooth(t): t = max(0.0, min(1.0, t)); return t * t * (3 - 2 * t)
 def hsl(h, s, l):
@@ -34,7 +43,7 @@ def build_track():
     while x <= TRACK_END + 8: xs.append(x); x += DX
     lanes = [-2.3, -2.0, -1.75, -1.5, -1.2, -0.9, -0.62, -0.45, -0.3, -0.12, 0, 0.12, 0.3, 0.45, 0.62, 0.9, 1.2, 1.5, 1.75, 2.0, 2.3]
     rows = []; cols = []
-    doubles = lambda x: X1 - 0.5 < x < XEND2 + 0.8
+    doubles = lambda x: X1 - 0.5 < x < XEND2 + 0.8      # the built table: packed, darker
     for x in xs:
         y0 = yS(x); row = []
         slope = (yS(x + 0.05) - yS(x - 0.05)) / 0.1
