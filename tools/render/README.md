@@ -27,3 +27,15 @@ saved .blend instead.
 7. `render_run.py` (headless: `blender-launcher -b ladies_only_final.blend --python render_run.py`) keys a bike + rider
    proxy and a chase camera from that trajectory and renders the descent at 1280x720, 24 fps to run/frame_####.png;
    assemble with `ffmpeg -framerate 24 -i run/frame_%04d.png -c:v libx264 -crf 22 -pix_fmt yuv420p ladies_only_run.mp4`.
+
+## Pump Lab light bake (page -> Blender Cycles -> page)
+
+8. The Pump Lab exposes `WORLD_EXPORT()` (terrain geometry in page vertex order + every `PNW.instanced` placement). Serve
+   the repo, run `receiver.py pump_world.json`, and in the page console `fetch('http://127.0.0.1:8735/world', {method:'POST',
+   body: JSON.stringify(WORLD_EXPORT())})`.
+9. `tools/pnw_assets_v5_bake.py` (live Blender via blender-mcp) rebuilds that world with the library objects as occluders,
+   lights it with a sun matching the page and a multiple-scattering sky, and bakes per-vertex SHADOW (soft sun visibility)
+   and AO with Cycles on the GPU into the terrain and the sculpted track (`bake_terrain`, `bake_track`: 2 hex bytes per
+   vertex). The page's `PNW.bakedMat` multiplies its direct light by the sun visibility and its ambient by the AO; the
+   forest no longer casts real-time shadows, only the bikes do. The strip under the track ribbon is dropped clear of the
+   track for the bake and neutralised in the page.
