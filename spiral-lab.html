@@ -1,0 +1,327 @@
+<meta charset="utf-8">
+<title>Spiral Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --bg:#23261E; --panel:#2F3328; --panel2:#262A20; --line:#484D3C; --ink:#EFE8D6; --dim:#A39F88;
+    --accent:#D9A441; --a:#D4784E; --b:#7FA6C9; --danger:#D9534F; --good:#8DBF6A; --l:#EFE8D6;
+    --disp:'Silkscreen',monospace; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:14px; line-height:1.5}
+  .wrap{max-width:1160px; margin:0 auto; padding:18px 16px 40px; display:flex; flex-direction:column; gap:14px}
+  header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--accent); text-shadow:3px 3px 0 #15170f}
+  .sub{color:var(--dim); font-size:12px; margin-top:2px; max-width:80ch}
+  .sub a{color:var(--b)}
+  .ctl{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .lbl{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--dim)}
+  .hs{display:flex; align-items:center; gap:8px}
+  .hs output{font-weight:600; min-width:56px; font-variant-numeric:tabular-nums}
+  .hs input{width:100px; height:22px}
+  .btn{font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 14px; cursor:pointer; background:var(--b); color:#132030; border:2px solid var(--line)}
+  .btn.alt{background:var(--panel2); color:var(--ink)}
+  .seg{display:flex; border:2px solid var(--line)}
+  .seg button{font-family:var(--disp); font-size:9px; letter-spacing:1px; padding:7px 9px; background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--accent); color:#1d1a10}
+  .btn:focus-visible,input:focus-visible,.seg button:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  input[type=range]{-webkit-appearance:none; appearance:none; background:transparent; cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  input[type=range]::-moz-range-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; margin-top:-8px; background:var(--accent); border:2px solid #15170f}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:0; background:var(--accent); border:2px solid #15170f}
+  .views{border:3px solid var(--line); background:#1C1F18; position:relative; overflow:hidden}
+  .views canvas{display:block; width:100%; height:auto}
+  .tag{position:absolute; left:8px; top:8px; font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:5px 8px; background:rgba(20,24,16,.7); color:var(--b); pointer-events:none}
+  .legend{position:absolute; right:8px; top:8px; font-size:10px; color:var(--ink); background:rgba(20,24,16,.7); padding:4px 8px; pointer-events:none; line-height:1.5}
+  .legend i{display:inline-block; width:10px; height:3px; vertical-align:middle; margin-right:5px}
+  .phase{position:absolute; left:8px; bottom:8px; font-size:11px; padding:4px 8px; background:rgba(20,24,16,.7); color:var(--ink); pointer-events:none; line-height:1.4; max-width:70ch}
+  .phase b{font-family:var(--disp); font-size:9px; letter-spacing:1px; display:block; color:var(--accent)}
+  .panels{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:14px}
+  .card{background:var(--panel); border:3px solid var(--line); padding:12px 12px 14px}
+  .card h2{font-family:var(--disp); font-size:12px; letter-spacing:1px; margin:0 0 8px; color:var(--accent)}
+  .card.l h2{color:var(--l)} .card.e h2{color:var(--good)} .card.f h2{color:var(--a)}
+  .reads{display:grid; grid-template-columns:1fr 1fr; gap:6px 10px}
+  .read .k{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim)}
+  .read .v{font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+  .read .v.warn{color:var(--danger)} .read .v.good{color:var(--good)}
+  .card .desc{color:var(--dim); font-size:11.5px; margin:8px 0 0}
+  .chart{border:3px solid var(--line); background:var(--panel)}
+  .chart canvas{display:block; width:100%; height:auto}
+  .note{color:var(--dim); font-size:12px; max-width:84ch}
+  .note b{color:var(--ink)}
+  .note i{color:var(--ink)}
+  @media (max-width:900px){ .panels{grid-template-columns:1fr} h1{font-size:20px} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SPIRAL LAB</h1>
+      <div class="sub">Where the speed in a pump comes from, done with the books open. A bike on a curved path, a rider on driven legs along the surface normal; the ground pushes only along that normal. On a circular arc the leg force points at the centre of curvature, so the <b>angular momentum</b> of rider and bike about that centre cannot change; yet the legs do <b>work</b> against the centripetal load, so the <b>energy</b> rises. Both are true at once, and the readouts prove it every step: the same thing in a trough, over a crest, round a berm, and on the zero-gravity magnetic pump track from the comments. After Seb Stott, <i>How to Pump Your Bike, According to Physics</i> (Pinkbike, 2021). Same rider and bike as the <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a>, <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> and <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>.</div>
+    </div>
+    <div class="ctl">
+      <div><div class="lbl">CURVE</div><div class="seg" id="sceneSeg"></div></div>
+      <div><div class="lbl">TECHNIQUE</div><div class="seg" id="techSeg"></div></div>
+      <div><div class="lbl">GRAVITY</div><div class="seg" id="gSeg"><button type="button" data-v="1" class="on">EARTH</button><button type="button" data-v="0">ZERO-G TRACK</button></div></div>
+      <div class="hs"><label class="lbl" for="rad">RADIUS</label><input id="rad" type="range" min="3" max="9" step="0.5" value="6"><output id="radOut">6.0 m</output></div>
+      <div class="hs"><label class="lbl" for="v0">ENTRY MPH</label><input id="v0" type="range" min="6" max="18" step="1" value="10"><output id="v0Out">10 mph</output></div>
+      <div class="hs"><label class="lbl" for="stk">STROKE</label><input id="stk" type="range" min="0.10" max="0.45" step="0.05" value="0.30"><output id="stkOut">30 cm</output></div>
+      <div class="hs"><label class="lbl" for="tscale">PLAYBACK</label><input id="tscale" type="range" min="0.1" max="1.5" step="0.1" value="0.4"><output id="tscaleOut">0.4×</output></div>
+      <button type="button" class="btn" id="rideBtn">PAUSE</button>
+      <button type="button" class="btn alt" id="restartBtn">RESTART</button>
+    </div>
+  </header>
+
+  <div class="views">
+    <canvas id="cv" width="1120" height="520"></canvas>
+    <div class="tag" id="viewTag">SIDE VIEW</div>
+    <div class="legend"><i style="background:#D9A441"></i>leg force on the rider <i style="background:#8DBF6A"></i>rider velocity <i style="background:#EFE8D6"></i>radius to the centre <i style="background:#D4784E"></i>rider's path (the spiral) <i style="background:#B07BC2"></i>ghost rider, legs rigid (R, no pump) <i style="background:#7FA6C9"></i>bike</div>
+    <div class="phase" id="phase"><b>PHASE</b>–</div>
+  </div>
+
+  <div class="panels">
+    <section class="card l">
+      <h2>ANGULAR MOMENTUM ABOUT THE CENTRE</h2>
+      <div class="reads">
+        <div class="read"><div class="k">L · RIDER + BIKE</div><div class="v" id="rL">–</div></div>
+        <div class="read"><div class="k">CHANGE ON THE ARC (GRAVITY'S SHARE REMOVED)</div><div class="v" id="rdL">–</div></div>
+        <div class="read"><div class="k">RIDER'S RADIUS r</div><div class="v" id="rr">–</div></div>
+        <div class="read"><div class="k">RIDER'S SPEED</div><div class="v" id="rvr">–</div></div>
+        <div class="read"><div class="k">MOMENT OF INERTIA I</div><div class="v" id="rI">–</div></div>
+        <div class="read"><div class="k">L² / 2I</div><div class="v" id="rL2">–</div></div>
+      </div>
+      <p class="desc">On the arc the ground's push and the legs' push both point at the centre, so neither can twist the system about it. Gravity can (it has a lever arm about the centre everywhere but the bottom), so the readout subtracts gravity's integrated torque; on the zero-g track <i>L</i> holds exactly, whatever the legs do. With <i>L</i> fixed and <i>I</i> = <i>m·r²</i> shrinking as the rider moves in, <i>L²/2I</i> (the kinetic energy) has to grow. That is the ice skater.</p>
+    </section>
+    <section class="card e">
+      <h2>ENERGY</h2>
+      <div class="reads">
+        <div class="read"><div class="k">KINETIC (RIDER + BIKE)</div><div class="v" id="rK">–</div></div>
+        <div class="read"><div class="k">POTENTIAL</div><div class="v" id="rV">–</div></div>
+        <div class="read"><div class="k">LEG WORK W</div><div class="v" id="rW">–</div></div>
+        <div class="read"><div class="k">ΔE − W (SHOULD BE 0)</div><div class="v" id="rChk">–</div></div>
+        <div class="read"><div class="k">BIKE SPEED</div><div class="v" id="rv">–</div></div>
+        <div class="read"><div class="k">NET GAIN (ENTRY HEIGHT + POSTURE)</div><div class="v" id="rGain">–</div></div>
+      </div>
+      <p class="desc">Energy is not conserved: it is <i>accounted for</i>. The only thing that can add or remove it is the legs, at the rate <i>force × extension speed</i>. Push out against a heavy load and the total rises; let the load fold the legs and it falls. The mismatch readout is the integrator's honesty check.</p>
+    </section>
+    <section class="card f">
+      <h2>WHY THE MASS SPEEDS UP</h2>
+      <div class="reads">
+        <div class="read"><div class="k">LEG FORCE</div><div class="v" id="rF">–</div></div>
+        <div class="read"><div class="k">LOAD TO HOLD STILL</div><div class="v" id="rLoad">–</div></div>
+        <div class="read"><div class="k">LEG POWER</div><div class="v" id="rP">–</div></div>
+        <div class="read"><div class="k">FORCE LEADS VELOCITY BY</div><div class="v" id="rAng">–</div></div>
+        <div class="read"><div class="k">CURVATURE UNDER THE BIKE</div><div class="v" id="rK2">–</div></div>
+        <div class="read"><div class="k">EXTENSION</div><div class="v" id="rh">–</div></div>
+      </div>
+      <p class="desc">A mass drawn toward the centre does not move on a circle any more, it moves on a spiral, and on a spiral the radial pull is no longer at right angles to the motion: it leans forward and does work. The angle readout is that lean. On a straight the curvature is zero, the load is only body weight, and a push just lifts the rider.</p>
+    </section>
+  </div>
+
+  <div class="chart"><canvas id="chart" width="1120" height="260"></canvas></div>
+
+  <p class="note"><b>The model.</b> Two masses from the Pump Lab: a 17 kg bike constrained to the path, and a 68 kg rider a distance <i>h</i> from it along the surface normal, on legs that push with a force <i>F</i> (the rider can also pull, as if clipped in, up to 1.2 body weights). Coordinates are the bike's distance along the path <i>s</i> and the leg length <i>h</i>; the equations come straight from the Lagrangian, so the ground reaction is a constraint that does no work, and the rider's velocity is <i>ṡ(1 − κh)</i> along the track plus <i>ḣ</i> along the normal, where <i>κ</i> is the signed curvature (positive when the centre is on the rider's side: a trough or a berm; negative over a crest). The generalised momentum <i>p<sub>s</sub></i> = [<i>m<sub>b</sub></i> + <i>m<sub>r</sub></i>(1 − κh)²] ṡ is what the angular-momentum readout shows, multiplied by the radius: on a constant-radius arc with no tangential force it cannot change, whatever the legs do. The curvature ramps in and out over 60 cm at each end of the arc so nothing is discontinuous. Integration at 2 kHz; energy is checked, not assumed.
+  <br><b>Trough, crest, berm.</b> The trough is a U in the side view: a 15&deg; down-slope, an arc of the chosen radius, a 15&deg; up-slope. The crest is the same upside down, and there the centre is beneath the ground, so "moving toward the centre" means pulling the bike up into the body. The berm is the same arc seen from above with the bank carrying the weight: gravity plays no part in the turning plane, which is why pumping a corner is pumping a trough. Zero-G is the magnetic pump track from the comments: no gravity at all, and the technique still works, push-pumping troughs and pull-pumping crests.
+  <br><b>Techniques.</b> PUSH IN THE CURVE extends the legs only while the ground curves, finishing as the arc ends. PUSH ON THE SLOPE does the same extension on the straight before the transition and finishes a bike-length short of it, where the curvature is zero: the legs lift the rider against body weight and nothing else, the potential energy goes up by the same amount, and the rider arrives at the curve already tall with nowhere to go, so the speed gain at entry height is a fraction of the in-curve push's. PASSIVE leaves the legs as a soft spring: the load in the curve folds them, work flows out of the system and the bike leaves slower than it arrived (the transition taketh away). RIGID holds <i>h</i> fixed: no work either way, a baseline.
+  <br><b>What the numbers say</b> (10 mph in, 6 m radius, 30 cm stroke, Goldstone's 68 kg on the 17 kg V10). Trough on Earth: push in the curve, 281 J of leg work, +0.51 mph at entry height and posture (200 J of the work is banked as the taller posture's potential energy; 81 J became speed). Push on the slope: 208 J of work, +0.09 mph: it all went into height. Passive: −141 J and −0.87 mph, the transition taketh away. Rigid: 0. The same trough on the zero-g track: push in the curve +0.26 mph, push on the slope exactly 0, because with no gravity a push where the ground is straight lifts nothing and turns nothing. Berm: +0.42 mph from 75 J, no gravity involved, which is the article's point that a turn is a trough. Crest on Earth at this speed: the pull is worth +0.06 mph, because the load over a 6 m crest at 10 mph is still mostly body weight; on the zero-g track the same pull is worth +0.21 mph, kpickrell's pull-pump. Energy is accounted to within 10 J in every case.
+  <br><b>What to watch.</b> Pick the trough and PUSH IN THE CURVE, then read the three cards during the arc: <i>L</i> flat, <i>L²/2I</i> climbing exactly with the kinetic energy, ΔE − W at zero. Switch to PUSH ON THE SLOPE: the same work is done, the potential energy rises by the same amount, and the speed gain at entry height is gone. Then turn gravity off and do the crest with PUSH IN THE CURVE (which, for a crest, is a pull).</p>
+</div>
+
+<script>
+'use strict';
+const D2R = Math.PI / 180;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const M_B = 17.0, M_R = 68.0, H0 = 1.02, H_MIN = 0.62, H_MAX = 1.36, BW = M_R * 9.81;
+let G = 9.81, R = 6.0, V0 = 10 * 0.447, STROKE = 0.30, TSCALE = 0.4, riding = true;
+const SCENES = [
+  { id: 'trough', name: 'TROUGH', view: 'SIDE VIEW · TROUGH', sign: +1, slope: 15 * D2R, top: false, lin: 7.0 },
+  { id: 'crest', name: 'CREST', view: 'SIDE VIEW · CREST', sign: -1, slope: 12 * D2R, top: false, lin: 3.5 },
+  { id: 'berm', name: 'BERM', view: 'TOP VIEW · BERM (the bank carries the weight)', sign: +1, slope: 50 * D2R, top: true, lin: 6.0 }
+];
+const TECHS = [
+  { id: 'curve', name: 'PUSH IN THE CURVE' }, { id: 'slope', name: 'PUSH ON THE SLOPE' }, { id: 'passive', name: 'PASSIVE' }, { id: 'rigid', name: 'RIGID' }
+];
+let scene = SCENES[0], tech = TECHS[0];
+
+/* =============== the path: straight, ramp, arc, ramp, straight; signed curvature kappa(s) =============== */
+const RAMP = 0.6, L_OUT = 9.0;
+let P = null;
+function buildPath(){
+  const phi = 2 * scene.slope, arc = R * phi;                       // the arc turns the heading through twice the slope angle
+  const L_IN = scene.lin, s0 = L_IN, s1 = s0 + RAMP, s2 = s0 + arc - RAMP, s3 = s0 + arc, s4 = s3 + L_OUT;
+  const kap = s => { const k = scene.sign / R; if (s < s0 || s > s3) return 0; if (s < s1) return k * (s - s0) / RAMP; if (s > s2) return k * (s3 - s) / RAMP; return k; };
+  const dkap = s => { const k = scene.sign / R; if (s < s0 || s > s3) return 0; if (s < s1) return k / RAMP; if (s > s2) return -k / RAMP; return 0; };
+  const ds = 0.01, n = Math.ceil(s4 / ds) + 1, x = new Float64Array(n), y = new Float64Array(n), th = new Float64Array(n);
+  let px = 0, py = 0, pth = scene.top ? 0 : -scene.slope * scene.sign;           // the trough starts heading downhill, the crest uphill, the berm straight
+  for (let i = 0; i < n; i++){ x[i] = px; y[i] = py; th[i] = pth; const s = i * ds; px += Math.cos(pth) * ds; py += Math.sin(pth) * ds; pth += kap(s) * ds; }
+  const cx = x[Math.round((s0 + arc / 2) / ds)], cy = y[Math.round((s0 + arc / 2) / ds)], thc = th[Math.round((s0 + arc / 2) / ds)];
+  const C = { x: cx - Math.sin(thc) * R * scene.sign, y: cy + Math.cos(thc) * R * scene.sign };   // centre of the arc: R along the normal on the curvature's side
+  P = { ds, n, x, y, th, kap, dkap, s0, s1, s2, s3, s4, arc, C, len: s4 };
+}
+function at(s){ const f = clamp(s / P.ds, 0, P.n - 1.001), i = Math.floor(f), t = f - i; return { x: lerp(P.x[i], P.x[i + 1], t), y: lerp(P.y[i], P.y[i + 1], t), th: lerp(P.th[i], P.th[i + 1], t) }; }
+
+/* =============== state and integrator (Lagrangian in s, h) =============== */
+const mk = () => ({ s: 0, ps: 0, h: H0, hd: 0, F: 0, W: 0, E0: 0, Larc: null, Lg: 0, done: false, trail: [], log: [], t: 0, load: 0, phase: '', kap: 0, sdot: 0, entryY: 0 });
+const S = mk(), GH = mk();                                          // GH: the ghost, a rigid rider on the same entry (the article's 'R, no pump' arc)
+function gy(){ return scene.top ? 0 : G; }                          // gravity in the drawing plane
+function energies(S){
+  const q = at(S.s), k = P.kap(S.s), f = 1 - k * S.h, sd = S.ps / (M_B + M_R * f * f), ny = Math.cos(q.th);
+  const T = 0.5 * M_B * sd * sd + 0.5 * M_R * (sd * sd * f * f + S.hd * S.hd);
+  const V = gy() * (M_B * q.y + M_R * (q.y + S.h * ny));
+  return { T, V, sd, f, k, ny, q };
+}
+function reset(){
+  buildPath();
+  for (const X of [S, GH]){ X.s = 0; X.h = H0; X.hd = 0; X.W = 0; X.done = false; X.trail.length = 0; X.log.length = 0; X.t = 0; X.Larc = null; X.Lg = 0; X.F = BW;
+    const q = at(0); X.ps = (M_B + M_R) * V0; X.E0 = energies(X).T + energies(X).V; X.entryY = q.y; }
+}
+function target(S){                                                 // the technique: a leg-length target along the path
+  const s = S.s, sg = scene.sign;                                    // sg>0: extend toward the centre; sg<0 (crest): the centre is below, so "toward the centre" is a pull
+  if (tech.id === 'curve'){ if (s < P.s0) return H0; if (s > P.s3) return H0 + sg * STROKE; return H0 + sg * STROKE * smooth((s - P.s0) / P.arc); }
+  if (tech.id === 'slope'){ const a = P.s0 - Math.min(5.0, P.s0 - 0.5), b = P.s0 - Math.min(1.2, P.s0 * 0.3); if (s < a) return H0; if (s > b) return H0 + sg * STROKE; return H0 + sg * STROKE * smooth((s - a) / (b - a)); }
+  return H0;
+}
+function step(S, tech, dt){
+  if (S.done) return;
+  const e = energies(S), k = e.k, f = e.f, sd = e.sd, ny = e.ny;
+  const load = M_R * (gy() * ny + k * sd * sd * f);                // leg force that holds the rider still relative to the ground
+  let F;
+  if (tech.id === 'rigid'){ F = load - M_R * 0; S.hd = 0; }
+  else if (tech.id === 'passive'){ F = M_R * gy() + 3500 * (H0 - S.h) - 400 * S.hd; }
+  else { const ht = target(S); F = load + M_R * (70 * (ht - S.h) - 14 * S.hd); }
+  F = clamp(F, -1.2 * BW, 3.5 * BW);
+  /* generalised momentum: p_s changes only through the curvature ramps (dT/ds) and gravity along the path */
+  const q = e.q, dV_ds = gy() * (M_B * Math.sin(q.th) + M_R * (Math.sin(q.th) - S.h * Math.sin(q.th) * k));
+  const dT_ds = -M_R * sd * sd * f * P.dkap(S.s) * S.h;
+  S.ps += (dT_ds - dV_ds) * dt;
+  if (S.Larc !== null && S.s <= P.s2) S.Lg += -dV_ds * R * dt;                  // gravity's torque about the centre, integrated: the only thing that can change L on the arc
+  /* legs */
+  const hdd = F / M_R - k * sd * sd * f - gy() * ny;
+  if (tech.id !== 'rigid'){ S.hd += hdd * dt; S.h += S.hd * dt; }
+  if (S.h < H_MIN){ S.h = H_MIN; if (S.hd < 0) S.hd = 0; F = Math.max(F, load); }
+  if (S.h > H_MAX){ S.h = H_MAX; if (S.hd > 0) S.hd = 0; }
+  S.F = F; S.load = load; S.kap = k;
+  S.W += F * S.hd * dt;
+  const e2 = energies(S); S.sdot = e2.sd; S.s += e2.sd * dt; S.t += dt;
+  if (S.s >= P.s1 && S.s <= P.s2 && S.Larc === null){ S.Larc = Lnow(S); S.Lg = 0; }
+  if (S.trail.length === 0 || S.s - S.trail[S.trail.length - 1].s > 0.08){ const n = { x: -Math.sin(e2.q.th), y: Math.cos(e2.q.th) }; S.trail.push({ s: S.s, x: e2.q.x + n.x * S.h, y: e2.q.y + n.y * S.h }); }
+  if (S.log.length === 0 || S.t - S.log[S.log.length - 1].t > 0.01) S.log.push({ t: S.t, s: S.s, L: Lnow(S), E: e2.T + e2.V, W: S.W, v: e2.sd });
+  S.phase = S.s < P.s0 ? (tech.id === 'slope' && S.s > P.s0 - 4 ? 'STRAIGHT · pushing early: the ground is not curving, this only lifts the rider' : 'STRAIGHT · curvature zero, load is body weight') :
+    S.s < P.s3 ? (tech.id === 'curve' ? (scene.sign > 0 ? 'ARC · extending toward the centre against the centripetal load' : 'ARC · pulling the bike up toward the centre beneath the ground') : tech.id === 'passive' ? 'ARC · the load folds the legs, work flows out' : tech.id === 'rigid' ? 'ARC · rigid: no work either way' : 'ARC · already tall, nothing left to push') : 'EXIT · straight again';
+  if (S.s > P.len - 0.05) S.done = true;
+  if (e2.sd < 0.15){ S.done = true; S.phase = 'STALLED · not enough speed to reach the curve'; }
+}
+function Lnow(S){ return S.ps * R; }                                // p_s × R: angular momentum of rider + bike about the arc's centre
+function moi(S){ const r = R - scene.sign * S.h; return M_B * R * R + M_R * r * r; }
+const RIGID = TECHS[3]; const S_main = S;
+
+/* =============== ui =============== */
+const $ = id => document.getElementById(id);
+function segs(id, list, cur, cb){ const el = $(id); el.innerHTML = ''; list.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.textContent = o.name; b.classList.toggle('on', o === cur); b.addEventListener('click', () => { cb(o); el.querySelectorAll('button').forEach((x, j) => x.classList.toggle('on', list[j] === o)); }); el.appendChild(b); }); }
+segs('sceneSeg', SCENES, scene, o => { scene = o; $('viewTag').textContent = o.view; reset(); });
+segs('techSeg', TECHS, tech, o => { tech = o; reset(); });
+$('gSeg').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { G = +b.dataset.v ? 9.81 : 0; $('gSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); reset(); }));
+$('rad').addEventListener('input', e => { R = +e.target.value; $('radOut').textContent = R.toFixed(1) + ' m'; reset(); });
+$('v0').addEventListener('input', e => { V0 = +e.target.value * 0.447; $('v0Out').textContent = e.target.value + ' mph'; reset(); });
+$('stk').addEventListener('input', e => { STROKE = +e.target.value; $('stkOut').textContent = Math.round(STROKE * 100) + ' cm'; reset(); });
+$('tscale').addEventListener('input', e => { TSCALE = +e.target.value; $('tscaleOut').textContent = TSCALE.toFixed(1) + '×'; });
+$('rideBtn').addEventListener('click', () => { riding = !riding; $('rideBtn').textContent = riding ? 'PAUSE' : 'RIDE'; });
+$('restartBtn').addEventListener('click', reset);
+if (matchMedia('(prefers-reduced-motion: reduce)').matches){ riding = false; $('rideBtn').textContent = 'RIDE'; }
+function txt(id, s, cls){ const el = $(id); el.textContent = s; el.className = 'v ' + (cls || ''); }
+function hud(){
+  const e = energies(S), L = Lnow(S), inArc = S.s >= P.s1 && S.s <= P.s2, dL = S.Larc === null ? null : (L - S.Lg) - S.Larc;
+  txt('rL', L.toFixed(1) + ' kg·m²/s'); txt('rdL', inArc && dL !== null ? ((dL >= 0 ? '+' : '') + dL.toFixed(2) + ' (' + (100 * dL / S.Larc).toFixed(2) + '%)' + (gy() > 0 ? ' · gravity added ' + (S.Lg >= 0 ? '+' : '') + S.Lg.toFixed(0) : ' · exact')) : (S.s > P.s2 && dL !== null ? 'arc over' : 'not on the arc yet'), inArc ? 'good' : '');
+  const r = R - scene.sign * S.h; txt('rr', r.toFixed(2) + ' m' + (inArc ? '' : ' (if it were the arc)'));
+  txt('rvr', (Math.hypot(e.sd * e.f, S.hd) / 0.447).toFixed(1) + ' mph');
+  txt('rI', moi(S).toFixed(0) + ' kg·m²'); txt('rL2', (L * L / (2 * moi(S))).toFixed(0) + ' J' + (inArc && Math.abs(S.hd) < 0.02 ? ' = KE' : ''), inArc ? 'good' : '');
+  const E = e.T + e.V; txt('rK', e.T.toFixed(0) + ' J'); txt('rV', e.V.toFixed(0) + ' J' + (gy() === 0 ? ' (no gravity)' : ''));
+  txt('rW', (S.W >= 0 ? '+' : '') + S.W.toFixed(0) + ' J', S.W > 5 ? 'good' : S.W < -5 ? 'warn' : '');
+  const chk = (E - S.E0) - S.W; txt('rChk', (chk >= 0 ? '+' : '') + chk.toFixed(1) + ' J', Math.abs(chk) < 3 ? 'good' : 'warn');
+  txt('rv', (e.sd / 0.447).toFixed(1) + ' mph');
+  const Ventry = S.E0 - 0.5 * (M_B + M_R) * V0 * V0, veq = Math.sqrt(Math.max(0, 2 * (E - Ventry - M_R * gy() * (S.h * e.ny - H0)) / (M_B + M_R)));   // the speed this energy would be back on the entry straight, in the entry posture (a taller rider has banked potential energy, not speed)
+  const gain = (veq - V0) / 0.447; txt('rGain', (gain >= 0 ? '+' : '') + gain.toFixed(2) + ' mph', gain > 0.05 ? 'good' : gain < -0.05 ? 'warn' : '');
+  txt('rF', (S.F / BW).toFixed(2) + ' × bw', S.F / BW > 2.2 ? 'warn' : ''); txt('rLoad', (S.load / BW).toFixed(2) + ' × bw');
+  const Pw = S.F * S.hd; txt('rP', Math.round(Pw) + ' W', Pw > 50 ? 'good' : Pw < -50 ? 'warn' : '');
+  /* angle between the force (along the normal, sign of F) and the rider's velocity */
+  const vt = e.sd * e.f, vn = S.hd, sp = Math.hypot(vt, vn); const ang = sp > 0.05 ? Math.acos(clamp(Math.sign(S.F) * vn / sp, -1, 1)) / D2R : 90; const lead = 90 - ang;
+  txt('rAng', (lead >= 0 ? '+' : '') + lead.toFixed(1) + '°' + (Math.abs(lead) < 0.3 ? ' (at right angles: no work)' : lead > 0 ? ' (leaning forward: doing work)' : ' (leaning back: taking work out)'), lead > 0.3 ? 'good' : lead < -0.3 ? 'warn' : '');
+  txt('rK2', Math.abs(S.kap) < 1e-4 ? 'straight' : (S.kap > 0 ? 'centre above · R ' : 'centre below · R ') + (1 / Math.abs(S.kap)).toFixed(1) + ' m');
+  txt('rh', Math.round(S.h * 100) + ' cm' + (S.h >= H_MAX - 0.001 ? ' · full' : S.h <= H_MIN + 0.001 ? ' · folded' : ''));
+  $('phase').innerHTML = '<b>' + scene.name + ' · ' + tech.name + (G === 0 ? ' · ZERO-G' : '') + '</b>' + S.phase;
+}
+
+/* =============== drawing =============== */
+const cv = $('cv'), ctx = cv.getContext('2d');
+function draw(){
+  const W = cv.width, H = cv.height; ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = scene.top ? '#1B1E19' : '#1C1F18'; ctx.fillRect(0, 0, W, H);
+  /* fit the path + centre in view */
+  let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (let i = 0; i < P.n; i += 20){ x0 = Math.min(x0, P.x[i]); x1 = Math.max(x1, P.x[i]); y0 = Math.min(y0, P.y[i]); y1 = Math.max(y1, P.y[i]); }
+  x0 = Math.min(x0, P.C.x - 0.5); x1 = Math.max(x1, P.C.x + 0.5); y0 = Math.min(y0, P.C.y - 0.5, y0 - 1.6); y1 = Math.max(y1, P.C.y + 0.5, y1 + 1.6);
+  const sc = Math.min((W - 80) / (x1 - x0), (H - 60) / (y1 - y0)), ox = 40 + ((W - 80) - (x1 - x0) * sc) / 2, oy = 30 + ((H - 60) - (y1 - y0) * sc) / 2;
+  const X = x => ox + (x - x0) * sc, Y = y => scene.top ? oy + (y - y0) * sc : H - oy - (y - y0) * sc;
+  /* ground */
+  ctx.beginPath(); for (let i = 0; i < P.n; i += 4){ const px = X(P.x[i]), py = Y(P.y[i]); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+  ctx.strokeStyle = '#7A5C3E'; ctx.lineWidth = 6; ctx.stroke();
+  if (!scene.top){ ctx.lineTo(X(P.x[P.n - 1]), H); ctx.lineTo(X(P.x[0]), H); ctx.closePath(); ctx.fillStyle = 'rgba(122,92,62,0.18)'; ctx.fill(); }
+  /* the arc's circle and centre */
+  ctx.setLineDash([4, 6]); ctx.strokeStyle = 'rgba(239,232,214,0.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(X(P.C.x), Y(P.C.y), R * sc, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#EFE8D6'; ctx.fillRect(X(P.C.x) - 3, Y(P.C.y) - 3, 6, 6); ctx.font = '11px IBM Plex Mono, monospace'; ctx.fillStyle = '#A39F88'; ctx.fillText('centre of curvature · R ' + R.toFixed(1) + ' m', X(P.C.x) + 8, Y(P.C.y) - 6);
+  /* arc extent marks */
+  for (const s of [P.s0, P.s3]){ const q = at(s); ctx.fillStyle = '#484D3C'; ctx.fillRect(X(q.x) - 2, Y(q.y) - 10, 4, 20); }
+  /* the ghost: a rigid rider, whose centre of mass stays on the larger circle (the article's 'R, no pump') */
+  if (GH.trail.length > 1){ ctx.setLineDash([6, 5]); ctx.beginPath(); GH.trail.forEach((p, i) => i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y))); ctx.strokeStyle = 'rgba(176,123,194,0.8)'; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); }
+  { const gq = at(GH.s), gn = { x: -Math.sin(gq.th), y: Math.cos(gq.th) }, gx = gq.x + gn.x * GH.h, gyy = gq.y + gn.y * GH.h; ctx.strokeStyle = 'rgba(127,166,201,0.45)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(X(gq.x), Y(gq.y)); ctx.lineTo(X(gx), Y(gyy)); ctx.stroke(); ctx.fillStyle = 'rgba(239,232,214,0.45)'; ctx.beginPath(); ctx.arc(X(gx), Y(gyy), 8, 0, 7); ctx.fill(); }
+  /* the spiral (rider's path) */
+  if (S.trail.length > 1){ ctx.beginPath(); S.trail.forEach((p, i) => i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y))); ctx.strokeStyle = '#D4784E'; ctx.lineWidth = 2; ctx.stroke(); }
+  /* bike, legs, rider */
+  const q = at(S.s), n = { x: -Math.sin(q.th), y: Math.cos(q.th) }, t = { x: Math.cos(q.th), y: Math.sin(q.th) };
+  const rx = q.x + n.x * S.h, ry = q.y + n.y * S.h, e = energies(S);
+  ctx.strokeStyle = '#EFE8D6'; ctx.lineWidth = 1; ctx.setLineDash([2, 4]); ctx.beginPath(); ctx.moveTo(X(P.C.x), Y(P.C.y)); ctx.lineTo(X(rx), Y(ry)); ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = '#7FA6C9'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(X(q.x), Y(q.y)); ctx.lineTo(X(rx), Y(ry)); ctx.stroke();   // legs
+  ctx.fillStyle = '#7FA6C9'; ctx.beginPath(); ctx.arc(X(q.x), Y(q.y), 7, 0, 7); ctx.fill();                                              // bike
+  ctx.fillStyle = '#EFE8D6'; ctx.beginPath(); ctx.arc(X(rx), Y(ry), 9, 0, 7); ctx.fill();                                                // rider mass
+  /* vectors: force along the normal (scaled by bw), rider velocity */
+  const arrow = (x, y, dx, dy, col) => { const L = Math.hypot(dx, dy); if (L < 2) return; ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.stroke();
+    const ux = dx / L, uy = dy / L; ctx.beginPath(); ctx.moveTo(x + dx, y + dy); ctx.lineTo(x + dx - ux * 10 - uy * 5, y + dy - uy * 10 + ux * 5); ctx.lineTo(x + dx - ux * 10 + uy * 5, y + dy - uy * 10 - ux * 5); ctx.closePath(); ctx.fill(); };
+  const fs = 0.55 * sc * (S.F / BW), ysgn = scene.top ? 1 : -1;
+  arrow(X(rx), Y(ry), n.x * fs, ysgn * n.y * fs, '#D9A441');
+  const vx = e.sd * e.f * t.x + S.hd * n.x, vy = e.sd * e.f * t.y + S.hd * n.y, vs = 0.22 * sc;
+  arrow(X(rx), Y(ry), vx * vs, ysgn * vy * vs, '#8DBF6A');
+  ctx.fillStyle = '#A39F88'; ctx.font = '11px IBM Plex Mono, monospace'; ctx.fillText('h ' + Math.round(S.h * 100) + ' cm', X(rx) + 12, Y(ry) + 4);
+  ctx.fillStyle = 'rgba(176,123,194,0.9)'; ctx.fillText('R (no pump) · ghost rider, legs rigid · ' + (R - scene.sign * H0).toFixed(2) + ' m', 16, 48); ctx.fillStyle = '#D4784E'; ctx.fillText('R (pump) · ' + (R - scene.sign * S.h).toFixed(2) + ' m', 16, 64);
+  if (scene.top){ ctx.fillText('bank carries the weight; only the turning plane is drawn', 16, H - 12); }
+  if (G === 0) { ctx.fillStyle = '#7FA6C9'; ctx.fillText('ZERO-G: magnetic rims, clipped in', W - 250, H - 12); }
+}
+function drawChart(){
+  const c = $('chart').getContext('2d'), W = 1120, H = 260, L = 56, Rr = 16, T = 22, B = 26;
+  c.clearRect(0, 0, W, H); c.fillStyle = '#2F3328'; c.fillRect(0, 0, W, H);
+  const Xs = s => L + (W - L - Rr) * s / P.len;
+  c.fillStyle = 'rgba(239,232,214,0.06)'; c.fillRect(Xs(P.s0), T, Xs(P.s3) - Xs(P.s0), H - T - B);
+  c.fillStyle = '#A39F88'; c.font = '10px monospace'; c.fillText('the arc', Xs(P.s0) + 4, H - 10);
+  const series = [['L about the centre', p => p.L, '#EFE8D6'], ['total energy E', p => p.E, '#8DBF6A'], ['leg work W (+E at entry)', p => S.E0 + p.W, '#D9A441'], ['bike speed', p => p.v, '#7FA6C9']];
+  const lg = S.log; if (lg.length < 2) return;
+  const Lmax = Math.max(...lg.map(p => Math.abs(p.L))) * 1.15 || 1, Emin = Math.min(...lg.map(p => Math.min(p.E, S.E0 + p.W))), Emax = Math.max(...lg.map(p => Math.max(p.E, S.E0 + p.W))), vmax = Math.max(...lg.map(p => p.v)) * 1.15 || 1;
+  const Y = (v, lo, hi) => T + (H - T - B) * (1 - clamp((v - lo) / Math.max(1e-6, hi - lo), 0, 1));
+  const scale = i => i === 0 ? [0, Lmax] : i === 3 ? [0, vmax] : [Emin - 0.1 * (Emax - Emin + 1), Emax + 0.1 * (Emax - Emin + 1)];
+  series.forEach(([nm, fn, col], i) => { const [lo, hi] = scale(i); c.strokeStyle = col; c.lineWidth = i === 2 ? 1.5 : 2; if (i === 2) c.setLineDash([5, 4]); c.beginPath(); lg.forEach((p, j) => j ? c.lineTo(Xs(p.s), Y(fn(p), lo, hi)) : c.moveTo(Xs(p.s), Y(fn(p), lo, hi))); c.stroke(); c.setLineDash([]);
+    c.fillStyle = col; c.fillText(nm, L + 8 + i * 230, 14); });
+  c.fillStyle = '#A39F88'; c.fillText('vs distance along the path · each trace on its own scale', W - 330, H - 10);
+}
+
+/* =============== loop =============== */
+const PDT = 1 / 2000; let last = performance.now(), acc = 0, frame = 0;
+function tick(now){
+  requestAnimationFrame(tick);
+  const dtReal = Math.min(0.05, (now - last) / 1000); last = now; const dt = dtReal * TSCALE;
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 400){ step(S, tech, PDT); step(GH, RIGID, PDT); acc -= PDT; n++; } if (S.done && GH.done){ acc = 0; if ((frame % 180) === 0) reset(); } }
+  draw(); if ((frame++ & 1) === 0){ hud(); drawChart(); }
+}
+reset(); $('viewTag').textContent = scene.view; requestAnimationFrame(tick);
+window.LAB = { S, GH, step: dt => { step(S, tech, dt); step(GH, RIGID, dt); }, reset, energies, Lnow, SCENES, TECHS, set: { scene: i => { scene = SCENES[i]; reset(); }, tech: i => { tech = TECHS[i]; reset(); } } };
+</script>
