@@ -101,9 +101,10 @@
   <header>
     <div>
       <h1>SUSPENSION LAB</h1>
-      <div class="sub">West Chester Cyclery &mdash; Jackson Goldstone's Santa Cruz V10 CC MX (size M, low), 208 mm lower-link VPP + 200 mm Fox 40 &middot; rider posture from his Val di Sole 2023 chase footage &middot; chassis pitch-rate capped at 360&deg;/s (measured pro DH peak 279&ndash;284&deg;/s, FPV chase footage) &middot; clicks from fully open<br><b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
+      <div class="sub">West Chester Cyclery &mdash; Jackson Goldstone's Santa Cruz V10 CC MX (size M, low), 208 mm lower-link VPP + 200 mm Fox 40 &middot; rider posture from his Val di Sole 2023 chase footage &middot; chassis pitch-rate capped at 360&deg;/s (measured pro DH peak 279&ndash;284&deg;/s, FPV chase footage) &middot; clicks from fully open<br><b>Courses:</b> Ladies Only (Mt Fromme, North Vancouver: roots, ladders, rock rolls) or Tortuga (Ride Kanuga, NC: the intermediate jump line, seven radiused-lip tabletops from 10 to 25 ft, a step-up, a step-down, a berm and a right-left berm S; 0.2 mi, 85 ft of drop). <b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
     </div>
     <div class="ctl">
+      <div><div class="lbl">COURSE</div><div class="seg" id="courseSeg"><button type="button" data-v="ladies">LADIES ONLY · FROMME</button><button type="button" data-v="tortuga">TORTUGA · KANUGA</button></div></div>
       <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">GOLDSTONE</button><button type="button" data-v="avg">AVERAGE</button></div></div>
       <div class="hs"><label class="lbl" for="rlb">RIDER LB</label><input id="rlb" type="range" min="120" max="260" step="5" value="150"><output id="rlbOut">150 lb</output></div>
       <div class="hs"><label class="lbl" for="effort">RIDER W</label><input id="effort" type="range" min="100" max="400" step="10" value="300"><output id="effortOut">300 W</output></div>
@@ -166,7 +167,8 @@
 
   <p class="note"><b>What is simulated.</b> A 37 lb V10 built from its parts (frame and links, Fox 40, cockpit, DHX2 coil, post, drivetrain, brakes) so the sprung centre of mass and pitch inertia follow from them; two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping) with rotational inertia and their own spin state; a 150 lb rider whose centre of mass is built from body segments (torso 50%, legs 32%, arms 10%, head 8%) at wherever the current pose puts them, on a leg spring&ndash;damper, and speed from rider power alone (no motor) against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). Braking and drive go through the wheels: brake torque (65/35 front/rear) and pedal/motor torque spin the wheels against a longitudinal slip curve that peaks near 15% slip and slides at ~72% of peak, so an over-braked wheel locks (the PRO rider modulates, the AVERAGE rider does not); the tyre forces at the ground pitch the mass above them, the front tyre force also pushes the wheel up the 63.5&deg; fork axis (brake dive), spinning wheels add to the mass to accelerate and resist being rolled (gyroscopic damping), and in the air brake and pedal torques react on the frame, which the PRO rider uses to level the bike. The rear wheel rides a solved four-bar VPP: lower-link-driven 250&times;75 shock, 208 mm at the axle, leverage ratio 2.86&rarr;2.59 (9% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
   <br><b>Sources.</b> Bike: <code>kinematic-model/data/bike_specs.yaml</code> (Goldstone's Santa Cruz V10 CC MX from the owner-supplied Pinkbike bike check: Fox 40 RAD 200 mm, Fox DHX2 with a 475 lb spring, 208 mm rear, 29/27.5 with 746/708 mm tyre ODs, reach 447, chainstay 455) plus the published V10 chart for stack, 63.5&deg; HTA and BB; 37 lb from the parts list. The linkage is the lower-link VPP four-bar refitted with <code>tools/vpp_fit.py</code> to 208 mm over 250&times;75 (LR 2.86&rarr;2.59); the VPP family's shape (near-linear falling leverage, slight rearward-then-forward axle path) comes from Pinkbike's Megatower "Behind the Numbers" scan. Rider: 150 lb. Kinematics: <code>kinematic-model/output/goldstone/vds_2023</code>, the Val di Sole 2023 FPV chase run tracked with the DH bike-keypoint model (pose on 84% of frames, 239 side-view frames used for posture; pitch/roll/yaw rate maxima 279/245/258 deg/s set the chassis caps; ground-speed estimate p95 64 km/h).
-  <br><b>Rider posture.</b> GOLDSTONE targets are percentiles of the 2D joint angles on the side-view frames of the Val di Sole run: knee p10/p25/p50 127/158/170&deg;, elbow 117/141/156&deg;. A chase drone films from above and behind, which reads joint angles tall, so the cruising attack stance uses p25 (knee 150, elbow 138), the deep absorb p10 (127/117) and the pop p75&ndash;p90 (168/152); his measured knee angular speed (p90 330&deg;/s) sets the absorb time constant, and knees and elbows move independently in the data (r = 0.03) while torso tracks the knees (r = 0.82), which is what the solver does. AVERAGE mirrors Charlie at 160.5 s and 194.5 s of the Asa comparison (upright torso, knee ~165&deg;, stiff legs). Knees always bend forward and elbows down; caps (knee &le;178&deg;, elbow &le;175&deg; for GOLDSTONE, his side-view p90) stop lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.</p>
+  <br><b>Tortuga.</b> A tabletop here is built the way a park builds one: a circular-arc transition of radius R rolls the trail into a straight takeoff face at the lip angle (22&ndash;30&deg;, steeper as they get bigger), a flat deck (10&ndash;25 ft), then a landing that rolls over a knuckle onto a down-ramp and rounds out at the bottom; the step-up leaves the trail 60 cm higher than it arrived and the step-down 90 cm lower. Because the lip is a radius and not a kink, the fork loads progressively through the transition and the bike leaves with the pitch the face gave it; the rider crouches into the transition (PRELOAD) and extends through the lip (POP), so the lift comes from the legs against a loaded transition rather than a jerk at the top. The berm S is two opposite banked corners with nothing between them: the rider has to be upright across the crossover with the bike rolling from one bank to the other. Feature order and sizes come from Trailforks, MTB Project and POV footage of the line; nothing is surveyed.
+  <br><b>Course (Ladies Only).</b> GOLDSTONE targets are percentiles of the 2D joint angles on the side-view frames of the Val di Sole run: knee p10/p25/p50 127/158/170&deg;, elbow 117/141/156&deg;. A chase drone films from above and behind, which reads joint angles tall, so the cruising attack stance uses p25 (knee 150, elbow 138), the deep absorb p10 (127/117) and the pop p75&ndash;p90 (168/152); his measured knee angular speed (p90 330&deg;/s) sets the absorb time constant, and knees and elbows move independently in the data (r = 0.03) while torso tracks the knees (r = 0.82), which is what the solver does. AVERAGE mirrors Charlie at 160.5 s and 194.5 s of the Asa comparison (upright torso, knee ~165&deg;, stiff legs). Knees always bend forward and elbows down; caps (knee &le;178&deg;, elbow &le;175&deg; for GOLDSTONE, his side-view p90) stop lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -370,9 +372,24 @@ const SEG = {
   ladder: (len, grade) => ({ len, grade, type: 'built',                                                 // cedar ladder bridge: crown + plank ripple
     h: t => 0.05 * Math.sin(Math.PI * t / len) + (Math.floor(t / 0.30) % 2 ? 0.012 : 0) }),
   chute: (len, grade) => ({ len, grade, type: 'dirt', noPedal: [0, 99],                                 // steep loam with braking ruts
-    h: t => 0.05 * Math.pow(Math.max(0, Math.sin(Math.PI * t / 0.8)), 1.4) })
+    h: t => 0.05 * Math.pow(Math.max(0, Math.sin(Math.PI * t / 0.8)), 1.4) }),
+  /* bike-park vocabulary: a tabletop whose lip is a circular arc of radius R rolling into a straight face at lipDeg, a flat
+     deck, and a landing that rolls over a knuckle onto a straight down-ramp at landDeg and rounds out at the bottom.
+     hEnd lifts (step-up) or drops (step-down) the trail after the landing. */
+  table: (H, lipDeg, R, deck, landDeg, grade, hEnd = 0) => {
+    const th = lipDeg * D2R, ya = R * (1 - Math.cos(th)), xa = R * Math.sin(th), face = Math.max(0, H - ya) / Math.tan(th), lipL = xa + face;
+    const drop = H - hEnd, landL = drop / Math.tan(landDeg * D2R) + 2.2, run = 1.5;
+    return { len: lipL + deck + landL + run, grade, type: 'built', noPedal: [0, 99], lipAt: lipL, hEnd, jump: { H, deck, lipDeg, landDeg },
+      h: t => {
+        if (t < xa) return R - Math.sqrt(Math.max(0, R * R - t * t));                                       // radiused transition
+        if (t < lipL) return ya + (t - xa) * Math.tan(th);                                                   // straight face to the lip
+        if (t < lipL + deck) return H;                                                                       // deck
+        if (t < lipL + deck + landL){ const u = (t - lipL - deck) / landL; return H - drop * (u * u * (3 - 2 * u)); }   // knuckle, ramp, round-out
+        return hEnd; } };
+  }
 };
-const COURSE = [
+const COURSES = {};
+COURSES.ladies = [
   /* Modelled on Ladies Only, Mt Fromme, North Vancouver -- segment sequence and character
      compiled from ride guides and POV footage (steep rooty upper, root staircase, cedar
      ladder bridges, rock rolls, tight tree gates, loam hips out). Grades and lengths are
@@ -399,6 +416,38 @@ const COURSE = [
   Object.assign(SEG.flat(10, -0.04), { name: 'SPRINT OUT' }),
   Object.assign(SEG.flat(6, 0.0), { name: 'FINISH' })
 ];
+COURSES.tortuga = [
+  /* Modelled on Tortuga, Ride Kanuga Bike Park (Hendersonville, NC): the intermediate jump line. Trailforks / MTB Project:
+     0.2 mi, 85 ft of descent, 10% average and 18% max grade, seven tabletops from 10 to 25 ft plus a step-up and a
+     step-down, merging into First In Flight. Feature order and the berm S read off POV footage (a left berm after the
+     first two tables, the big step-up, then a hard right-left S, then the two biggest tables before the turn-out).
+     Sizes are plausible-scale, not surveyed. */
+  Object.assign(SEG.flat(5, 0.0), { name: 'DROP-IN', turn: 0 }),
+  Object.assign(SEG.flat(20, -0.16), { name: 'ROLL-IN 16%', turn: -8 }),
+  Object.assign(SEG.table(0.80, 22, 3.5, 3.0, 24, -0.05), { name: 'TABLE 1 · 10 FT' }),
+  Object.assign(SEG.flat(7, -0.14), { name: 'STRAIGHT', turn: 14 }),
+  Object.assign(SEG.table(0.90, 24, 3.6, 3.7, 25, -0.05), { name: 'TABLE 2 · 12 FT' }),
+  Object.assign(SEG.corner(12, 8, 25, -0.09), { name: 'BERM L 25°', turn: -78 }),
+  Object.assign(SEG.flat(8, -0.14), { name: 'STRAIGHT' }),
+  Object.assign(SEG.table(1.00, 25, 4.0, 4.6, 25, -0.05), { name: 'TABLE 3 · 15 FT' }),
+  Object.assign(SEG.flat(8, -0.14), { name: 'STRAIGHT', turn: 10 }),
+  Object.assign(SEG.table(1.30, 28, 4.2, 5.5, 22, -0.03, 0.6), { name: 'STEP-UP · 18 FT' }),
+  Object.assign(SEG.corner(11, 7.5, 26, -0.09), { name: 'S-BERM R 26°', turn: 84 }),
+  Object.assign(SEG.corner(12, 8, 28, -0.09), { name: 'S-BERM L 28°', turn: -90 }),
+  Object.assign(SEG.table(1.00, 25, 4.0, 4.6, 25, -0.06), { name: 'TABLE 4 · 15 FT' }),
+  Object.assign(SEG.flat(7, -0.14), { name: 'STRAIGHT', turn: -8 }),
+  Object.assign(SEG.table(0.90, 24, 3.8, 5.5, 26, -0.04, -0.9), { name: 'STEP-DOWN · 18 FT' }),
+  Object.assign(SEG.flat(9, -0.14), { name: 'STRAIGHT' }),
+  Object.assign(SEG.table(1.20, 27, 4.5, 6.1, 26, -0.06), { name: 'TABLE 5 · 20 FT' }),
+  Object.assign(SEG.flat(9, -0.14), { name: 'STRAIGHT', turn: 12 }),
+  Object.assign(SEG.table(1.30, 28, 4.5, 6.7, 26, -0.05), { name: 'TABLE 6 · 22 FT' }),
+  Object.assign(SEG.flat(8, -0.14), { name: 'STRAIGHT' }),
+  Object.assign(SEG.table(1.45, 30, 5.0, 7.6, 27, -0.06), { name: 'TABLE 7 · 25 FT' }),
+  Object.assign(SEG.flat(10, -0.07), { name: 'TURN-OUT TO FIRST IN FLIGHT', turn: 30 }),
+  Object.assign(SEG.flat(6, 0.0), { name: 'FINISH' })
+];
+const COURSE_ID = (() => { try { return COURSES[localStorage.getItem('course')] ? localStorage.getItem('course') : 'ladies'; } catch (e) { return 'ladies'; } })();
+const COURSE = COURSES[COURSE_ID];
 /* The trail is generated from the course itself: each segment is a constant-curvature arc (turn in degrees over its
    length), then a cubic Hermite curve closes the loop back to the start and becomes the RETURN CLIMB, whose grade is
    set so the elevation profile also closes. So the lap is a true loop: corner radii are exact and nothing teleports. */
@@ -429,7 +478,7 @@ let COURSE_LEN = 0;
   const ret = Object.assign(SEG.roots(retLen, 0, 0.025), { name: 'RETURN CLIMB' });
   COURSE.push(ret);
   COURSE_LEN = 0; for (const g of COURSE){ g.start = COURSE_LEN; COURSE_LEN += g.len; }
-  let b = 0; for (const g of COURSE){ if (g === ret) g.grade = -b / g.len; g.base = b; b += g.grade * g.len; }
+  let b = 0; for (const g of COURSE){ if (g === ret) g.grade = -b / g.len; g.base = b; b += g.grade * g.len + (g.hEnd || 0); }
 })();
 function pathAt(sIn){
   let sp = sIn % COURSE_LEN; if (sp < 0) sp += COURSE_LEN;
@@ -446,7 +495,7 @@ function segAt(u){
 function terrainAt(u){ const [g, t] = segAt(u); return g.base + g.grade * t + g.h(t); }
 /* discrete obstacles laid on the trail: each is both a height profile the tyres roll over and a mesh in the scene */
 const OBST = [];
-function addObst(segName, t, o){ const g = COURSE.find(x => x.name === segName); OBST.push(Object.assign({ u: g.start + t }, o)); }
+function addObst(segName, t, o){ const g = COURSE.find(x => x.name === segName); if (!g) return; OBST.push(Object.assign({ u: g.start + t }, o)); }
 /* Upper roots: interlaced cedar roots crossing at angles */
 addObst('UPPER ROOTS 14%', 3.0, { type: 'log', r: 0.07, yaw: 0.5 });
 addObst('UPPER ROOTS 14%', 6.5, { type: 'log', r: 0.10, yaw: -0.4 });
@@ -624,6 +673,7 @@ const POSE = {
     seated:  { hx: -0.15, knee: 148, elbow: 130, k: 30000, c: 1500 },        // fireroad return
     climb:   { hx: -0.22, knee: 152, elbow: 122, k: 12000, c: 1000 },
     attack:  { hx: -0.21, knee: 150, elbow: 138, k: 8500,  c: 900  },        // tall, loose DH cruise: side-view p25
+    preload: { hx: -0.24, knee: 118, elbow: 102, k: 9000,  c: 950  },
     pop:     { hx: -0.20, knee: 168, elbow: 152, k: 14000, c: 1100 },        // extension at the lip: p75-p90
     air:     { hx: -0.22, knee: 160, elbow: 146, k: 7000,  c: 800  },        // legs long in the air, arms working (airborne frames)
     land:    { hx: -0.24, knee: 127, elbow: 117, k: 8000,  c: 1000 },        // deep absorb: side-view p10
@@ -633,6 +683,7 @@ const POSE = {
     seated:  { hx: -0.14, knee: 152, elbow: 148, k: 34000, c: 1700 },
     climb:   { hx: -0.16, knee: 155, elbow: 148, k: 20000, c: 1300 },
     attack:  { hx: -0.16, knee: 157, elbow: 145, k: 22000, c: 1400 },
+    preload: { hx: -0.20, knee: 146, elbow: 140, k: 20000, c: 1300 },
     pop:     { hx: -0.24, knee: 160, elbow: 150, k: 24000, c: 1500 },
     air:     { hx: -0.26, knee: 150, elbow: 140, k: 18000, c: 1200 },
     land:    { hx: -0.26, knee: 148, elbow: 140, k: 22000, c: 1400 },
@@ -657,7 +708,7 @@ let poseState = 'seated', poseT = 0, airT = 0, contactT = 0, pedaling = true, cr
 const cur = { hx: -0.15, hy: 0.70, torso: 42, kneeMax: 158, elbowMax: 145 };
 function poseController(dt, grade, airborne, u){
   const seg = segAt(u)[0];
-  const distToLip = (seg.name === 'BIG JUMP') ? (3.0 + 0.8) - segAt(u)[1] : 99;
+  const distToLip = seg.lipAt !== undefined ? seg.lipAt - segAt(u)[1] : (seg.name === 'BIG JUMP') ? (3.0 + 0.8) - segAt(u)[1] : 99;
   const distToLedge = (seg.name === 'HUCK TO FLAT') ? (8.0 + 2.5) - segAt(u)[1] : 99;
   let next = poseState;
   if (airborne){ airT += dt; contactT = 0; next = airT > 0.08 ? 'air' : poseState; }
@@ -665,6 +716,7 @@ function poseController(dt, grade, airborne, u){
     contactT += dt; airT = 0;
     if (poseState === 'air' || (poseState === 'land' && contactT < 0.45)) next = 'land';
     else if (distToLip > 0 && distToLip < 0.35 + v * 0.12) next = 'pop';
+    else if (distToLip > 0 && distToLip < 1.0 + v * 0.30) next = 'preload';                                 // crouch into the transition first: the pop then has somewhere to come from
     else if (distToLedge > 0 && distToLedge < 0.4 + v * 0.2) next = 'huck';
     else if (pedaling && seg.grade > -0.025 && (seg.name === 'START' || seg.name === 'FINISH')) next = 'seated';
     else if (pedaling) next = 'climb';
@@ -676,7 +728,7 @@ function poseController(dt, grade, airborne, u){
   const steep = clamp(-grade, 0, 0.25);
   const att = poseState === 'attack' && riderMode === 'pro';
   const tgt = solvePose(P, att ? -0.35 * steep : 0, poseState === 'seated' || poseState === 'climb');
-  const tau = poseState === 'pop' ? 0.06 : poseState === 'huck' ? 0.10 : (riderMode === 'pro' ? 0.14 : 0.30);
+  const tau = poseState === 'pop' ? 0.07 : poseState === 'preload' ? 0.10 : poseState === 'huck' ? 0.10 : (riderMode === 'pro' ? 0.14 : 0.30);
   const a = 1 - Math.exp(-dt / tau);
   cur.hx += (tgt.hx - cur.hx) * a; cur.hy += (tgt.hy - cur.hy) * a; cur.torso += (tgt.torso - cur.torso) * a; cur.kneeMax = tgt.kneeMax; cur.elbowMax = tgt.elbowMax;
   rider.xTarget = cur.hx; rider.yTarget = cur.hy;
@@ -870,6 +922,8 @@ ui.rideBtn.addEventListener('click', () => { riding = !riding; ui.rideBtn.textCo
 ui.restartBtn.addEventListener('click', () => reset());
 function segButtons(id, cb){ const el = $(id); el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(b.dataset.v); })); }
 segButtons('riderSeg', vv => { riderMode = vv; });
+document.querySelectorAll('#courseSeg button').forEach(b => { b.classList.toggle('on', b.dataset.v === COURSE_ID); b.addEventListener('click', () => { try { localStorage.setItem('course', b.dataset.v); } catch (e) {} location.reload(); }); });
+document.title = COURSE_ID === 'tortuga' ? 'Suspension Lab · Tortuga' : 'Suspension Lab';
 segButtons('shockSeg', vv => {
   shockType = vv;
   if (vv === 'air'){ ui.rSpring.min = 120; ui.rSpring.max = 260; ui.rSpring.step = 5; ui.rSpring.value = 205; $('rSpringLbl').innerHTML = '<u>AIR</u><br>psi'; }
@@ -906,7 +960,7 @@ function updateHud(joints){
   ui.hudSec.textContent = seg.name + '  ·  LAP ' + lap;
   ui.hudSpd.textContent = (v / 0.447).toFixed(0) + ' mph';
   ui.hudGrade.textContent = (gradeS * 100).toFixed(0) + '%';
-  ui.hudState.textContent = { seated: 'SEATED PEDAL', climb: gradeS > 0.045 ? 'STANDING CLIMB' : 'STANDING PEDAL', attack: 'ATTACK', pop: 'PRELOAD / POP', air: 'AIRBORNE', land: 'ABSORB LANDING', huck: 'HUCK: WEIGHT BACK' }[poseState];
+  ui.hudState.textContent = { seated: 'SEATED PEDAL', climb: gradeS > 0.045 ? 'STANDING CLIMB' : 'STANDING PEDAL', attack: 'ATTACK', preload: 'PRELOAD INTO THE LIP', pop: 'POP', air: 'AIRBORNE', land: 'ABSORB LANDING', huck: 'HUCK: WEIGHT BACK' }[poseState];
   const lockF = wheelF.tire > 0 && wheelF.om * wheelF.r < 0.35 * v, lockR = wheelR.tire > 0 && wheelR.om * wheelR.r < 0.35 * v;
   ui.hudPower.textContent = (brakeF > 50 && !corner.sliding) ? ('BRAKING ' + Math.round(brakeF) + ' N · slip F ' + Math.round(wheelF.slip * 100) + '% R ' + Math.round(wheelR.slip * 100) + '%' + (lockF ? ' · FRONT LOCKED' : lockR ? ' · REAR LOCKED' : '') + (corner.braking ? ' · for corner' : '')) : corner.sliding ? ('SLIDING · grip ' + Math.round(corner.usage * 100) + '%') : corner.active ? ((corner.lean > 0 ? 'LEFT ' : 'RIGHT ') + corner.g.toFixed(2) + ' g · lean ' + Math.abs(Math.round(corner.lean / D2R)) + '° · grip ' + Math.round(corner.usage * 100) + '%' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
   for (const k of ['knee', 'hip', 'elbow', 'torso']) setJoint(k, joints[k]);

@@ -439,7 +439,7 @@ function takeoff(r, hdRel, atStop){                                             
   r.cx = r.x; r.cy = S.y + FR * r.h;                                                 // in the air the leg length is measured straight up from the bike
   r.cvx = vt * tx + vn * n.x; r.cvy = vt * ty + vn * n.y;
   r.hd = atStop ? 0 : hdRel;                                                          // at the leg stop the body's speed is shared with the bike (the yank); otherwise the legs keep moving
-  r.pw = -(r.v / GEO.wb) * Math.sin(Math.max(0, S.th)) * 0.45 + (atStop ? 1.2 : 0);    // the rear wheel is still being lifted by the lip after the front has left: nose-down; a pop pulls the bars and cancels it
+  r.pw = -(r.v / GEO.wb) * Math.sin(Math.max(0, S.th)) * 0.45 + (atStop ? 0.6 : 0);    // the rear wheel is still being lifted by the lip after the front has left: nose-down; a pop pulls the bars and cancels it
   r.air = true; r.airT = 0; r.hAir = r.h; r.u = -0.03; r.ud = 0; r.pitch = S.th; r.pitchTarget = null; r.tookOff = r.x; r.F = 0; r.jumps++;
 }
 function land(r){
@@ -461,14 +461,14 @@ function land(r){
 function stepAir(r, dt){
   r.airT += dt;
   const target = r.airCtl(r);
-  const hdd = 90 * (target - r.h) - 16 * r.hd; r.hd += hdd * dt; r.h += r.hd * dt;    // the legs move the bike against the body; the CoM does not care
+  const hdd = 55 * (target - r.h) - 13 * r.hd; r.hd += hdd * dt; r.h += r.hd * dt;    // the legs move the bike against the body; the CoM does not care
   if (r.h < H_MIN){ r.h = H_MIN; r.hd = Math.max(0, r.hd); } if (r.h > H_MAX){ r.h = H_MAX; r.hd = Math.min(0, r.hd); }
   const sp = Math.hypot(r.cvx, r.cvy), ad = 0.5 * 1.2 * 0.55 * sp * sp / (M_BIKE + M_RIDER);
   r.cvx -= ad * r.cvx / Math.max(sp, 0.1) * dt; r.cvy -= (G9 + ad * r.cvy / Math.max(sp, 0.1)) * dt;
   r.cx += r.cvx * dt; r.cy += r.cvy * dt;
   r.x = r.cx; const by = r.cy - FR * r.h;                                             // the bike hangs below the CoM by the rider's share of the leg length
   r.v = sp; r.F = 0; r.L = 0;
-  const tq = r.pitchTarget === null ? -1.2 * r.pw : 16 * (r.pitchTarget - r.pitch) - 6 * r.pw;   // the rider's arms and legs steer the bike's attitude; a stiff rider only has a little aero damping
+  const tq = r.pitchTarget === null ? -1.2 * r.pw : 9 * (r.pitchTarget - r.pitch) - 4.5 * r.pw;   // the rider's arms and legs steer the bike's attitude; a stiff rider only has a little aero damping
   r.pw += tq * dt; r.pitch = clamp(r.pitch + r.pw * dt, -1.0, 1.0);
   r.S = { y: by, th: r.pitch, k: 0, u: 0, set: 2 };
   if (r.x - r.lastX > 0.15){ r.lastX = r.x; r.trail.push({ x: r.cx, y: r.cy + (1 - FR) * r.h }); if (r.trail.length > 60) r.trail.shift(); }
