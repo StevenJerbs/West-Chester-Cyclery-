@@ -1,0 +1,12 @@
+# The kinematic model is its own 1.3 GB project with its own venv and datasets; it lives here for convenience
+# but is not part of this repository. Ignored so an `add -A` cannot pull it in.
+kinematic-model/
+
+# Solved lap trajectories, ~1.5 MB each. Regenerate with:
+#   node tools/loop/loop_lap.js pro --json tools/loop/run_pro.json
+tools/loop/run_*.json
+tools/render/*_run_*.json
+
+# Render output
+tools/render/out/
+*.mp4
