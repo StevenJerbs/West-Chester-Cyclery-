@@ -1,0 +1,106 @@
+{
+ "retIn": 5.9,
+ "retM": 0.85,
+ "turns": [
+  {
+   "name": "ROLL-IN",
+   "turn": -18
+  },
+  {
+   "name": "CEDAR ROLLERS 1",
+   "turn": -18
+  },
+  {
+   "name": "CEDAR ROLLERS 2",
+   "turn": 8
+  },
+  {
+   "name": "WASHOUT ENTRY",
+   "turn": 20
+  },
+  {
+   "name": "ROCK GARDEN UPPER",
+   "turn": 14
+  },
+  {
+   "name": "QUARRY SLAB",
+   "turn": 19
+  },
+  {
+   "name": "LOWER SLAB",
+   "turn": 3
+  },
+  {
+   "name": "GALLERY RUN-IN",
+   "turn": -24
+  },
+  {
+   "name": "GALLERY LINK",
+   "turn": 3
+  },
+  {
+   "name": "HIP RUN-IN",
+   "turn": 34
+  },
+  {
+   "name": "GAP RUN-IN",
+   "turn": -26
+  },
+  {
+   "name": "GAP OUTRUN",
+   "turn": 43
+  },
+  {
+   "name": "HOLLOW ENTRY",
+   "turn": 19
+  },
+  {
+   "name": "HOLLOW TRAVERSE",
+   "turn": 35
+  },
+  {
+   "name": "ROCK GARDEN LOWER",
+   "turn": -24
+  },
+  {
+   "name": "BOULDER EXIT",
+   "turn": -22
+  },
+  {
+   "name": "PIPES PUMP 1",
+   "turn": 21
+  },
+  {
+   "name": "PIPES PUMP 2",
+   "turn": 34
+  },
+  {
+   "name": "PIPES PUMP 3",
+   "turn": 13
+  },
+  {
+   "name": "ELBOW STRAIGHT",
+   "turn": 8
+  },
+  {
+   "name": "SPRINT OUT",
+   "turn": 29
+  },
+  {
+   "name": "MILL GRADE 1",
+   "turn": -7
+  },
+  {
+   "name": "MILL GRADE 2",
+   "turn": 40
+  },
+  {
+   "name": "MILL GRADE 3",
+   "turn": -17
+  },
+  {
+   "name": "MILL GRADE 4",
+   "turn": 9
+  }
+ ]
+}
