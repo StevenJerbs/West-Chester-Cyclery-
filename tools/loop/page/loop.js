@@ -236,6 +236,7 @@ function tick(now){
     pushTrack(scroll - 0.6, RIDE_LINE);
   }
   pose(riding ? dt : 0);                                                          // pose() also drives the chase camera
+  RIG_MERGE.update();                                                             // bake the posed parts into the one rig mesh
   if (MODE === 'cine') cineCamera(dt);
   else if (MODE === 'fly') flyCamera(dt);
 

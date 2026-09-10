@@ -186,7 +186,7 @@ buildStep('terrain', () => {
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.setAttribute('bake', PNW.bakeAttr('bake_terrain', n * n));
   g.setIndex(idx); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, PNW.bakedMat({ flatShading: true, roughness: 0.96 }));
+  const m = new THREE.Mesh(g, PNW.bakedMat({ flatShading: true, roughness: 0.96 }, 'ground'));
   m.receiveShadow = true; scene.add(m); WORLD.terrain = m;
 });
 const CUT_R = 7.0;    // the band reaches 10 m, so the tiers overlap by 3 m — a tight berm folds the band's normals and a butt joint would show sky
@@ -221,7 +221,7 @@ buildStep('corridor', () => {
         const y = w > 0 ? lerp(near, worldHeight(x, z), w) : near;
         pos[k] = x; pos[k + 1] = row[j] = y - 0.03; pos[k + 2] = z;
         const a = Math.abs(l), nz = fbm(x * 0.28, z * 0.28), lit = fbm(x * 0.06 + 3, z * 0.06 + 8);
-        if (a < 3.0) c.setHex(gt === 'rock' ? 0x4E564C : gt === 'built' ? 0x59492F : 0x33261A).offsetHSL(0, 0, 0.03 * nz - 0.015 - 0.012 * a);
+        if (a < 1.5) c.setHex(gt === 'rock' ? 0x4E564C : gt === 'built' ? 0x59492F : 0x33261A).offsetHSL(0, 0, 0.03 * nz - 0.015 - 0.012 * a);
         else if (lit > 0.58) c.setHSL(0.075, 0.28, 0.075 + 0.05 * nz);            // the litter berm the trail cut threw up
         else c.setHSL(0.29 + 0.04 * nz, 0.22, 0.070 + 0.055 * nz);
         col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
@@ -240,7 +240,7 @@ buildStep('corridor', () => {
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.setAttribute('bake', new THREE.BufferAttribute(bk, 2));
     g.setIndex(idx); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, PNW.bakedMat({ roughness: 0.95 }));
+    const m = new THREE.Mesh(g, PNW.bakedMat({ roughness: 0.95 }, 'ground'));
     m.receiveShadow = true; scene.add(m); WORLD.corridor.push(m);
   }
 });
@@ -267,7 +267,7 @@ buildStep('trail', () => {
   const NL = RIB_L.length, NR = Math.floor(COURSE_LEN / RIB_DS);
   const rows = Math.ceil(NR / RIB_CHUNKS);
   const GC = { dirt: 0x35281B, rock: 0x555D52, built: 0x6A5637, water: 0x2C2A22 };
-  const c = new THREE.Color();
+  const c = new THREE.Color(), LITTER = new THREE.Color(0x2A2415);
   for (let ch = 0; ch < RIB_CHUNKS; ch++){
     const r0 = ch * rows, r1 = Math.min(NR, r0 + rows) + 1, nr = r1 - r0;
     if (nr < 2) continue;
@@ -282,9 +282,12 @@ buildStep('trail', () => {
         pos[k] = P.x + rx * l; pos[k + 1] = row[j] = LOOP.groundAt(s, l) + 0.02; pos[k + 2] = P.z + rz * l;
         const a = Math.abs(l);
         c.setHex(base);
-        /* the worn line: two packed, darker, wetter ruts either side of the crown, going to loose at the edges */
-        const rut = a > 0.2 && a < 0.62 ? -0.030 : 0;
-        c.offsetHSL(0, 0, rut + ((i + j) % 2 ? -0.010 : 0.008) + 0.055 * smooth((a - 1.1) / 0.9) - 0.012 * Math.sin(s * 0.9));
+        /* the worn line: two packed, darker, wetter ruts either side of the crown, going to loose past 0.6 m and to
+           needle litter past the shoulder -- the ribbon still reaches 3.2 m so the bench and berm backs are one surface,
+           but what reads as trail is the 1.7 m in the middle */
+        const rut = a > 0.15 && a < 0.48 ? -0.030 : 0;
+        c.offsetHSL(0, 0, rut + ((i + j) % 2 ? -0.010 : 0.008) + 0.05 * smooth((a - 0.65) / 0.5) - 0.012 * Math.sin(s * 0.9));
+        if (a > 0.9 && groundType(s) !== 'rock') c.lerp(LITTER, smooth((a - 0.9) / 0.9) * (0.75 + 0.25 * Math.sin(s * 1.7 + a)));
         col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
       }
       for (let j = 0; j < NL; j++){ const o = (i * NL + j) * 2; bk[o] = 1; bk[o + 1] = openness(row[j], row, 1.6); }
@@ -444,11 +447,49 @@ buildStep('water', () => {
   }
 });
 
+/* -- ground cover: three small assets built here rather than in Blender, in the same {v, t, c} format PNW.geo reads.
+   A sedge tuft (blades as two-sided triangles), a patch of fallen leaves (flat cards), and a moss hummock. Each is one
+   instanced draw call however many are placed. -- */
+(function groundCoverAssets(){
+  let seed = 31; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const hex = (r, g, b) => ((Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255)).toString(16).padStart(6, '0');
+  const mk = () => ({ v: [], t: [], c: [] });
+  const tri = (d, a, b, c, col) => { const i = d.v.length / 3; d.v.push(...a, ...b, ...c); d.t.push(i, i + 1, i + 2); d.c.push(col, col, col); };
+  const tri2 = (d, a, b, c, col) => { tri(d, a, b, c, col); tri(d, a, c, b, col); };     // both windings: seen from either side
+  /* sedge tuft: 9 blades radiating and leaning outward, yellow-green with a dark base */
+  const tuft = mk();
+  for (let i = 0; i < 9; i++){
+    const th = i / 9 * 6.283 + rnd() * 0.5, lean = 0.10 + rnd() * 0.16, h = 0.22 + rnd() * 0.22, w = 0.018 + rnd() * 0.012;
+    const dx = Math.cos(th), dz = Math.sin(th), px = -dz, pz = dx;
+    const g = 0.36 + rnd() * 0.16, col = hex(0.30 + rnd() * 0.14, g, 0.10 + rnd() * 0.06);
+    tri2(tuft, [px * w, 0, pz * w], [-px * w, 0, -pz * w], [dx * lean, h, dz * lean], col);
+  }
+  tri2(tuft, [-0.05, 0.005, -0.04], [0.06, 0.005, -0.03], [0.0, 0.005, 0.06], hex(0.13, 0.11, 0.06));
+  /* fallen leaves: seven cards, maple ochre to alder brown, each tilted a little off the ground */
+  const litter = mk();
+  for (let i = 0; i < 7; i++){
+    const x = (rnd() - 0.5) * 0.5, z = (rnd() - 0.5) * 0.5, th = rnd() * 6.283, r = 0.05 + rnd() * 0.05, tilt = rnd() * 0.03;
+    const cx = Math.cos(th), cz = Math.sin(th), t = rnd();
+    const col = t < 0.4 ? hex(0.55 + rnd() * 0.2, 0.36 + rnd() * 0.12, 0.10) : t < 0.7 ? hex(0.40 + rnd() * 0.1, 0.24, 0.09) : hex(0.30, 0.20 + rnd() * 0.05, 0.08);
+    const a = [x + cx * r, 0.008, z + cz * r], b = [x - cz * r * 0.7, 0.008 + tilt, z + cx * r * 0.7], c = [x - cx * r, 0.008, z - cz * r], d = [x + cz * r * 0.7, 0.008 + tilt, z - cx * r * 0.7];
+    tri2(litter, a, b, c, col); tri2(litter, a, c, d, col);
+  }
+  /* moss hummock: a low eight-sided dome, blue-green in the shade */
+  const moss = mk();
+  for (let i = 0; i < 8; i++){
+    const t0 = i / 8 * 6.283, t1 = (i + 1) / 8 * 6.283, r = 0.16, col = hex(0.13 + rnd() * 0.05, 0.22 + rnd() * 0.06, 0.09);
+    tri(moss, [0, 0.075, 0], [Math.cos(t0) * r, 0.01, Math.sin(t0) * r], [Math.cos(t1) * r, 0.01, Math.sin(t1) * r], col);
+    tri(moss, [Math.cos(t0) * r * 0.55, 0.055, Math.sin(t0) * r * 0.55], [Math.cos(t0) * r, 0.01, Math.sin(t0) * r], [Math.cos(t1) * r * 0.55, 0.055, Math.sin(t1) * r * 0.55], hex(0.17, 0.27, 0.11));
+  }
+  PNW_DATA.tuft = tuft; PNW_DATA.litter = litter; PNW_DATA.moss = moss;
+})();
+
 /* -- scatter: the forest, sized to the quality tier -- */
 buildStep('forest', () => {
   let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const P = { cedar: [], cedar2: [], cedar3: [], fir: [], hemlock: [], maple: [], snag: [],
-              fern: [], salal: [], foxglove: [], boulder: [], stump: [], nurselog: [], sticks: [], rockedge: [] };
+              fern: [], salal: [], foxglove: [], boulder: [], stump: [], nurselog: [], sticks: [], rockedge: [],
+              tuft: [], litter: [], moss: [], sapling: [] };
   const put = (a, x, z, y, s0, s1) => a.push({ x, y, z, ry: rnd() * 6.28, s: s0 + rnd() * (s1 - s0) });
   /* Sample along the trail rather than over the bounding box: the loop's corridor is maybe a fifth of its bbox,
      and box-rejection at 1.8 km throws away four samples in five. */
@@ -476,8 +517,14 @@ buildStep('forest', () => {
     put(sp, q.x, q.z, H(q, -0.25), 0.62, 1.25);
   }
   for (let i = 0; i < Math.round(620 * F); i++){ const q = far(); if (q) put(rnd() < 0.55 ? P.fir : P.hemlock, q.x, q.z, H(q, -0.3), 0.7, 1.4); }
-  for (let i = 0; i < Math.round(900 * F); i++){ const q = near(2.0, 5.5); if (q) put(P.fern, q.x, q.z, H(q, -0.02), 0.75, 1.5); }
-  for (let i = 0; i < Math.round(520 * F); i++){ const q = near(2.3, 8.0); if (q) put(P.salal, q.x, q.z, H(q, -0.03), 0.8, 1.6); }
+  /* the understorey crowds the singletrack: ferns from 0.9 m, salal from 1.3 m, and the ground cover from the shoulder */
+  for (let i = 0; i < Math.round(900 * F); i++){ const q = near(1.6, 5.5); if (q) put(P.fern, q.x, q.z, H(q, -0.02), 0.75, 1.5); }
+  for (let i = 0; i < Math.round(700 * F); i++){ const q = near(0.9, 2.2); if (q) put(P.fern, q.x, q.z, H(q, -0.02), 0.45, 0.9); }
+  for (let i = 0; i < Math.round(520 * F); i++){ const q = near(1.3, 8.0); if (q) put(P.salal, q.x, q.z, H(q, -0.03), 0.8, 1.6); }
+  for (let i = 0; i < Math.round(2400 * F); i++){ const q = near(0.72, 5.0); if (q) put(P.tuft, q.x, q.z, H(q, -0.01), 0.7, 1.4); }
+  for (let i = 0; i < Math.round(1800 * F); i++){ const q = near(0.55, 7.0); if (q) put(P.litter, q.x, q.z, H(q, 0.0), 0.8, 1.6); }
+  for (let i = 0; i < Math.round(800 * F); i++){ const q = near(1.1, 12); if (q) put(P.moss, q.x, q.z, H(q, -0.02), 0.8, 2.2); }
+  for (let i = 0; i < Math.round(260 * F); i++){ const q = near(2.0, 9.0); if (q) put(P.sapling, q.x, q.z, H(q, -0.03), 0.12, 0.26); }   // hemlock regen
   for (let i = 0; i < Math.round(180 * F); i++){ const q = near(2.4, 7.0); if (q) put(P.foxglove, q.x, q.z, H(q, -0.02), 0.7, 1.3); }
   for (let i = 0; i < Math.round(120 * F); i++){ const q = near(3.0, 14); if (q) put(P.stump, q.x, q.z, H(q, -0.05), 0.8, 1.6); }
   for (let i = 0; i < Math.round(150 * F); i++){ const q = near(3.4, 16); if (q) put(P.nurselog, q.x, q.z, H(q, -0.04), 0.8, 1.7); }
@@ -499,8 +546,10 @@ buildStep('forest', () => {
   }
   window.PNW_PLACEMENTS = P;
   const WIND = { cedar: 1.0, cedar2: 1.0, cedar3: 1.0, fir: 0.8, hemlock: 0.9, maple: 1.6, snag: 0,
-                 fern: 3.2, salal: 2.0, foxglove: 3.6, boulder: 0, stump: 0, nurselog: 0, sticks: 0, rockedge: 0 };
-  for (const k of Object.keys(P)) if (P[k].length) PNW.instanced(scene, k, P[k], WIND[k]);
+                 fern: 3.2, salal: 2.0, foxglove: 3.6, boulder: 0, stump: 0, nurselog: 0, sticks: 0, rockedge: 0,
+                 tuft: 3.0, litter: 0, moss: 0, sapling: 2.4 };
+  const MESH = { sapling: 'hemlock' };                                          // placements that reuse another asset's geometry
+  for (const k of Object.keys(P)) if (P[k].length) PNW.instanced(scene, MESH[k] || k, P[k], WIND[k]);
   PNW.sky(scene, WCX, WCZ, WSIZE * 1.05);
   if (QNAME !== 'low') window.PNW_RAVENS = PNW.ravens(scene, WCX, 34, WCZ, WSIZE * 0.26);
   /* mist in the three lowest points of the loop */

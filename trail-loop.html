@@ -51,7 +51,7 @@
   <header>
     <div>
       <h1>CASCADE LOOP</h1>
-      <div class="sub">A level-sized trail loop: <b>1.8 km</b>, an <b>837 m descent at &minus;9.2%</b> through eleven zones, closed by a fire-road climb. Large rollers, a five-table jump line, two rock drops, a road gap, two rock gardens and seventeen berms &mdash; ridden by the same Santa Cruz V10 and rider model as the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>, on a course whose geometry and rideability are both gated by tests before it ships. Sunlight and ambient occlusion are path-traced in Blender and baked in; the browser never traces a ray.</div>
+      <div class="sub">A level-sized trail loop: <b>1.8 km</b>, an <b>837 m descent at &minus;9.2%</b> through eleven zones, closed by a fire-road climb. Large rollers, a five-table jump line, two rock drops, a road gap, two rock gardens and seventeen berms of narrow singletrack &mdash; ridden on a <b>Starling Murmur</b> (steel single pivot, 140 / 150 mm, the bike the mtbkin keypoint model tracks most tightly) with the rider model and physics of the <a href="https://claude.ai/code/artifact/1bad7b2c-32ee-4a2a-8adb-b10f7af612e3">Suspension Lab</a>, on a course whose geometry and rideability are both gated by tests before it ships. Sunlight and ambient occlusion are path-traced in Blender and baked in; the browser never traces a ray.</div>
     </div>
     <div class="ctl">
       <div><div class="lbl">MODE</div><div class="seg" id="modeSeg"><button type="button" data-v="ride" class="on">RIDE</button><button type="button" data-v="cine">CINEMATIC</button><button type="button" data-v="fly">FREE CAM</button></div></div>
@@ -126,20 +126,28 @@ const PNW = (() => {
     return geos[name] = g;
   }
   const uTime = { value: 0 };
+  const NOISE_GLSL = ['float pnwH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float pnwN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(pnwH(i), pnwH(i + vec2(1, 0)), f.x), mix(pnwH(i + vec2(0, 1)), pnwH(i + vec2(1, 1)), f.x), f.y); }'].join('\n');
   function swayMat(amp){
     const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
     m.onBeforeCompile = sh => {
       sh.uniforms.uT = uTime;
-      sh.vertexShader = ('uniform float uT;\n' + sh.vertexShader).replace('#include <begin_vertex>',
+      sh.vertexShader = ('uniform float uT; varying float vTint; varying vec3 vWq;\n' + sh.vertexShader).replace('#include <begin_vertex>',
         ['#include <begin_vertex>',
          '#ifdef USE_INSTANCING',
          '  float pnwPh = instanceMatrix[3][0] * 0.63 + instanceMatrix[3][2] * 0.87;',
          '#else',
          '  float pnwPh = 0.0;',
          '#endif',
+         'vTint = fract(sin(pnwPh * 12.9898) * 43758.5453);',                 // one number per plant: its own shade
          'float pnwSw = ' + amp.toFixed(2) + ' * position.y * 0.012;',
          'transformed.x += sin(uT * 1.05 + pnwPh + position.y * 0.35) * pnwSw;',
-         'transformed.z += cos(uT * 0.85 + pnwPh * 1.31) * pnwSw * 0.6;'].join('\n'));
+         'transformed.z += cos(uT * 0.85 + pnwPh * 1.31) * pnwSw * 0.6;'].join('\n'))
+        .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWq = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      /* per-plant brightness and a touch of hue, plus a fine grain so flat-coloured fronds and bark read as surface */
+      sh.fragmentShader = ('varying float vTint; varying vec3 vWq;\n' + NOISE_GLSL + '\n' + sh.fragmentShader)
+        .replace('#include <color_fragment>', '#include <color_fragment>\n{ diffuseColor.rgb *= 0.84 + 0.30 * vTint; diffuseColor.g *= 0.95 + 0.10 * vTint; diffuseColor.r *= 1.06 - 0.10 * vTint; float gr = pnwN(vWq.xz * 9.0 + vWq.y * 3.0); diffuseColor.rgb *= 0.90 + 0.18 * gr; }');
     };
     return m;
   }
@@ -197,9 +205,6 @@ const PNW = (() => {
     for (let i = 0; i < n; i++){ const o = i * 4; a[i * 2] = o + 4 <= h.length ? parseInt(h.substr(o, 2), 16) / 255 : 1; a[i * 2 + 1] = o + 4 <= h.length ? parseInt(h.substr(o + 2, 2), 16) / 255 : 1; }
     return new THREE.BufferAttribute(a, 2);
   }
-  const NOISE_GLSL = ['float pnwH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
-    'float pnwN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
-    '  return mix(mix(pnwH(i), pnwH(i + vec2(1, 0)), f.x), mix(pnwH(i + vec2(0, 1)), pnwH(i + vec2(1, 1)), f.x), f.y); }'].join('\n');
   function bakedMat(opts, kind){                                       // MeshStandardMaterial whose direct light is scaled by the baked sun visibility and whose ambient by the baked AO
     const m = new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: 0.93, metalness: 0 }, opts || {}));
     m.onBeforeCompile = sh => {
@@ -210,9 +215,15 @@ const PNW = (() => {
       let fs = ('uniform float uT; varying vec2 vBake; varying vec3 vWp; varying vec3 vVx; varying vec3 vVz;\n' + NOISE_GLSL + '\n' + sh.fragmentShader)
         .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\nreflectedLight.directDiffuse *= mix(0.16, 1.0, vBake.x); reflectedLight.directSpecular *= mix(0.16, 1.0, vBake.x);')
         .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\nreflectedLight.indirectDiffuse *= mix(0.45, 1.0, vBake.y);');
-      if (kind === 'track') fs = fs                                     // fine grain in the dirt, and the dark packed ruts read wet
-        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ vec2 q = vWp.xz * 7.0; float e = 0.05; float gx = pnwN(q + vec2(e, 0.0)) - pnwN(q - vec2(e, 0.0)), gz = pnwN(q + vec2(0.0, e)) - pnwN(q - vec2(0.0, e)); normal = normalize(normal + (vVx * gx + vVz * gz) * 1.6); }')
+      if (kind === 'track') fs = fs                                     // grain and pebbles in the dirt; the dark packed ruts read wet
+        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ vec2 q = vWp.xz * 7.0; float e = 0.05; float gx = pnwN(q + vec2(e, 0.0)) - pnwN(q - vec2(e, 0.0)), gz = pnwN(q + vec2(0.0, e)) - pnwN(q - vec2(0.0, e)); vec2 q2 = vWp.xz * 23.0; float e2 = 0.02; gx += 0.45 * (pnwN(q2 + vec2(e2, 0.0)) - pnwN(q2 - vec2(e2, 0.0))); gz += 0.45 * (pnwN(q2 + vec2(0.0, e2)) - pnwN(q2 - vec2(0.0, e2))); normal = normalize(normal + (vVx * gx + vVz * gz) * 1.6); }')
+        .replace('#include <color_fragment>', '#include <color_fragment>\n{ float g1 = pnwN(vWp.xz * 3.1), g2 = pnwN(vWp.xz * 19.0); diffuseColor.rgb *= 0.80 + 0.28 * g1 + 0.14 * g2; float peb = smoothstep(0.91, 0.97, pnwN(vWp.xz * 27.0 + 7.0)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.40, 0.38, 0.34), peb * 0.55); }')
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n{ float lum = dot(vColor.rgb, vec3(0.3, 0.5, 0.2)); roughnessFactor = mix(roughnessFactor, 0.42, smoothstep(0.22, 0.10, lum)); }');
+      /* ground: hillside, bench and berm backs. Two octaves of detail normal, moss creeping in where the bake says shade,
+         and a broad mottle so a hectare of vertex colour is not one flat tone */
+      if (kind === 'ground') fs = fs
+        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ vec2 q = vWp.xz * 2.3; float e = 0.08; float gx = pnwN(q + vec2(e, 0.0)) - pnwN(q - vec2(e, 0.0)), gz = pnwN(q + vec2(0.0, e)) - pnwN(q - vec2(0.0, e)); vec2 q2 = vWp.xz * 11.0; float e2 = 0.03; gx += 0.5 * (pnwN(q2 + vec2(e2, 0.0)) - pnwN(q2 - vec2(e2, 0.0))); gz += 0.5 * (pnwN(q2 + vec2(0.0, e2)) - pnwN(q2 - vec2(0.0, e2))); normal = normalize(normal + (vVx * gx + vVz * gz) * 1.1); }')
+        .replace('#include <color_fragment>', '#include <color_fragment>\n{ float m1 = pnwN(vWp.xz * 0.55 + 3.0), m2 = pnwN(vWp.xz * 4.7); float lum = dot(diffuseColor.rgb, vec3(0.3, 0.5, 0.2)); float mossMask = smoothstep(0.42, 0.72, m1 * 0.7 + m2 * 0.3) * (1.0 - 0.55 * vBake.x); vec3 moss = vec3(0.14, 0.22, 0.08) * (0.5 + 2.2 * lum); diffuseColor.rgb = mix(diffuseColor.rgb, moss, mossMask * 0.65); diffuseColor.rgb *= 0.84 + 0.32 * m2; }');
       if (kind === 'water') fs = fs
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ float dx = sin(vWp.x * 2.9 + uT * 1.2) * 0.05 + sin((vWp.x + vWp.z) * 5.3 - uT * 0.8) * 0.03, dz = cos(vWp.z * 2.3 + uT * 1.05) * 0.05 + cos((vWp.x - vWp.z) * 4.1 + uT * 0.7) * 0.03; normal = normalize(normal + vVx * dx + vVz * dz); }');
       sh.fragmentShader = fs;
@@ -269,8 +280,8 @@ function bermProfile(l, bank, Hb, side){
 function plainProfile(l){
   const a = Math.abs(l);
   let h = -0.035 * l * l;                                         // crown
-  if (a > 0.25 && a < 0.5) h -= 0.022;                            // the two tyre grooves
-  if (a > 1.4) h -= 0.11 * (a - 1.4);                             // the worn edge falls away
+  if (a > 0.18 && a < 0.42) h -= 0.022;                           // the two tyre grooves
+  if (a > 0.85) h -= 0.13 * (a - 0.85);                           // singletrack: the tread is gone by 0.85 m and the shoulder falls to the litter
   return h;
 }
 
@@ -684,11 +695,11 @@ function makeCourse(courseId, opt){
     for (const k of ENV_OFF){ const dx = k * r; const y = groundAt(u + dx, l) - (r - Math.sqrt(r * r - dx * dx)); if (y > best) best = y; }
     return best;
   }
-  /* how far up the berm the rider is allowed to go, and how far off-line elsewhere */
+  /* how far up the berm the rider is allowed to go, and how far off-line elsewhere (singletrack: 0.7 m each side) */
   function lineLimit(u){
     const [g] = segAt(u);
-    if (g.corner && g.corner.Hb > 0){ const s = g.corner.side; return s > 0 ? [-0.9, 2.2] : [-2.2, 0.9]; }
-    return [-1.15, 1.15];
+    if (g.corner && g.corner.Hb > 0){ const s = g.corner.side; return s > 0 ? [-0.6, 2.2] : [-2.2, 0.6]; }
+    return [-0.7, 0.7];
   }
   function invalidateObst(){ OB_BUCKETS = null; }
 
@@ -716,15 +727,25 @@ const addObst = LOOP.addObst, obstH = LOOP.obstH;
 /* The setup the physics reads. suspension-lab.html drives its solver from slider elements; rather than fork the
    solver, give it the same shape backed by plain values, so the physics below is byte-identical to the lab's. */
 const $ = id => document.getElementById(id);
-const SETUP = { rlb: 150, effort: 300, vcap: 30, rSpring: 475, rLsc: 8, rHsc: 4, rLsr: 8, rHsr: 4,
-                fSpring: 72, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
+/* The bike: the Starling Murmur, the full-suspension bike the mtbkin keypoint model tracks most tightly. The lab's
+   physics reads BIKE before it builds its geometry and linkage table; RIG_STYLE swaps the full-face for a half shell. */
+const BIKE = 'murmur', RIG_STYLE = 'enduro';
+/* Set up firm for a 140 mm bike on a DH-scale course, found by sweeping the rideability gate: 450 lb/in on the TTX
+   coil with the rebound slowed (10 / 6 clicks) so the rear does not kick the bike nose-up off the big rollers, and
+   92 psi with three tokens in the 150 mm fork for the jump line. Softer bottoms out in the Gallery; stiffer (500)
+   kicks the pro rider into a loop-out on Cedar Speedway; slower rebound packs down. */
+const SETUP = { rlb: 150, effort: 300, vcap: 30, rSpring: 450, rLsc: 7, rHsc: 5, rLsr: 10, rHsr: 6,
+                fSpring: 92, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
 const ui = new Proxy({}, { get: (t, k) => t[k] || (t[k] = { value: SETUP[k] !== undefined ? SETUP[k] : 0, textContent: '', style: {} }) });
 
-/* quality tiers. The bake carries the sun's shadows, so switching shadow maps off on mobile costs almost nothing
+/* quality tiers. The physics step is 1/600 s on every tier: at 1/300 the Murmur's lighter wheels on the firm setup
+   put the tyre spring past what the integrator holds and the bike pitched over in its first metre. The step is cheap;
+   the frame loop caps substeps at 90.
+   The bake carries the sun's shadows, so switching shadow maps off on mobile costs almost nothing
    visually and is the single biggest win — a 2048 PCF-soft map is most of the frame on a phone. */
 const IS_TOUCH = (navigator.maxTouchPoints || 0) > 0 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const QUALITY = {
-  low:  { dpr: 1.4, scale: 0.82, aa: false, shadow: 0,    ssao: false, bloom: 0,    smaa: false, fog: 0.0062, draw: 120, flora: 0.5,  leaves: 150, reflect: false, pdt: 1 / 300, sun: 0.78, hemi: 0.40, exp: 0.92, chunks: 6, ambient: true },
+  low:  { dpr: 1.4, scale: 0.82, aa: false, shadow: 0,    ssao: false, bloom: 0,    smaa: false, fog: 0.0062, draw: 120, flora: 0.5,  leaves: 150, reflect: false, pdt: 1 / 600, sun: 0.78, hemi: 0.40, exp: 0.92, chunks: 6, ambient: true },
   med:  { dpr: 1.7, scale: 1.0,  aa: true,  shadow: 1024, ssao: false, bloom: 0.08, smaa: false, fog: 0.0048, draw: 210, flora: 0.78, leaves: 300, reflect: true,  pdt: 1 / 600, sun: 0.92, hemi: 0.50, exp: 1.00, chunks: 9, ambient: true },
   high: { dpr: 2.0, scale: 1.0,  aa: true,  shadow: 2048, ssao: true,  bloom: 0.11, smaa: true,  fog: 0.0037, draw: 270, flora: 1.0,  leaves: 450, reflect: true,  pdt: 1 / 600, sun: 1.05, hemi: 0.62, exp: 1.06, chunks: 12, ambient: false }
 };
@@ -742,11 +763,44 @@ const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
 function hash(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
-/* =============== Santa Cruz V10 CC 29/27.5 MX, size M, low -- Jackson Goldstone's 2023 Syndicate race bike.
-   Travel, spring, wheels, reach and chainstay from kinematic-model/data/bike_specs.yaml (owner-supplied Pinkbike bike check);
-   stack / HTA / STA / BB / wheelbase from the published V10 geometry chart. =============== */
-const GEO = { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350,
-  rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, e2e: 0.250, travelR: 0.208 };
+/* =============== the bike ===============
+   Two bikes share this physics; a global BIKE set before this script picks one (the labs leave it unset: the V10).
+   v10    Santa Cruz V10 CC 29/27.5 MX, size M, low -- Jackson Goldstone's 2023 Syndicate race bike. Travel, spring, wheels,
+          reach and chainstay from kinematic-model/data/bike_specs.yaml (owner-supplied Pinkbike bike check); stack / HTA /
+          STA / BB / wheelbase from the published V10 geometry chart. Lower-link-driven VPP, refitted to 208 mm over a 250x75
+          shock, LR 2.86->2.59 (tools/vpp_fit.py); lower pivot behind the BB, shock driven off the lower link as on the V10.
+   murmur Starling Murmur 2021, size L, as Pinkbike's 2021 Field Test rode it: 150 mm Ohlins fork, 140 mm rear on an Ohlins
+          TTX coil, 29" wheels. Geometry from mtbkin's configs/geometry/pinkbike2021/starling_murmur.yaml (the 160 mm chart
+          corrected for the 150 mm fork). Chosen because it is the full-suspension bike the mtbkin keypoint model tracks most
+          tightly (BB-to-rear-axle spread 6.9 px, 99% of frames) -- and it tracks tightly for the same reason it is easy to
+          model: a steel single pivot, so the swingarm is one rigid triangle (pivot, axle, shock strut) and the shock is driven
+          straight off it. Pivot and shock mounts are placed from the Field Test photos to give 140 mm over a 230x60 shock. */
+const BIKE_ID = typeof BIKE !== 'undefined' && BIKE === 'murmur' ? 'murmur' : 'v10';
+const BIKES = {
+  v10: { name: 'Santa Cruz V10 CC MX',
+    geo: { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350,
+      rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, e2e: 0.250, travelR: 0.208 },
+    link: { kind: 'vpp', P1: { x: -0.03703, y: 0.08419 }, L1: 0.07216, P3: { x: -0.09307, y: 0.29010 }, L2: 0.15568, D: 0.12988,
+      AX: { x: 0.46254, y: 0.17557 }, S: { x: -0.10098, y: 0.02219 }, F: { x: 0.02571, y: 0.24762 }, th0: 0.47243 },
+    /* 37 lb (17 kg) built from its parts, frame-local (kg, x, y): frame+links, Fox 40, cockpit, DHX2 coil, post+saddle, cranks+drivetrain+pedals, brakes */
+    parts: [[3.6, 0.12, 0.34], [2.9, 0.62, 0.42], [0.9, 0.50, 0.66], [1.2, 0.0, 0.14], [0.3, -0.15, 0.55], [1.2, 0.02, 0.02], [0.8, 0.30, 0.20]],
+    mUF: 2.6, mUR: 3.6,                                                       // 29 DD front wheel; 27.5 DD rear with cassette and rotor
+    rig: { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, coil: 0x111111,
+      tt: 0.055, dt: 0.062, st: 0.05, ht: 0.065, cs: 0.05, ss: 0.038, stanch: 0.042, lower: 0.058, strut: true } },
+  murmur: { name: 'Starling Murmur',
+    geo: { reach: 0.488, stack: 0.636, hta: 65.0 * D2R, sta: 77.0 * D2R, cs: 0.445, wb: 1.255, bb: 0.337,
+      rF: 0.372, rR: 0.372, forkTravel: 0.150, offset: 0.044, ht: 0.110, stroke: 0.060, e2e: 0.230, travelR: 0.140 },
+    /* single pivot: P1 the main pivot; AX0 and S0 the axle and the swingarm's shock mount at full extension, frame-local;
+       F the frame's shock mount under the top tube. th0 = 0 means "as drawn"; the table rotates the swingarm from there. */
+    link: { kind: 'single', P1: { x: 0.015, y: 0.090 }, P3: { x: 0.015, y: 0.090 }, AX0: { x: -0.4436, y: 0.035 },
+      S0: { x: -0.0359, y: 0.3030 }, F: { x: 0.1835, y: 0.2338 }, th0: 0 },   // fit: 140 mm / 60 mm, LR 2.44->2.23
+    /* 35 lb (15.9 kg): steel frame+swingarm, Ohlins RXF36, cockpit, TTX coil, dropper+saddle, cranks+drivetrain+pedals, brakes */
+    parts: [[4.3, 0.10, 0.33], [2.2, 0.66, 0.40], [0.9, 0.52, 0.64], [0.75, 0.07, 0.35], [0.6, -0.14, 0.52], [1.4, 0.02, 0.02], [0.8, 0.30, 0.20]],
+    mUF: 2.2, mUR: 2.8,                                                       // 29 trail wheels, EXO+ casings
+    rig: { frame: 0x2B2F33, frame2: 0x2B2F33, decal: 0xC49A5A, forkUp: 0x1C1C1C, forkLow: 0x141414, coil: 0xE3B324,
+      tt: 0.032, dt: 0.038, st: 0.032, ht: 0.044, cs: 0.026, ss: 0.020, stanch: 0.036, lower: 0.050, strut: false } }
+};
+const BK = BIKES[BIKE_ID], GEO = BK.geo;
 const V2 = (x, y) => ({ x, y });
 const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta));          // down the steering axis
 const dFwd  = V2(Math.sin(GEO.hta),  Math.cos(GEO.hta));          // perpendicular, forward
@@ -762,12 +816,16 @@ const dUp = V2(-dDown.x, -dDown.y);
 const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035);
 const GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
 
-/* =============== VPP four-bar (lower-link driven), refitted to the V10: 208 mm over a 250x75 shock, LR 2.86->2.59 (9% progressive),
-   axle at the 455 mm chainstay with the 27.5 rear wheel, lower pivot behind the BB and the shock driven off the lower link as on the V10 =============== */
-const VPP = { P1: V2(-0.03703, 0.08419), L1: 0.07216, P3: V2(-0.09307, 0.29010), L2: 0.15568, D: 0.12988,
-  AX: V2(0.46254, 0.17557), S: V2(-0.10098, 0.02219), F: V2(0.02571, 0.24762), th0: 0.47243 };
+/* =============== the rear linkage: a lower-link-driven four-bar (VPP) or a single pivot, one solver =============== */
+const VPP = BK.link;
 function vppSolve(th, prevP4){
   const P1 = VPP.P1, P3 = VPP.P3;
+  if (VPP.kind === 'single'){                                             // the whole swingarm turns about P1
+    const c = Math.cos(th - VPP.th0), s = Math.sin(th - VPP.th0);
+    const rot = p => V2(P1.x + (p.x - P1.x) * c - (p.y - P1.y) * s, P1.y + (p.x - P1.x) * s + (p.y - P1.y) * c);
+    const axle = rot(VPP.AX0), S = rot(VPP.S0);
+    return { P2: P1, P4: S, axle, S, shock: Math.hypot(S.x - VPP.F.x, S.y - VPP.F.y) };
+  }
   const P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));
   const vx = P3.x - P2.x, vy = P3.y - P2.y, d = Math.hypot(vx, vy);
   const a = (VPP.D * VPP.D - VPP.L2 * VPP.L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, VPP.D * VPP.D - a * a));
@@ -842,9 +900,9 @@ function coilSpring(S, k){                             // S = shaft stroke (m); 
 }
 
 /* =============== bodies =============== */
-/* 37 lb (17 kg) V10 built from its parts, frame-local (m, kg): sprung CoM and pitch inertia follow from them */
-const PARTS = [[3.6, 0.12, 0.34], [2.9, 0.62, 0.42], [0.9, 0.50, 0.66], [1.2, 0.0, 0.14], [0.3, -0.15, 0.55], [1.2, 0.02, 0.02], [0.8, 0.30, 0.20]];   // frame+links, Fox 40, cockpit, DHX2 coil, post+saddle, cranks+drivetrain+pedals, brakes
-const M_UF = 2.6, M_UR = 3.6;                                                 // 29 DD front wheel; 27.5 DD rear with cassette and rotor
+/* the bike built from its parts, frame-local (kg, m): sprung CoM and pitch inertia follow from them (see BIKES) */
+const PARTS = BK.parts;
+const M_UF = BK.mUF, M_UR = BK.mUR;
 const IW_F = 0.72 * M_UF * GEO.rF * GEO.rF, IW_R = 0.70 * M_UR * GEO.rR * GEO.rR;   // most wheel mass sits at the rim and tyre
 const M_SPRUNG = PARTS.reduce((a, q) => a + q[0], 0);
 const COM = V2(PARTS.reduce((a, q) => a + q[0] * q[1], 0) / M_SPRUNG, PARTS.reduce((a, q) => a + q[0] * q[2], 0) / M_SPRUNG);
@@ -1117,7 +1175,11 @@ function step(dt){
   const mScale = M_RIDER / 78;                                                        // a heavier rider has more authority over the bars, and more mass to move
   const kp = (inAir ? 900 : 350) * mScale, cp = (inAir ? 220 : 150) * mScale;
   Tz += -kp * (chassis.phi - phiRef) - cp * chassis.w;
-  if (tF <= 0 && tR > 0 && v > 2) Tz += riderMode === 'pro' ? 320 : 120;              // front wheel off the ledge: the rider pushes the bars forward and shifts back                               // the rider's arms hold the bars level with the trail; in the air they set the bike up for the landing
+  /* front wheel off a ledge: the rider pushes the bars forward and shifts back so the bike leaves level. Only while
+     the nose is still low and not already rotating up: past that the same push is what loops a bike out, and the
+     rider does the opposite -- straight arms driving the bars down (~M g x 0.4 m of reach), which no roller kick beats. */
+  if (tF <= 0 && tR > 0 && v > 2 && chassis.phi < 0.22 && chassis.w < 2.5) Tz += riderMode === 'pro' ? 320 : 120;
+  if (!inAir && chassis.phi > 0.35) Tz -= (riderMode === 'pro' ? 1400 : 900) * mScale * (chassis.phi - 0.35) + 120 * mScale * Math.max(0, chassis.w);
   const hCg = (M_SPRUNG * COM.y + M_RIDER * rcm.y) / (M_SPRUNG + M_RIDER) + Math.max(0, chassis.y - gF);   // combined CoM height above the ground
   // longitudinal forces at the ground pitch the mass above them: tyre slip forces plus the push-back of bump faces (base grade excluded: that moment is already in the geometry)
   const NcapT = 1.6 * (M_SPRUNG + M_RIDER + M_UF + M_UR) * G9;
@@ -1365,7 +1427,7 @@ buildStep('terrain', () => {
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.setAttribute('bake', PNW.bakeAttr('bake_terrain', n * n));
   g.setIndex(idx); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, PNW.bakedMat({ flatShading: true, roughness: 0.96 }));
+  const m = new THREE.Mesh(g, PNW.bakedMat({ flatShading: true, roughness: 0.96 }, 'ground'));
   m.receiveShadow = true; scene.add(m); WORLD.terrain = m;
 });
 const CUT_R = 7.0;    // the band reaches 10 m, so the tiers overlap by 3 m — a tight berm folds the band's normals and a butt joint would show sky
@@ -1400,7 +1462,7 @@ buildStep('corridor', () => {
         const y = w > 0 ? lerp(near, worldHeight(x, z), w) : near;
         pos[k] = x; pos[k + 1] = row[j] = y - 0.03; pos[k + 2] = z;
         const a = Math.abs(l), nz = fbm(x * 0.28, z * 0.28), lit = fbm(x * 0.06 + 3, z * 0.06 + 8);
-        if (a < 3.0) c.setHex(gt === 'rock' ? 0x4E564C : gt === 'built' ? 0x59492F : 0x33261A).offsetHSL(0, 0, 0.03 * nz - 0.015 - 0.012 * a);
+        if (a < 1.5) c.setHex(gt === 'rock' ? 0x4E564C : gt === 'built' ? 0x59492F : 0x33261A).offsetHSL(0, 0, 0.03 * nz - 0.015 - 0.012 * a);
         else if (lit > 0.58) c.setHSL(0.075, 0.28, 0.075 + 0.05 * nz);            // the litter berm the trail cut threw up
         else c.setHSL(0.29 + 0.04 * nz, 0.22, 0.070 + 0.055 * nz);
         col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
@@ -1419,7 +1481,7 @@ buildStep('corridor', () => {
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.setAttribute('bake', new THREE.BufferAttribute(bk, 2));
     g.setIndex(idx); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, PNW.bakedMat({ roughness: 0.95 }));
+    const m = new THREE.Mesh(g, PNW.bakedMat({ roughness: 0.95 }, 'ground'));
     m.receiveShadow = true; scene.add(m); WORLD.corridor.push(m);
   }
 });
@@ -1446,7 +1508,7 @@ buildStep('trail', () => {
   const NL = RIB_L.length, NR = Math.floor(COURSE_LEN / RIB_DS);
   const rows = Math.ceil(NR / RIB_CHUNKS);
   const GC = { dirt: 0x35281B, rock: 0x555D52, built: 0x6A5637, water: 0x2C2A22 };
-  const c = new THREE.Color();
+  const c = new THREE.Color(), LITTER = new THREE.Color(0x2A2415);
   for (let ch = 0; ch < RIB_CHUNKS; ch++){
     const r0 = ch * rows, r1 = Math.min(NR, r0 + rows) + 1, nr = r1 - r0;
     if (nr < 2) continue;
@@ -1461,9 +1523,12 @@ buildStep('trail', () => {
         pos[k] = P.x + rx * l; pos[k + 1] = row[j] = LOOP.groundAt(s, l) + 0.02; pos[k + 2] = P.z + rz * l;
         const a = Math.abs(l);
         c.setHex(base);
-        /* the worn line: two packed, darker, wetter ruts either side of the crown, going to loose at the edges */
-        const rut = a > 0.2 && a < 0.62 ? -0.030 : 0;
-        c.offsetHSL(0, 0, rut + ((i + j) % 2 ? -0.010 : 0.008) + 0.055 * smooth((a - 1.1) / 0.9) - 0.012 * Math.sin(s * 0.9));
+        /* the worn line: two packed, darker, wetter ruts either side of the crown, going to loose past 0.6 m and to
+           needle litter past the shoulder -- the ribbon still reaches 3.2 m so the bench and berm backs are one surface,
+           but what reads as trail is the 1.7 m in the middle */
+        const rut = a > 0.15 && a < 0.48 ? -0.030 : 0;
+        c.offsetHSL(0, 0, rut + ((i + j) % 2 ? -0.010 : 0.008) + 0.05 * smooth((a - 0.65) / 0.5) - 0.012 * Math.sin(s * 0.9));
+        if (a > 0.9 && groundType(s) !== 'rock') c.lerp(LITTER, smooth((a - 0.9) / 0.9) * (0.75 + 0.25 * Math.sin(s * 1.7 + a)));
         col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
       }
       for (let j = 0; j < NL; j++){ const o = (i * NL + j) * 2; bk[o] = 1; bk[o + 1] = openness(row[j], row, 1.6); }
@@ -1623,11 +1688,49 @@ buildStep('water', () => {
   }
 });
 
+/* -- ground cover: three small assets built here rather than in Blender, in the same {v, t, c} format PNW.geo reads.
+   A sedge tuft (blades as two-sided triangles), a patch of fallen leaves (flat cards), and a moss hummock. Each is one
+   instanced draw call however many are placed. -- */
+(function groundCoverAssets(){
+  let seed = 31; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const hex = (r, g, b) => ((Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255)).toString(16).padStart(6, '0');
+  const mk = () => ({ v: [], t: [], c: [] });
+  const tri = (d, a, b, c, col) => { const i = d.v.length / 3; d.v.push(...a, ...b, ...c); d.t.push(i, i + 1, i + 2); d.c.push(col, col, col); };
+  const tri2 = (d, a, b, c, col) => { tri(d, a, b, c, col); tri(d, a, c, b, col); };     // both windings: seen from either side
+  /* sedge tuft: 9 blades radiating and leaning outward, yellow-green with a dark base */
+  const tuft = mk();
+  for (let i = 0; i < 9; i++){
+    const th = i / 9 * 6.283 + rnd() * 0.5, lean = 0.10 + rnd() * 0.16, h = 0.22 + rnd() * 0.22, w = 0.018 + rnd() * 0.012;
+    const dx = Math.cos(th), dz = Math.sin(th), px = -dz, pz = dx;
+    const g = 0.36 + rnd() * 0.16, col = hex(0.30 + rnd() * 0.14, g, 0.10 + rnd() * 0.06);
+    tri2(tuft, [px * w, 0, pz * w], [-px * w, 0, -pz * w], [dx * lean, h, dz * lean], col);
+  }
+  tri2(tuft, [-0.05, 0.005, -0.04], [0.06, 0.005, -0.03], [0.0, 0.005, 0.06], hex(0.13, 0.11, 0.06));
+  /* fallen leaves: seven cards, maple ochre to alder brown, each tilted a little off the ground */
+  const litter = mk();
+  for (let i = 0; i < 7; i++){
+    const x = (rnd() - 0.5) * 0.5, z = (rnd() - 0.5) * 0.5, th = rnd() * 6.283, r = 0.05 + rnd() * 0.05, tilt = rnd() * 0.03;
+    const cx = Math.cos(th), cz = Math.sin(th), t = rnd();
+    const col = t < 0.4 ? hex(0.55 + rnd() * 0.2, 0.36 + rnd() * 0.12, 0.10) : t < 0.7 ? hex(0.40 + rnd() * 0.1, 0.24, 0.09) : hex(0.30, 0.20 + rnd() * 0.05, 0.08);
+    const a = [x + cx * r, 0.008, z + cz * r], b = [x - cz * r * 0.7, 0.008 + tilt, z + cx * r * 0.7], c = [x - cx * r, 0.008, z - cz * r], d = [x + cz * r * 0.7, 0.008 + tilt, z - cx * r * 0.7];
+    tri2(litter, a, b, c, col); tri2(litter, a, c, d, col);
+  }
+  /* moss hummock: a low eight-sided dome, blue-green in the shade */
+  const moss = mk();
+  for (let i = 0; i < 8; i++){
+    const t0 = i / 8 * 6.283, t1 = (i + 1) / 8 * 6.283, r = 0.16, col = hex(0.13 + rnd() * 0.05, 0.22 + rnd() * 0.06, 0.09);
+    tri(moss, [0, 0.075, 0], [Math.cos(t0) * r, 0.01, Math.sin(t0) * r], [Math.cos(t1) * r, 0.01, Math.sin(t1) * r], col);
+    tri(moss, [Math.cos(t0) * r * 0.55, 0.055, Math.sin(t0) * r * 0.55], [Math.cos(t0) * r, 0.01, Math.sin(t0) * r], [Math.cos(t1) * r * 0.55, 0.055, Math.sin(t1) * r * 0.55], hex(0.17, 0.27, 0.11));
+  }
+  PNW_DATA.tuft = tuft; PNW_DATA.litter = litter; PNW_DATA.moss = moss;
+})();
+
 /* -- scatter: the forest, sized to the quality tier -- */
 buildStep('forest', () => {
   let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   const P = { cedar: [], cedar2: [], cedar3: [], fir: [], hemlock: [], maple: [], snag: [],
-              fern: [], salal: [], foxglove: [], boulder: [], stump: [], nurselog: [], sticks: [], rockedge: [] };
+              fern: [], salal: [], foxglove: [], boulder: [], stump: [], nurselog: [], sticks: [], rockedge: [],
+              tuft: [], litter: [], moss: [], sapling: [] };
   const put = (a, x, z, y, s0, s1) => a.push({ x, y, z, ry: rnd() * 6.28, s: s0 + rnd() * (s1 - s0) });
   /* Sample along the trail rather than over the bounding box: the loop's corridor is maybe a fifth of its bbox,
      and box-rejection at 1.8 km throws away four samples in five. */
@@ -1655,8 +1758,14 @@ buildStep('forest', () => {
     put(sp, q.x, q.z, H(q, -0.25), 0.62, 1.25);
   }
   for (let i = 0; i < Math.round(620 * F); i++){ const q = far(); if (q) put(rnd() < 0.55 ? P.fir : P.hemlock, q.x, q.z, H(q, -0.3), 0.7, 1.4); }
-  for (let i = 0; i < Math.round(900 * F); i++){ const q = near(2.0, 5.5); if (q) put(P.fern, q.x, q.z, H(q, -0.02), 0.75, 1.5); }
-  for (let i = 0; i < Math.round(520 * F); i++){ const q = near(2.3, 8.0); if (q) put(P.salal, q.x, q.z, H(q, -0.03), 0.8, 1.6); }
+  /* the understorey crowds the singletrack: ferns from 0.9 m, salal from 1.3 m, and the ground cover from the shoulder */
+  for (let i = 0; i < Math.round(900 * F); i++){ const q = near(1.6, 5.5); if (q) put(P.fern, q.x, q.z, H(q, -0.02), 0.75, 1.5); }
+  for (let i = 0; i < Math.round(700 * F); i++){ const q = near(0.9, 2.2); if (q) put(P.fern, q.x, q.z, H(q, -0.02), 0.45, 0.9); }
+  for (let i = 0; i < Math.round(520 * F); i++){ const q = near(1.3, 8.0); if (q) put(P.salal, q.x, q.z, H(q, -0.03), 0.8, 1.6); }
+  for (let i = 0; i < Math.round(2400 * F); i++){ const q = near(0.72, 5.0); if (q) put(P.tuft, q.x, q.z, H(q, -0.01), 0.7, 1.4); }
+  for (let i = 0; i < Math.round(1800 * F); i++){ const q = near(0.55, 7.0); if (q) put(P.litter, q.x, q.z, H(q, 0.0), 0.8, 1.6); }
+  for (let i = 0; i < Math.round(800 * F); i++){ const q = near(1.1, 12); if (q) put(P.moss, q.x, q.z, H(q, -0.02), 0.8, 2.2); }
+  for (let i = 0; i < Math.round(260 * F); i++){ const q = near(2.0, 9.0); if (q) put(P.sapling, q.x, q.z, H(q, -0.03), 0.12, 0.26); }   // hemlock regen
   for (let i = 0; i < Math.round(180 * F); i++){ const q = near(2.4, 7.0); if (q) put(P.foxglove, q.x, q.z, H(q, -0.02), 0.7, 1.3); }
   for (let i = 0; i < Math.round(120 * F); i++){ const q = near(3.0, 14); if (q) put(P.stump, q.x, q.z, H(q, -0.05), 0.8, 1.6); }
   for (let i = 0; i < Math.round(150 * F); i++){ const q = near(3.4, 16); if (q) put(P.nurselog, q.x, q.z, H(q, -0.04), 0.8, 1.7); }
@@ -1678,8 +1787,10 @@ buildStep('forest', () => {
   }
   window.PNW_PLACEMENTS = P;
   const WIND = { cedar: 1.0, cedar2: 1.0, cedar3: 1.0, fir: 0.8, hemlock: 0.9, maple: 1.6, snag: 0,
-                 fern: 3.2, salal: 2.0, foxglove: 3.6, boulder: 0, stump: 0, nurselog: 0, sticks: 0, rockedge: 0 };
-  for (const k of Object.keys(P)) if (P[k].length) PNW.instanced(scene, k, P[k], WIND[k]);
+                 fern: 3.2, salal: 2.0, foxglove: 3.6, boulder: 0, stump: 0, nurselog: 0, sticks: 0, rockedge: 0,
+                 tuft: 3.0, litter: 0, moss: 0, sapling: 2.4 };
+  const MESH = { sapling: 'hemlock' };                                          // placements that reuse another asset's geometry
+  for (const k of Object.keys(P)) if (P[k].length) PNW.instanced(scene, MESH[k] || k, P[k], WIND[k]);
   PNW.sky(scene, WCX, WCZ, WSIZE * 1.05);
   if (QNAME !== 'low') window.PNW_RAVENS = PNW.ravens(scene, WCX, 34, WCZ, WSIZE * 0.26);
   /* mist in the three lowest points of the loop */
@@ -1870,18 +1981,21 @@ function ik(a, b, l1, l2, prefer, maxAngleDeg){
 const angleAt = (a, b, c) => { const v1 = a.clone().sub(b), v2 = c.clone().sub(b); return Math.acos(clamp(v1.dot(v2) / (v1.length() * v2.length()), -1, 1)) / D2R; };
 
 /* colours: Syndicate V10 (gloss black, team blue, white logo band), Fox 40 Kashima, Red Bull helmet */
-const C = { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, sw: 0x14161C, link: 0x1F3B7A, coil: 0x111111, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
+const RV = BK.rig;                                                       // per-bike colours and tube sizes
+const HALF_SHELL = typeof RIG_STYLE !== 'undefined' && RIG_STYLE === 'enduro';   // enduro half shell instead of the full-face
+const C = { frame: RV.frame, frame2: RV.frame2, decal: RV.decal, forkUp: RV.forkUp, forkLow: RV.forkLow, sw: RV.frame, link: RV.frame2, coil: RV.coil, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
   skin: 0xD8AA80, jersey: 0x1F3B7A, pants: 0x15161A, helmet: 0xF2F2F0, shoe: 0x25211E, motor: 0x1B1B1B };
 const P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const rig = new THREE.Group(); rig.rotation.order = 'YXZ'; scene.add(rig);
 const frame = new THREE.Group(); rig.add(frame);
 function tube(a, b, t, c, d){ const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; }
-tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), 0.055, C.frame, 0.06);    // top tube, nearly straight
-tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.062, C.frame, 0.062);                                            // down tube
-tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);                                      // SANTA CRUZ decal band
-tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame);                                            // seat tube
-tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);                                                 // shock mount strut off the down tube
-tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);              // head tube
+tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), RV.tt, C.frame, RV.tt * 1.1);   // top tube, nearly straight
+tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), RV.dt, C.frame, RV.dt);                                              // down tube
+tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, RV.dt * 1.5);                                  // decal band
+tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), RV.st, C.frame);                                             // seat tube
+if (RV.strut) tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);                                     // shock mount strut off the down tube (V10)
+else tube(P3(VPP.F.x - 0.02, VPP.F.y - 0.02), P3(VPP.F.x + 0.06, VPP.F.y + 0.05), 0.03, C.frame);                            // shock tab under the top tube (single pivot)
+tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), RV.ht, C.frame);                // head tube
 const chainring = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12), mat(0x3A3A3A)); chainring.rotation.x = Math.PI / 2; chainring.position.set(0, 0, 0.09); frame.add(chainring);
 const brace = limb(1, 0.03, 0.15, C.sw); frame.add(brace);
 const upperLink = limb(1, 0.03, 0.09, C.link); frame.add(upperLink);
@@ -1889,9 +2003,9 @@ const lowerLink = limb(1, 0.035, 0.10, C.link); frame.add(lowerLink);
 const lowerLinkArm = limb(1, 0.03, 0.08, C.link); frame.add(lowerLinkArm);
 const shockBody = limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil = limb(1, 0.072, 0.072, C.coil), shockShaft = limb(1, 0.026, 0.026, 0xC9C2B0);
 frame.add(shockBody, shockCoil, shockShaft);
-const chainL = limb(1, 0.05, 0.04, C.sw), chainR = limb(1, 0.05, 0.04, C.sw), seatL = limb(1, 0.038, 0.032, C.sw), seatR = limb(1, 0.038, 0.032, C.sw);
+const chainL = limb(1, RV.cs, RV.cs * 0.8, C.sw), chainR = limb(1, RV.cs, RV.cs * 0.8, C.sw), seatL = limb(1, RV.ss, RV.ss * 0.85, C.sw), seatR = limb(1, RV.ss, RV.ss * 0.85, C.sw);
 frame.add(chainL, chainR, seatL, seatR);
-const stanchL = limb(1, 0.042, 0.042, C.forkUp), stanchR = limb(1, 0.042, 0.042, C.forkUp), lowerL = limb(1, 0.058, 0.058, C.forkLow), lowerR = limb(1, 0.058, 0.058, C.forkLow), arch = limb(1, 0.04, 0.04, C.forkLow);
+const stanchL = limb(1, RV.stanch, RV.stanch, C.forkUp), stanchR = limb(1, RV.stanch, RV.stanch, C.forkUp), lowerL = limb(1, RV.lower, RV.lower, C.forkLow), lowerR = limb(1, RV.lower, RV.lower, C.forkLow), arch = limb(1, 0.04, 0.04, C.forkLow);
 frame.add(stanchL, stanchR, lowerL, lowerR, arch);
 const post = limb(1, 0.031, 0.031, 0xC8952A); frame.add(post);
 const saddle = box(0.27, 0.045, 0.09, 0x1E1A18); frame.add(saddle);
@@ -1901,8 +2015,11 @@ const GRIP_L = P3(BAR.x, BAR.y, GRIP_Z), GRIP_R = P3(BAR.x, BAR.y, -GRIP_Z);
 const crankL = limb(CRANK, 0.03, 0.025, 0x25211E), crankR = limb(CRANK, 0.03, 0.025, 0x25211E); frame.add(crankL, crankR);
 const pedL = box(0.1, 0.02, 0.07, 0x6F675A), pedR = box(0.1, 0.02, 0.07, 0x6F675A); frame.add(pedL, pedR);
 /* rider */
-const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.15, 0.15, 0.15, C.skin), helmet = box(0.22, 0.20, 0.21, C.helmet), visor = box(0.11, 0.025, 0.2, C.helmet);
-const chinBar = box(0.075, 0.07, 0.19, C.helmet), goggle = box(0.02, 0.06, 0.17, 0x1E1A18);
+/* full-face: a shell around the whole head plus a chin bar. Half shell: a shorter shell that sits on top and wraps the
+   back, leaving the face open -- the enduro lid. */
+const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.15, 0.15, 0.15, C.skin),
+      helmet = HALF_SHELL ? box(0.19, 0.125, 0.205, C.helmet) : box(0.22, 0.20, 0.21, C.helmet), visor = box(0.11, 0.025, 0.2, C.helmet);
+const chinBar = HALF_SHELL ? new THREE.Object3D() : box(0.075, 0.07, 0.19, C.helmet), goggle = box(0.02, 0.06, 0.17, 0x1E1A18);
 const hipBox = box(0.17, 0.14, 0.22, C.pants);
 const uArmL = limb(0.31, 0.06, 0.06, C.jersey), lArmL = limb(0.29, 0.05, 0.05, C.jersey), uArmR = limb(0.31, 0.06, 0.06, C.jersey), lArmR = limb(0.29, 0.05, 0.05, C.jersey);
 const thighL = limb(0.44, 0.085, 0.085, C.pants), shinL = limb(0.44, 0.065, 0.065, C.pants), thighR = limb(0.44, 0.085, 0.085, C.pants), shinR = limb(0.44, 0.065, 0.065, C.pants);
@@ -1934,7 +2051,7 @@ function pose(dt){
   const k = vtLookup(wheelR.t);
   const axR = P3(k.ax, k.ay);
   aimLimb(lowerLink, P3(VPP.P1.x, VPP.P1.y), P3(k.P2.x, k.P2.y));
-  aimLimb(lowerLinkArm, P3(VPP.P1.x, VPP.P1.y), P3(k.S.x, k.S.y));
+  aimLimb(lowerLinkArm, P3(VPP.P1.x, VPP.P1.y), VPP.kind === 'single' ? P3(VPP.P1.x, VPP.P1.y) : P3(k.S.x, k.S.y));   // single pivot: the upper link IS the strut
   aimLimb(upperLink, P3(VPP.P3.x, VPP.P3.y), P3(k.P4.x, k.P4.y));
   for (const [cs, ss, zz] of [[chainL, seatL, 0.075], [chainR, seatR, -0.075]]){
     aimLimb(cs, P3(k.P2.x, k.P2.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(k.P4.x, k.P4.y, zz), P3(axR.x, axR.y, zz)); }
@@ -1970,7 +2087,8 @@ function pose(dt){
   aimLimb(torso, shoulders, hips);
   const neck = tor + 35 * D2R;
   head.position.set(shoulders.x + 0.17 * Math.cos(neck), shoulders.y + 0.17 * Math.sin(neck), 0);
-  helmet.position.set(head.position.x - 0.01, head.position.y + 0.02, 0); helmet.rotation.z = neck - 90 * D2R;
+  if (HALF_SHELL){ helmet.position.set(head.position.x - 0.035, head.position.y + 0.045, 0); helmet.rotation.z = (neck - 90 * D2R) * 0.5; }
+  else { helmet.position.set(head.position.x - 0.01, head.position.y + 0.02, 0); helmet.rotation.z = neck - 90 * D2R; }
   visor.position.set(head.position.x + 0.10, head.position.y + 0.11, 0); visor.rotation.z = -0.25;
   chinBar.position.set(head.position.x + 0.12, head.position.y - 0.045, 0); goggle.position.set(head.position.x + 0.10, head.position.y + 0.035, 0);
   numberPlate.position.set(BAR.x + 0.04, BAR.y + 0.02, 0);
@@ -1998,11 +2116,22 @@ function pose(dt){
   }
   jointsOut.knee = kneeAng; jointsOut.elbow = elbowAng; jointsOut.torso = cur.torso - Math.atan(gradeS) / D2R + chassis.phi / D2R;
   /* camera & backdrop follow */
-  /* roll: a second-order response to the lean the corner asks for (the rider steers into it) */
+  /* roll: the bike is an inverted pendulum standing on its contact line, and the only thing that can lean it is the
+     steer angle. To start a lean the rider steers OUT of the turn for a moment (countersteer: the contact line moves out
+     from under the mass), then holds the geometric steer that balances the lean. The controller below does exactly
+     that, so the bars visibly flick the wrong way at every turn-in, and the lean rate is what speed and steer give
+     rather than a spring. In the air nothing pushes back: the lean holds. Below ~8 mph the model is not meaningful
+     and the speed is floored. */
+  const H_CG = 1.05, VLEAN = Math.max(3.5, v), inAir = poseState === 'air';
   const gyro = 0.9 * (wheelF.I * wheelF.om + wheelR.I * wheelR.om);                // spinning wheels resist being rolled
-  leanAcc = 60 * (corner.lean - leanVis) - (14 + gyro) * leanVel; leanVel += leanAcc * dt; leanVis += leanVel * dt;
+  const steerHold = clamp(G9 * GEO.wb * Math.sin(leanVis) / (VLEAN * VLEAN), -0.5, 0.5);      // the steer that balances this lean
+  const steerCmd = inAir ? steerVis * 0.9 : clamp(steerHold - 0.35 * (corner.lean - leanVis) + 0.12 * leanVel, -0.55, 0.55);
+  steerVis += (steerCmd - steerVis) * Math.min(1, dt * 14);                       // the bars cannot move instantly
+  leanAcc = inAir ? -1.5 * leanVel
+          : (G9 / H_CG) * Math.sin(leanVis) - (VLEAN * VLEAN / (H_CG * GEO.wb)) * Math.tan(steerVis) * Math.cos(leanVis) - (1.2 + 0.4 * gyro) * leanVel;
+  leanVel += leanAcc * dt; leanVis = clamp(leanVis + leanVel * dt, -1.1, 1.1);
   const av = Math.min(1, dt * 5);
-  steerVis += (clamp(-PW.kappa * 2.2, -0.5, 0.5) - steerVis) * av; headTurnVis += (clamp(-pathAt(scroll + 6).kappa * 3, -0.7, 0.7) - headTurnVis) * av;
+  headTurnVis += (clamp(-pathAt(scroll + 6).kappa * 3, -0.7, 0.7) - headTurnVis) * av;
   /* chase camera: behind and to the right, orbitable by drag */
   const fx = Math.cos(PW.theta), fz = Math.sin(PW.theta), rx = -fz, rz = fx;
   const az = camAz, r = 5.6, el = 0.33 + camEl;
@@ -2013,6 +2142,60 @@ function pose(dt){
   camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(tgt, Math.min(1, dt * 9));
   camera.position.copy(camPos); camera.lookAt(camLook);
 }
+
+/* ---- one draw call for the bike and rider ----
+   The rig arrives from suspension-lab.html as 72 meshes: every tube, stay, spoke, limb and lever is its own draw
+   call. That was free against 75 m of lab trail; here it was two thirds of the low tier's budget. Nothing in
+   pose() needs the parts to be meshes — it only sets positions, scales and quaternions through aimLimb — so each
+   part keeps its Object3D, is hidden, and after every pose() its world matrix is baked into one shared geometry
+   with the part's colour carried per vertex. About two thousand vertices transformed on the CPU per frame, for
+   seventy-one draw calls saved. pose() and the rig itself are untouched. */
+const RIG_MERGE = (() => {
+  const parts = [];
+  rig.updateMatrixWorld(true);
+  rig.traverse(o => { if (o.isMesh) parts.push(o); });
+  let nV = 0, nI = 0;
+  for (const p of parts){ const g = p.geometry; nV += g.attributes.position.count; nI += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nV * 3), nor = new Float32Array(nV * 3), col = new Float32Array(nV * 3);
+  const idx = nV > 65535 ? new Uint32Array(nI) : new Uint16Array(nI);
+  let v0 = 0, i0 = 0;
+  for (const p of parts){
+    const g = p.geometry, n = g.attributes.position.count, c = p.material.color;
+    p.userData.v0 = v0;
+    for (let i = 0; i < n; i++){ col[(v0 + i) * 3] = c.r; col[(v0 + i) * 3 + 1] = c.g; col[(v0 + i) * 3 + 2] = c.b; }
+    if (g.index){ const ia = g.index.array; for (let i = 0; i < ia.length; i++) idx[i0 + i] = ia[i] + v0; i0 += ia.length; }
+    else { for (let i = 0; i < n; i++) idx[i0 + i] = v0 + i; i0 += n; }
+    v0 += n;
+    p.visible = false;                       // still posed and still in the hierarchy; just never drawn on its own
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3).setUsage(THREE.DynamicDrawUsage));
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88, metalness: 0 }));
+  mesh.name = 'rig-merged';
+  mesh.frustumCulled = false; mesh.matrixAutoUpdate = false;     // world-space vertices; the bike is always on screen
+  mesh.castShadow = Q.shadow > 0;                                 // the one shadow caster the plan asked for
+  scene.add(mesh);
+  const _m3 = new THREE.Matrix3(), _v = new THREE.Vector3();
+  function update(){
+    rig.updateMatrixWorld(true);
+    for (const p of parts){
+      const g = p.geometry, pa = g.attributes.position.array, na = g.attributes.normal.array, n = g.attributes.position.count;
+      const m = p.matrixWorld; _m3.getNormalMatrix(m);
+      let o = p.userData.v0 * 3;
+      for (let i = 0, k = 0; i < n; i++, o += 3, k += 3){
+        _v.set(pa[k], pa[k + 1], pa[k + 2]).applyMatrix4(m); pos[o] = _v.x; pos[o + 1] = _v.y; pos[o + 2] = _v.z;
+        _v.set(na[k], na[k + 1], na[k + 2]).applyMatrix3(_m3).normalize(); nor[o] = _v.x; nor[o + 1] = _v.y; nor[o + 2] = _v.z;
+      }
+    }
+    geo.attributes.position.needsUpdate = true; geo.attributes.normal.needsUpdate = true;
+    mesh.visible = rig.visible;
+  }
+  update();
+  return { mesh, parts, update, verts: nV, tris: nI / 3 };
+})();
 
 /* ============ modes, camera and the frame loop ============ */
 /* =============== modes, input, HUD and the frame loop =============== */
@@ -2253,6 +2436,7 @@ function tick(now){
     pushTrack(scroll - 0.6, RIDE_LINE);
   }
   pose(riding ? dt : 0);                                                          // pose() also drives the chase camera
+  RIG_MERGE.update();                                                             // bake the posed parts into the one rig mesh
   if (MODE === 'cine') cineCamera(dt);
   else if (MODE === 'fly') flyCamera(dt);
 

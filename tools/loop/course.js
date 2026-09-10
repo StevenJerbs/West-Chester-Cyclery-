@@ -44,8 +44,8 @@ function bermProfile(l, bank, Hb, side){
 function plainProfile(l){
   const a = Math.abs(l);
   let h = -0.035 * l * l;                                         // crown
-  if (a > 0.25 && a < 0.5) h -= 0.022;                            // the two tyre grooves
-  if (a > 1.4) h -= 0.11 * (a - 1.4);                             // the worn edge falls away
+  if (a > 0.18 && a < 0.42) h -= 0.022;                           // the two tyre grooves
+  if (a > 0.85) h -= 0.13 * (a - 0.85);                           // singletrack: the tread is gone by 0.85 m and the shoulder falls to the litter
   return h;
 }
 
@@ -459,11 +459,11 @@ function makeCourse(courseId, opt){
     for (const k of ENV_OFF){ const dx = k * r; const y = groundAt(u + dx, l) - (r - Math.sqrt(r * r - dx * dx)); if (y > best) best = y; }
     return best;
   }
-  /* how far up the berm the rider is allowed to go, and how far off-line elsewhere */
+  /* how far up the berm the rider is allowed to go, and how far off-line elsewhere (singletrack: 0.7 m each side) */
   function lineLimit(u){
     const [g] = segAt(u);
-    if (g.corner && g.corner.Hb > 0){ const s = g.corner.side; return s > 0 ? [-0.9, 2.2] : [-2.2, 0.9]; }
-    return [-1.15, 1.15];
+    if (g.corner && g.corner.Hb > 0){ const s = g.corner.side; return s > 0 ? [-0.6, 2.2] : [-2.2, 0.6]; }
+    return [-0.7, 0.7];
   }
   function invalidateObst(){ OB_BUCKETS = null; }
 

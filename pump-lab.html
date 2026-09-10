@@ -190,20 +190,28 @@ const PNW = (() => {
     return geos[name] = g;
   }
   const uTime = { value: 0 };
+  const NOISE_GLSL = ['float pnwH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float pnwN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(pnwH(i), pnwH(i + vec2(1, 0)), f.x), mix(pnwH(i + vec2(0, 1)), pnwH(i + vec2(1, 1)), f.x), f.y); }'].join('\n');
   function swayMat(amp){
     const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
     m.onBeforeCompile = sh => {
       sh.uniforms.uT = uTime;
-      sh.vertexShader = ('uniform float uT;\n' + sh.vertexShader).replace('#include <begin_vertex>',
+      sh.vertexShader = ('uniform float uT; varying float vTint; varying vec3 vWq;\n' + sh.vertexShader).replace('#include <begin_vertex>',
         ['#include <begin_vertex>',
          '#ifdef USE_INSTANCING',
          '  float pnwPh = instanceMatrix[3][0] * 0.63 + instanceMatrix[3][2] * 0.87;',
          '#else',
          '  float pnwPh = 0.0;',
          '#endif',
+         'vTint = fract(sin(pnwPh * 12.9898) * 43758.5453);',                 // one number per plant: its own shade
          'float pnwSw = ' + amp.toFixed(2) + ' * position.y * 0.012;',
          'transformed.x += sin(uT * 1.05 + pnwPh + position.y * 0.35) * pnwSw;',
-         'transformed.z += cos(uT * 0.85 + pnwPh * 1.31) * pnwSw * 0.6;'].join('\n'));
+         'transformed.z += cos(uT * 0.85 + pnwPh * 1.31) * pnwSw * 0.6;'].join('\n'))
+        .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWq = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      /* per-plant brightness and a touch of hue, plus a fine grain so flat-coloured fronds and bark read as surface */
+      sh.fragmentShader = ('varying float vTint; varying vec3 vWq;\n' + NOISE_GLSL + '\n' + sh.fragmentShader)
+        .replace('#include <color_fragment>', '#include <color_fragment>\n{ diffuseColor.rgb *= 0.84 + 0.30 * vTint; diffuseColor.g *= 0.95 + 0.10 * vTint; diffuseColor.r *= 1.06 - 0.10 * vTint; float gr = pnwN(vWq.xz * 9.0 + vWq.y * 3.0); diffuseColor.rgb *= 0.90 + 0.18 * gr; }');
     };
     return m;
   }
@@ -261,9 +269,6 @@ const PNW = (() => {
     for (let i = 0; i < n; i++){ const o = i * 4; a[i * 2] = o + 4 <= h.length ? parseInt(h.substr(o, 2), 16) / 255 : 1; a[i * 2 + 1] = o + 4 <= h.length ? parseInt(h.substr(o + 2, 2), 16) / 255 : 1; }
     return new THREE.BufferAttribute(a, 2);
   }
-  const NOISE_GLSL = ['float pnwH(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
-    'float pnwN(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
-    '  return mix(mix(pnwH(i), pnwH(i + vec2(1, 0)), f.x), mix(pnwH(i + vec2(0, 1)), pnwH(i + vec2(1, 1)), f.x), f.y); }'].join('\n');
   function bakedMat(opts, kind){                                       // MeshStandardMaterial whose direct light is scaled by the baked sun visibility and whose ambient by the baked AO
     const m = new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: 0.93, metalness: 0 }, opts || {}));
     m.onBeforeCompile = sh => {
@@ -274,9 +279,15 @@ const PNW = (() => {
       let fs = ('uniform float uT; varying vec2 vBake; varying vec3 vWp; varying vec3 vVx; varying vec3 vVz;\n' + NOISE_GLSL + '\n' + sh.fragmentShader)
         .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\nreflectedLight.directDiffuse *= mix(0.16, 1.0, vBake.x); reflectedLight.directSpecular *= mix(0.16, 1.0, vBake.x);')
         .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\nreflectedLight.indirectDiffuse *= mix(0.45, 1.0, vBake.y);');
-      if (kind === 'track') fs = fs                                     // fine grain in the dirt, and the dark packed ruts read wet
-        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ vec2 q = vWp.xz * 7.0; float e = 0.05; float gx = pnwN(q + vec2(e, 0.0)) - pnwN(q - vec2(e, 0.0)), gz = pnwN(q + vec2(0.0, e)) - pnwN(q - vec2(0.0, e)); normal = normalize(normal + (vVx * gx + vVz * gz) * 1.6); }')
+      if (kind === 'track') fs = fs                                     // grain and pebbles in the dirt; the dark packed ruts read wet
+        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ vec2 q = vWp.xz * 7.0; float e = 0.05; float gx = pnwN(q + vec2(e, 0.0)) - pnwN(q - vec2(e, 0.0)), gz = pnwN(q + vec2(0.0, e)) - pnwN(q - vec2(0.0, e)); vec2 q2 = vWp.xz * 23.0; float e2 = 0.02; gx += 0.45 * (pnwN(q2 + vec2(e2, 0.0)) - pnwN(q2 - vec2(e2, 0.0))); gz += 0.45 * (pnwN(q2 + vec2(0.0, e2)) - pnwN(q2 - vec2(0.0, e2))); normal = normalize(normal + (vVx * gx + vVz * gz) * 1.6); }')
+        .replace('#include <color_fragment>', '#include <color_fragment>\n{ float g1 = pnwN(vWp.xz * 3.1), g2 = pnwN(vWp.xz * 19.0); diffuseColor.rgb *= 0.80 + 0.28 * g1 + 0.14 * g2; float peb = smoothstep(0.91, 0.97, pnwN(vWp.xz * 27.0 + 7.0)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.40, 0.38, 0.34), peb * 0.55); }')
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n{ float lum = dot(vColor.rgb, vec3(0.3, 0.5, 0.2)); roughnessFactor = mix(roughnessFactor, 0.42, smoothstep(0.22, 0.10, lum)); }');
+      /* ground: hillside, bench and berm backs. Two octaves of detail normal, moss creeping in where the bake says shade,
+         and a broad mottle so a hectare of vertex colour is not one flat tone */
+      if (kind === 'ground') fs = fs
+        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ vec2 q = vWp.xz * 2.3; float e = 0.08; float gx = pnwN(q + vec2(e, 0.0)) - pnwN(q - vec2(e, 0.0)), gz = pnwN(q + vec2(0.0, e)) - pnwN(q - vec2(0.0, e)); vec2 q2 = vWp.xz * 11.0; float e2 = 0.03; gx += 0.5 * (pnwN(q2 + vec2(e2, 0.0)) - pnwN(q2 - vec2(e2, 0.0))); gz += 0.5 * (pnwN(q2 + vec2(0.0, e2)) - pnwN(q2 - vec2(0.0, e2))); normal = normalize(normal + (vVx * gx + vVz * gz) * 1.1); }')
+        .replace('#include <color_fragment>', '#include <color_fragment>\n{ float m1 = pnwN(vWp.xz * 0.55 + 3.0), m2 = pnwN(vWp.xz * 4.7); float lum = dot(diffuseColor.rgb, vec3(0.3, 0.5, 0.2)); float mossMask = smoothstep(0.42, 0.72, m1 * 0.7 + m2 * 0.3) * (1.0 - 0.55 * vBake.x); vec3 moss = vec3(0.14, 0.22, 0.08) * (0.5 + 2.2 * lum); diffuseColor.rgb = mix(diffuseColor.rgb, moss, mossMask * 0.65); diffuseColor.rgb *= 0.84 + 0.32 * m2; }');
       if (kind === 'water') fs = fs
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ float dx = sin(vWp.x * 2.9 + uT * 1.2) * 0.05 + sin((vWp.x + vWp.z) * 5.3 - uT * 0.8) * 0.03, dz = cos(vWp.z * 2.3 + uT * 1.05) * 0.05 + cos((vWp.x - vWp.z) * 4.1 + uT * 0.7) * 0.03; normal = normalize(normal + vVx * dx + vVz * dz); }');
       sh.fragmentShader = fs;

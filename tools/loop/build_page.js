@@ -41,6 +41,7 @@ const rig = between(susp, '/* limbs */', '/* =============== main loop =========
 /* ---- 4. the pieces this build writes itself ---- */
 const worldJs = fs.readFileSync(path.join(__dirname, 'page/world.js'), 'utf8');
 const uiJs = fs.readFileSync(path.join(__dirname, 'page/ui.js'), 'utf8');
+const rigMergeJs = fs.readFileSync(path.join(__dirname, 'page/rig_merge.js'), 'utf8');
 const loopJs = fs.readFileSync(path.join(__dirname, 'page/loop.js'), 'utf8');
 const headHtml = fs.readFileSync(path.join(__dirname, 'page/head.html'), 'utf8');
 
@@ -80,6 +81,7 @@ const out = headHtml
   + '/*<<<PHYSICS>>>*/\n' + physHead + physTail + '/*<<</PHYSICS>>>*/\n\n'
   + '/* ============ the world ============ */\n' + worldJs + '\n'
   + '/* ============ the bike, from suspension-lab.html ============ */\n' + rig + '\n'
+  + rigMergeJs + '\n'
   + '/* ============ modes, camera and the frame loop ============ */\n' + loopJs + '\n'
   + '</script>\n';
 

@@ -277,11 +277,44 @@ const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
 function hash(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
-/* =============== Santa Cruz V10 CC 29/27.5 MX, size M, low -- Jackson Goldstone's 2023 Syndicate race bike.
-   Travel, spring, wheels, reach and chainstay from kinematic-model/data/bike_specs.yaml (owner-supplied Pinkbike bike check);
-   stack / HTA / STA / BB / wheelbase from the published V10 geometry chart. =============== */
-const GEO = { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350,
-  rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, e2e: 0.250, travelR: 0.208 };
+/* =============== the bike ===============
+   Two bikes share this physics; a global BIKE set before this script picks one (the labs leave it unset: the V10).
+   v10    Santa Cruz V10 CC 29/27.5 MX, size M, low -- Jackson Goldstone's 2023 Syndicate race bike. Travel, spring, wheels,
+          reach and chainstay from kinematic-model/data/bike_specs.yaml (owner-supplied Pinkbike bike check); stack / HTA /
+          STA / BB / wheelbase from the published V10 geometry chart. Lower-link-driven VPP, refitted to 208 mm over a 250x75
+          shock, LR 2.86->2.59 (tools/vpp_fit.py); lower pivot behind the BB, shock driven off the lower link as on the V10.
+   murmur Starling Murmur 2021, size L, as Pinkbike's 2021 Field Test rode it: 150 mm Ohlins fork, 140 mm rear on an Ohlins
+          TTX coil, 29" wheels. Geometry from mtbkin's configs/geometry/pinkbike2021/starling_murmur.yaml (the 160 mm chart
+          corrected for the 150 mm fork). Chosen because it is the full-suspension bike the mtbkin keypoint model tracks most
+          tightly (BB-to-rear-axle spread 6.9 px, 99% of frames) -- and it tracks tightly for the same reason it is easy to
+          model: a steel single pivot, so the swingarm is one rigid triangle (pivot, axle, shock strut) and the shock is driven
+          straight off it. Pivot and shock mounts are placed from the Field Test photos to give 140 mm over a 230x60 shock. */
+const BIKE_ID = typeof BIKE !== 'undefined' && BIKE === 'murmur' ? 'murmur' : 'v10';
+const BIKES = {
+  v10: { name: 'Santa Cruz V10 CC MX',
+    geo: { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350,
+      rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, e2e: 0.250, travelR: 0.208 },
+    link: { kind: 'vpp', P1: { x: -0.03703, y: 0.08419 }, L1: 0.07216, P3: { x: -0.09307, y: 0.29010 }, L2: 0.15568, D: 0.12988,
+      AX: { x: 0.46254, y: 0.17557 }, S: { x: -0.10098, y: 0.02219 }, F: { x: 0.02571, y: 0.24762 }, th0: 0.47243 },
+    /* 37 lb (17 kg) built from its parts, frame-local (kg, x, y): frame+links, Fox 40, cockpit, DHX2 coil, post+saddle, cranks+drivetrain+pedals, brakes */
+    parts: [[3.6, 0.12, 0.34], [2.9, 0.62, 0.42], [0.9, 0.50, 0.66], [1.2, 0.0, 0.14], [0.3, -0.15, 0.55], [1.2, 0.02, 0.02], [0.8, 0.30, 0.20]],
+    mUF: 2.6, mUR: 3.6,                                                       // 29 DD front wheel; 27.5 DD rear with cassette and rotor
+    rig: { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, coil: 0x111111,
+      tt: 0.055, dt: 0.062, st: 0.05, ht: 0.065, cs: 0.05, ss: 0.038, stanch: 0.042, lower: 0.058, strut: true } },
+  murmur: { name: 'Starling Murmur',
+    geo: { reach: 0.488, stack: 0.636, hta: 65.0 * D2R, sta: 77.0 * D2R, cs: 0.445, wb: 1.255, bb: 0.337,
+      rF: 0.372, rR: 0.372, forkTravel: 0.150, offset: 0.044, ht: 0.110, stroke: 0.060, e2e: 0.230, travelR: 0.140 },
+    /* single pivot: P1 the main pivot; AX0 and S0 the axle and the swingarm's shock mount at full extension, frame-local;
+       F the frame's shock mount under the top tube. th0 = 0 means "as drawn"; the table rotates the swingarm from there. */
+    link: { kind: 'single', P1: { x: 0.015, y: 0.090 }, P3: { x: 0.015, y: 0.090 }, AX0: { x: -0.4436, y: 0.035 },
+      S0: { x: -0.0359, y: 0.3030 }, F: { x: 0.1835, y: 0.2338 }, th0: 0 },   // fit: 140 mm / 60 mm, LR 2.44->2.23
+    /* 35 lb (15.9 kg): steel frame+swingarm, Ohlins RXF36, cockpit, TTX coil, dropper+saddle, cranks+drivetrain+pedals, brakes */
+    parts: [[4.3, 0.10, 0.33], [2.2, 0.66, 0.40], [0.9, 0.52, 0.64], [0.75, 0.07, 0.35], [0.6, -0.14, 0.52], [1.4, 0.02, 0.02], [0.8, 0.30, 0.20]],
+    mUF: 2.2, mUR: 2.8,                                                       // 29 trail wheels, EXO+ casings
+    rig: { frame: 0x2B2F33, frame2: 0x2B2F33, decal: 0xC49A5A, forkUp: 0x1C1C1C, forkLow: 0x141414, coil: 0xE3B324,
+      tt: 0.032, dt: 0.038, st: 0.032, ht: 0.044, cs: 0.026, ss: 0.020, stanch: 0.036, lower: 0.050, strut: false } }
+};
+const BK = BIKES[BIKE_ID], GEO = BK.geo;
 const V2 = (x, y) => ({ x, y });
 const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta));          // down the steering axis
 const dFwd  = V2(Math.sin(GEO.hta),  Math.cos(GEO.hta));          // perpendicular, forward
@@ -297,12 +330,16 @@ const dUp = V2(-dDown.x, -dDown.y);
 const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035);
 const GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
 
-/* =============== VPP four-bar (lower-link driven), refitted to the V10: 208 mm over a 250x75 shock, LR 2.86->2.59 (9% progressive),
-   axle at the 455 mm chainstay with the 27.5 rear wheel, lower pivot behind the BB and the shock driven off the lower link as on the V10 =============== */
-const VPP = { P1: V2(-0.03703, 0.08419), L1: 0.07216, P3: V2(-0.09307, 0.29010), L2: 0.15568, D: 0.12988,
-  AX: V2(0.46254, 0.17557), S: V2(-0.10098, 0.02219), F: V2(0.02571, 0.24762), th0: 0.47243 };
+/* =============== the rear linkage: a lower-link-driven four-bar (VPP) or a single pivot, one solver =============== */
+const VPP = BK.link;
 function vppSolve(th, prevP4){
   const P1 = VPP.P1, P3 = VPP.P3;
+  if (VPP.kind === 'single'){                                             // the whole swingarm turns about P1
+    const c = Math.cos(th - VPP.th0), s = Math.sin(th - VPP.th0);
+    const rot = p => V2(P1.x + (p.x - P1.x) * c - (p.y - P1.y) * s, P1.y + (p.x - P1.x) * s + (p.y - P1.y) * c);
+    const axle = rot(VPP.AX0), S = rot(VPP.S0);
+    return { P2: P1, P4: S, axle, S, shock: Math.hypot(S.x - VPP.F.x, S.y - VPP.F.y) };
+  }
   const P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));
   const vx = P3.x - P2.x, vy = P3.y - P2.y, d = Math.hypot(vx, vy);
   const a = (VPP.D * VPP.D - VPP.L2 * VPP.L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, VPP.D * VPP.D - a * a));
@@ -575,9 +612,9 @@ function coilSpring(S, k){                             // S = shaft stroke (m); 
 }
 
 /* =============== bodies =============== */
-/* 37 lb (17 kg) V10 built from its parts, frame-local (m, kg): sprung CoM and pitch inertia follow from them */
-const PARTS = [[3.6, 0.12, 0.34], [2.9, 0.62, 0.42], [0.9, 0.50, 0.66], [1.2, 0.0, 0.14], [0.3, -0.15, 0.55], [1.2, 0.02, 0.02], [0.8, 0.30, 0.20]];   // frame+links, Fox 40, cockpit, DHX2 coil, post+saddle, cranks+drivetrain+pedals, brakes
-const M_UF = 2.6, M_UR = 3.6;                                                 // 29 DD front wheel; 27.5 DD rear with cassette and rotor
+/* the bike built from its parts, frame-local (kg, m): sprung CoM and pitch inertia follow from them (see BIKES) */
+const PARTS = BK.parts;
+const M_UF = BK.mUF, M_UR = BK.mUR;
 const IW_F = 0.72 * M_UF * GEO.rF * GEO.rF, IW_R = 0.70 * M_UR * GEO.rR * GEO.rR;   // most wheel mass sits at the rim and tyre
 const M_SPRUNG = PARTS.reduce((a, q) => a + q[0], 0);
 const COM = V2(PARTS.reduce((a, q) => a + q[0] * q[1], 0) / M_SPRUNG, PARTS.reduce((a, q) => a + q[0] * q[2], 0) / M_SPRUNG);
@@ -850,7 +887,11 @@ function step(dt){
   const mScale = M_RIDER / 78;                                                        // a heavier rider has more authority over the bars, and more mass to move
   const kp = (inAir ? 900 : 350) * mScale, cp = (inAir ? 220 : 150) * mScale;
   Tz += -kp * (chassis.phi - phiRef) - cp * chassis.w;
-  if (tF <= 0 && tR > 0 && v > 2) Tz += riderMode === 'pro' ? 320 : 120;              // front wheel off the ledge: the rider pushes the bars forward and shifts back                               // the rider's arms hold the bars level with the trail; in the air they set the bike up for the landing
+  /* front wheel off a ledge: the rider pushes the bars forward and shifts back so the bike leaves level. Only while
+     the nose is still low and not already rotating up: past that the same push is what loops a bike out, and the
+     rider does the opposite -- straight arms driving the bars down (~M g x 0.4 m of reach), which no roller kick beats. */
+  if (tF <= 0 && tR > 0 && v > 2 && chassis.phi < 0.22 && chassis.w < 2.5) Tz += riderMode === 'pro' ? 320 : 120;
+  if (!inAir && chassis.phi > 0.35) Tz -= (riderMode === 'pro' ? 1400 : 900) * mScale * (chassis.phi - 0.35) + 120 * mScale * Math.max(0, chassis.w);
   const hCg = (M_SPRUNG * COM.y + M_RIDER * rcm.y) / (M_SPRUNG + M_RIDER) + Math.max(0, chassis.y - gF);   // combined CoM height above the ground
   // longitudinal forces at the ground pitch the mass above them: tyre slip forces plus the push-back of bump faces (base grade excluded: that moment is already in the geometry)
   const NcapT = 1.6 * (M_SPRUNG + M_RIDER + M_UF + M_UR) * G9;
@@ -1157,18 +1198,21 @@ function ik(a, b, l1, l2, prefer, maxAngleDeg){
 const angleAt = (a, b, c) => { const v1 = a.clone().sub(b), v2 = c.clone().sub(b); return Math.acos(clamp(v1.dot(v2) / (v1.length() * v2.length()), -1, 1)) / D2R; };
 
 /* colours: Syndicate V10 (gloss black, team blue, white logo band), Fox 40 Kashima, Red Bull helmet */
-const C = { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, sw: 0x14161C, link: 0x1F3B7A, coil: 0x111111, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
+const RV = BK.rig;                                                       // per-bike colours and tube sizes
+const HALF_SHELL = typeof RIG_STYLE !== 'undefined' && RIG_STYLE === 'enduro';   // enduro half shell instead of the full-face
+const C = { frame: RV.frame, frame2: RV.frame2, decal: RV.decal, forkUp: RV.forkUp, forkLow: RV.forkLow, sw: RV.frame, link: RV.frame2, coil: RV.coil, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
   skin: 0xD8AA80, jersey: 0x1F3B7A, pants: 0x15161A, helmet: 0xF2F2F0, shoe: 0x25211E, motor: 0x1B1B1B };
 const P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
 const rig = new THREE.Group(); rig.rotation.order = 'YXZ'; scene.add(rig);
 const frame = new THREE.Group(); rig.add(frame);
 function tube(a, b, t, c, d){ const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; }
-tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), 0.055, C.frame, 0.06);    // top tube, nearly straight
-tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), 0.062, C.frame, 0.062);                                            // down tube
-tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, 0.095);                                      // SANTA CRUZ decal band
-tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), 0.05, C.frame);                                            // seat tube
-tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);                                                 // shock mount strut off the down tube
-tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), 0.065, C.frame);              // head tube
+tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), RV.tt, C.frame, RV.tt * 1.1);   // top tube, nearly straight
+tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), RV.dt, C.frame, RV.dt);                                              // down tube
+tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, RV.dt * 1.5);                                  // decal band
+tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), RV.st, C.frame);                                             // seat tube
+if (RV.strut) tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);                                     // shock mount strut off the down tube (V10)
+else tube(P3(VPP.F.x - 0.02, VPP.F.y - 0.02), P3(VPP.F.x + 0.06, VPP.F.y + 0.05), 0.03, C.frame);                            // shock tab under the top tube (single pivot)
+tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), RV.ht, C.frame);                // head tube
 const chainring = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12), mat(0x3A3A3A)); chainring.rotation.x = Math.PI / 2; chainring.position.set(0, 0, 0.09); frame.add(chainring);
 const brace = limb(1, 0.03, 0.15, C.sw); frame.add(brace);
 const upperLink = limb(1, 0.03, 0.09, C.link); frame.add(upperLink);
@@ -1176,9 +1220,9 @@ const lowerLink = limb(1, 0.035, 0.10, C.link); frame.add(lowerLink);
 const lowerLinkArm = limb(1, 0.03, 0.08, C.link); frame.add(lowerLinkArm);
 const shockBody = limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil = limb(1, 0.072, 0.072, C.coil), shockShaft = limb(1, 0.026, 0.026, 0xC9C2B0);
 frame.add(shockBody, shockCoil, shockShaft);
-const chainL = limb(1, 0.05, 0.04, C.sw), chainR = limb(1, 0.05, 0.04, C.sw), seatL = limb(1, 0.038, 0.032, C.sw), seatR = limb(1, 0.038, 0.032, C.sw);
+const chainL = limb(1, RV.cs, RV.cs * 0.8, C.sw), chainR = limb(1, RV.cs, RV.cs * 0.8, C.sw), seatL = limb(1, RV.ss, RV.ss * 0.85, C.sw), seatR = limb(1, RV.ss, RV.ss * 0.85, C.sw);
 frame.add(chainL, chainR, seatL, seatR);
-const stanchL = limb(1, 0.042, 0.042, C.forkUp), stanchR = limb(1, 0.042, 0.042, C.forkUp), lowerL = limb(1, 0.058, 0.058, C.forkLow), lowerR = limb(1, 0.058, 0.058, C.forkLow), arch = limb(1, 0.04, 0.04, C.forkLow);
+const stanchL = limb(1, RV.stanch, RV.stanch, C.forkUp), stanchR = limb(1, RV.stanch, RV.stanch, C.forkUp), lowerL = limb(1, RV.lower, RV.lower, C.forkLow), lowerR = limb(1, RV.lower, RV.lower, C.forkLow), arch = limb(1, 0.04, 0.04, C.forkLow);
 frame.add(stanchL, stanchR, lowerL, lowerR, arch);
 const post = limb(1, 0.031, 0.031, 0xC8952A); frame.add(post);
 const saddle = box(0.27, 0.045, 0.09, 0x1E1A18); frame.add(saddle);
@@ -1188,8 +1232,11 @@ const GRIP_L = P3(BAR.x, BAR.y, GRIP_Z), GRIP_R = P3(BAR.x, BAR.y, -GRIP_Z);
 const crankL = limb(CRANK, 0.03, 0.025, 0x25211E), crankR = limb(CRANK, 0.03, 0.025, 0x25211E); frame.add(crankL, crankR);
 const pedL = box(0.1, 0.02, 0.07, 0x6F675A), pedR = box(0.1, 0.02, 0.07, 0x6F675A); frame.add(pedL, pedR);
 /* rider */
-const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.15, 0.15, 0.15, C.skin), helmet = box(0.22, 0.20, 0.21, C.helmet), visor = box(0.11, 0.025, 0.2, C.helmet);
-const chinBar = box(0.075, 0.07, 0.19, C.helmet), goggle = box(0.02, 0.06, 0.17, 0x1E1A18);
+/* full-face: a shell around the whole head plus a chin bar. Half shell: a shorter shell that sits on top and wraps the
+   back, leaving the face open -- the enduro lid. */
+const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.15, 0.15, 0.15, C.skin),
+      helmet = HALF_SHELL ? box(0.19, 0.125, 0.205, C.helmet) : box(0.22, 0.20, 0.21, C.helmet), visor = box(0.11, 0.025, 0.2, C.helmet);
+const chinBar = HALF_SHELL ? new THREE.Object3D() : box(0.075, 0.07, 0.19, C.helmet), goggle = box(0.02, 0.06, 0.17, 0x1E1A18);
 const hipBox = box(0.17, 0.14, 0.22, C.pants);
 const uArmL = limb(0.31, 0.06, 0.06, C.jersey), lArmL = limb(0.29, 0.05, 0.05, C.jersey), uArmR = limb(0.31, 0.06, 0.06, C.jersey), lArmR = limb(0.29, 0.05, 0.05, C.jersey);
 const thighL = limb(0.44, 0.085, 0.085, C.pants), shinL = limb(0.44, 0.065, 0.065, C.pants), thighR = limb(0.44, 0.085, 0.085, C.pants), shinR = limb(0.44, 0.065, 0.065, C.pants);
@@ -1221,7 +1268,7 @@ function pose(dt){
   const k = vtLookup(wheelR.t);
   const axR = P3(k.ax, k.ay);
   aimLimb(lowerLink, P3(VPP.P1.x, VPP.P1.y), P3(k.P2.x, k.P2.y));
-  aimLimb(lowerLinkArm, P3(VPP.P1.x, VPP.P1.y), P3(k.S.x, k.S.y));
+  aimLimb(lowerLinkArm, P3(VPP.P1.x, VPP.P1.y), VPP.kind === 'single' ? P3(VPP.P1.x, VPP.P1.y) : P3(k.S.x, k.S.y));   // single pivot: the upper link IS the strut
   aimLimb(upperLink, P3(VPP.P3.x, VPP.P3.y), P3(k.P4.x, k.P4.y));
   for (const [cs, ss, zz] of [[chainL, seatL, 0.075], [chainR, seatR, -0.075]]){
     aimLimb(cs, P3(k.P2.x, k.P2.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(k.P4.x, k.P4.y, zz), P3(axR.x, axR.y, zz)); }
@@ -1257,7 +1304,8 @@ function pose(dt){
   aimLimb(torso, shoulders, hips);
   const neck = tor + 35 * D2R;
   head.position.set(shoulders.x + 0.17 * Math.cos(neck), shoulders.y + 0.17 * Math.sin(neck), 0);
-  helmet.position.set(head.position.x - 0.01, head.position.y + 0.02, 0); helmet.rotation.z = neck - 90 * D2R;
+  if (HALF_SHELL){ helmet.position.set(head.position.x - 0.035, head.position.y + 0.045, 0); helmet.rotation.z = (neck - 90 * D2R) * 0.5; }
+  else { helmet.position.set(head.position.x - 0.01, head.position.y + 0.02, 0); helmet.rotation.z = neck - 90 * D2R; }
   visor.position.set(head.position.x + 0.10, head.position.y + 0.11, 0); visor.rotation.z = -0.25;
   chinBar.position.set(head.position.x + 0.12, head.position.y - 0.045, 0); goggle.position.set(head.position.x + 0.10, head.position.y + 0.035, 0);
   numberPlate.position.set(BAR.x + 0.04, BAR.y + 0.02, 0);
@@ -1285,11 +1333,22 @@ function pose(dt){
   }
   jointsOut.knee = kneeAng; jointsOut.elbow = elbowAng; jointsOut.torso = cur.torso - Math.atan(gradeS) / D2R + chassis.phi / D2R;
   /* camera & backdrop follow */
-  /* roll: a second-order response to the lean the corner asks for (the rider steers into it) */
+  /* roll: the bike is an inverted pendulum standing on its contact line, and the only thing that can lean it is the
+     steer angle. To start a lean the rider steers OUT of the turn for a moment (countersteer: the contact line moves out
+     from under the mass), then holds the geometric steer that balances the lean. The controller below does exactly
+     that, so the bars visibly flick the wrong way at every turn-in, and the lean rate is what speed and steer give
+     rather than a spring. In the air nothing pushes back: the lean holds. Below ~8 mph the model is not meaningful
+     and the speed is floored. */
+  const H_CG = 1.05, VLEAN = Math.max(3.5, v), inAir = poseState === 'air';
   const gyro = 0.9 * (wheelF.I * wheelF.om + wheelR.I * wheelR.om);                // spinning wheels resist being rolled
-  leanAcc = 60 * (corner.lean - leanVis) - (14 + gyro) * leanVel; leanVel += leanAcc * dt; leanVis += leanVel * dt;
+  const steerHold = clamp(G9 * GEO.wb * Math.sin(leanVis) / (VLEAN * VLEAN), -0.5, 0.5);      // the steer that balances this lean
+  const steerCmd = inAir ? steerVis * 0.9 : clamp(steerHold - 0.35 * (corner.lean - leanVis) + 0.12 * leanVel, -0.55, 0.55);
+  steerVis += (steerCmd - steerVis) * Math.min(1, dt * 14);                       // the bars cannot move instantly
+  leanAcc = inAir ? -1.5 * leanVel
+          : (G9 / H_CG) * Math.sin(leanVis) - (VLEAN * VLEAN / (H_CG * GEO.wb)) * Math.tan(steerVis) * Math.cos(leanVis) - (1.2 + 0.4 * gyro) * leanVel;
+  leanVel += leanAcc * dt; leanVis = clamp(leanVis + leanVel * dt, -1.1, 1.1);
   const av = Math.min(1, dt * 5);
-  steerVis += (clamp(-PW.kappa * 2.2, -0.5, 0.5) - steerVis) * av; headTurnVis += (clamp(-pathAt(scroll + 6).kappa * 3, -0.7, 0.7) - headTurnVis) * av;
+  headTurnVis += (clamp(-pathAt(scroll + 6).kappa * 3, -0.7, 0.7) - headTurnVis) * av;
   /* chase camera: behind and to the right, orbitable by drag */
   const fx = Math.cos(PW.theta), fz = Math.sin(PW.theta), rx = -fz, rz = fx;
   const az = camAz, r = 5.6, el = 0.33 + camEl;

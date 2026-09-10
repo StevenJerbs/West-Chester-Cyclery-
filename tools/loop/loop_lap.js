@@ -36,9 +36,12 @@ const bankAt = __L.bankAt, lineLimit = __L.lineLimit;
 `;
 
 /* ---- the UI the lab's physics reads its setup from ------------------------------------------------- */
-const DEF = { rlb: 150, effort: 300, vcap: 26, rSpring: 475, rLsc: 8, rHsc: 4, rLsr: 8, rHsr: 4,
-              fSpring: 72, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
+/* the same bike and setup the page uses (tools/loop/page/ui.js): the Starling Murmur, 450 lb/in coil, rebound slowed */
+const DEF = { rlb: 150, effort: 300, vcap: 26, rSpring: 450, rLsc: 7, rHsc: 5, rLsr: 10, rHsr: 6,
+              fSpring: 92, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
+if (process.env.SETUP) Object.assign(DEF, JSON.parse(process.env.SETUP));   // e.g. SETUP='{"rSpring":450,"rHsc":5}' for a sweep
 const uiGlue = `
+const BIKE = 'murmur';
 const ui = new Proxy({}, { get: (t, k) => t[k] || (t[k] = { value: __DEF[k] !== undefined ? __DEF[k] : 0, textContent: '', style: {} }) });
 `;
 
@@ -52,6 +55,7 @@ for (let i = 0; i < 600 * 400; i++){
   const before = lap;
   const segBefore = segAt(scroll)[0];
   step(PDT); t += PDT;
+  if (lap > before) break;                       // the step that closed the lap is back at the trailhead: do not book it there
   const [g, gt] = segAt(scroll);
   const air = wheelF.tire <= 0 && wheelR.tire <= 0;
   const zn = g.zone || 'RETURN';
@@ -84,7 +88,6 @@ for (let i = 0; i < 600 * 400; i++){
       +wheelF.s.toFixed(4), +wheelR.t.toFixed(4), +rider.u.toFixed(4), +cur.hx.toFixed(3), +cur.hy.toFixed(3),
       +cur.torso.toFixed(2), poseState, +crank.toFixed(3), +corner.lean.toFixed(4), +brakeF.toFixed(0),
       air ? 1 : 0, +wheelF.y.toFixed(4), +wheelR.y.toFixed(4), +dropper.toFixed(3)]); }
-  if (lap > before) break;
 }
 __report({ rider: '${rider}', lapTime: t, minV, stalls, zones: [...zones.values()], events, traj,
   COURSE, COURSE_LEN, GEO, PATH,
