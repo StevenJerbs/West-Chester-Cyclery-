@@ -48,6 +48,14 @@
   .stam i.low{background:var(--brake)}
   .weight{width:min(34vw, 220px); height:22px; position:relative}
   .weight canvas{width:100%; height:100%; display:block}
+  .lean{font-family:var(--disp); font-size:clamp(8px, 1.8vh, 11px); letter-spacing:1px; color:var(--dim); font-variant-numeric:tabular-nums}
+  .lean.f{color:var(--accent)} .lean.r{color:var(--blue)}
+  .tiltcheck{display:grid; grid-template-columns:minmax(160px, 260px) 1fr; gap:12px; align-items:center; border:2px solid var(--line); padding:8px}
+  .tiltcheck canvas{width:100%; height:auto; display:block; background:var(--panel2)}
+  .tcTxt{display:flex; flex-direction:column; gap:4px}
+  .tcTxt .v{font-size:clamp(11px, 2.4vh, 14px); font-weight:600}
+  .tcTxt button{align-self:flex-start; padding:7px 10px; font-size:9px}
+  @media (max-width:640px){ .tiltcheck{grid-template-columns:1fr} }
   .toast{position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); font-family:var(--disp); font-size:clamp(12px, 3.6vh, 24px); letter-spacing:1px; color:var(--ink); text-shadow:3px 3px 0 #15170f; opacity:0; transition:opacity .25s; text-align:center; white-space:nowrap}
   .toast.on{opacity:1}
   .toast.good{color:var(--pedal)} .toast.bad{color:var(--brake)} .toast.gold{color:var(--accent)}
@@ -92,6 +100,7 @@
   #rotate .ph{width:38px; height:64px; border:3px solid var(--accent); border-radius:6px; animation:turn 1.6s ease-in-out infinite}
   @keyframes turn{0%,20%{transform:rotate(0)} 60%,100%{transform:rotate(-90deg)}}
   @media (orientation: portrait) and (pointer: coarse){ #rotate{display:flex} }
+  @media (max-height: 520px){ .sub.pump{display:none} .how .v{display:none} .card{gap:7px; padding:10px 14px} .blurb{min-height:0} }
   @media (prefers-reduced-motion: reduce){ #rotate .ph{animation:none; transform:rotate(-90deg)} .toast{transition:none} }
   .tiny{font-size:10px; color:var(--dim)}
   .tiny a{color:var(--blue)}
@@ -109,9 +118,9 @@
   <div class="pad" id="padR"><div class="tag">PEDAL ▶</div></div>
   <div class="hudTL"><div class="speed"><span id="spd">0</span><small>MPH</small></div><div class="sec" id="secName">THE START</div></div>
   <div class="hudTR"><div class="timer" id="timer">0:00.0</div><div class="best" id="bestT">best –</div>
-    <div class="hudBtns"><button type="button" id="fxBtn" title="post-processing and shadows">FX · HIGH</button><button type="button" id="sndBtn" title="sound">SND · ON</button><button type="button" id="quitBtn">MENU</button></div></div>
+    <div class="hudBtns"><button type="button" id="fxBtn" title="post-processing and shadows">FX · HIGH</button><button type="button" id="musBtn" title="music">MUSIC · ON</button><button type="button" id="sndBtn" title="sound effects">SND · ON</button><button type="button" id="quitBtn">MENU</button></div></div>
   <div class="coach" id="coach">TAP TO RIDE</div>
-  <div class="meter"><div class="weight"><canvas id="wcv" width="440" height="44"></canvas></div><div class="stam"><i id="stam"></i></div></div>
+  <div class="meter"><div class="lean" id="lean">TILT · CENTRED</div><div class="weight"><canvas id="wcv" width="440" height="44"></canvas></div><div class="stam"><i id="stam"></i></div></div>
   <div class="toast" id="toast"></div>
   <div class="count" id="count">3</div>
 </div>
@@ -127,9 +136,10 @@
       <div class="how ped"><div class="k">RIGHT THUMB · PEDAL</div><div class="v">Hold to pedal. Stamina runs out; coast to get it back. Key: ↑ or W</div></div>
       <div class="how brk"><div class="k">LEFT THUMB · BRAKE</div><div class="v">Hold to brake. Brake hard with your weight forward on a steep and you go over the bars. Key: ↓ or S</div></div>
     </div>
-    <p class="sub"><b>Pumping:</b> come up tall through the bottom of the trough, press forward over the crest, pull back and up off a lip, weight back off a drop, level the bike to the landing. Cased landings cost speed; a bad one costs the run.</p>
-    <div class="row"><button type="button" class="pri big" id="rideBtn">TAP TO RIDE</button><span class="sp"></span><button type="button" id="fxBtn2">FX · HIGH</button><button type="button" id="sndBtn2">SND · ON</button></div>
-    <div class="tiny">Full screen in landscape. On iPhone the motion permission dialog appears once. <span id="tiltState">Tilt: not detected yet, keyboard works.</span></div>
+    <p class="sub pump"><b>Pumping:</b> come up tall through the bottom of the trough, press forward over the crest, pull back and up off a lip, weight back off a drop, level the bike to the landing. Cased landings cost speed; a bad one costs the run.</p>
+    <div class="tiltcheck"><canvas id="tcv" width="420" height="120"></canvas><div class="tcTxt"><div class="lbl">TILT CHECK · ROLL THE PHONE</div><div class="v" id="tiltState">Waiting for the sensor</div><div class="tiny" id="tiltRaw">Clockwise (right end down) weights the front axle, counter-clockwise the rear.</div><button type="button" id="tiltBtn">ENABLE TILT</button></div></div>
+    <div class="row"><button type="button" class="pri big" id="rideBtn">TAP TO RIDE</button><span class="sp"></span><button type="button" id="fxBtn2">FX · HIGH</button><button type="button" id="musBtn2">MUSIC · ON</button><button type="button" id="sndBtn2">SND · ON</button></div>
+    <div class="tiny">Full screen in landscape. On iPhone, motion access is asked once; sound needs the ringer switch on or the volume buttons up.</div>
   </div>
 </div>
 
@@ -456,17 +466,70 @@ const CTL = { tilt: 0, pedal: 0, brake: 0 };                                    
 const R = { events: [] };
 function resetRider(){
   Object.assign(R, { x: 0, v: 0, vd: 0, u: 0, ud: 0, udd: 0, h: H0, hd: 0, hdd: 0, hs: 0, hsd: 0, air: false, airT: 0, pitch: 0, pw: 0, N: PH.M * G9, brake: 0, st: 1, crashed: false, crashT: 0, done: false, time: 0,
-    tookOff: 0, unloadT: 0, secIdx: 0, checkpoint: 0, travF: PH.sagF, travR: PH.sagR, travFd: 0, travRd: 0, crank: Math.PI / 2, lastKind: '', by: 0, manual: 0, vSm: 0, finT: 0, vBody: 0, thump: 0, crashSnd: false });
+    tookOff: 0, unloadT: 0, secIdx: 0, checkpoint: 0, travF: PH.sagF, travR: PH.sagR, travFd: 0, travRd: 0, crank: Math.PI / 2, lastKind: '', by: 0, manual: 0, vSm: 0, finT: 0, vBody: 0, thump: 0, crashSnd: false, camX: 0, camY: 0 });
+  RAG.on = false;
   R.S = surf(0); R.com = V2(0, 0); R.cv = V2(0, 0); R.led = { pump: 0, ped: 0, mot: 0, brake: 0, drag: 0, land: 0, grav: 0 }; R.stats = { top: 0, airMax: 0, crashes: 0, landings: 0, clean: 0 }; R.events.length = 0; R.lastLand = null;
 }
 const event = (text, cls) => R.events.push({ text, cls: cls || '' });
 function respawn(){ const sec = COURSE.sections[R.secIdx]; let x = Math.max(0.5, sec.x0 - 14);   /* back on the run-in, with a push and room to pedal */
   while (x < sec.x0 - 2 && (Math.abs(surf(x).th) > 0.6 || COURSE.edges.some(e => x >= e.x - 0.5 && x < e.x + 1.5))) x += 0.5;
-  R.x = x; R.S = surf(R.x); R.v = 6.0; R.u = 0; R.ud = 0; R.h = H0; R.hd = 0; R.hs = 0; R.hsd = 0; R.air = false; R.pitch = R.S.th; R.pw = 0; R.brake = 0; R.st = Math.min(1, R.st + 0.35); R.crashed = false; R.travF = PH.sagF; R.travR = PH.sagR; R.travFd = R.travRd = 0; R.unloadT = 0; }
-function crash(msg){
-  const th = R.air ? R.pitch : R.S.th, vx = R.air ? R.cv.x : R.v * Math.cos(th), vy = R.air ? R.cv.y : R.v * Math.sin(th);
-  R.crashed = true; R.crashT = 0; R.air = false; R.stats.crashes++; R.crashSnd = true; R.crashV = V2(vx * 0.75, Math.max(vy * 0.5, 0) + 1.5); R.crashPos = V2(R.x, R.S.y + 0.2); R.crashSpin = -(2.5 + Math.min(4, Math.abs(vx) * 0.3)); R.crashRot = th; R.N = 0;
+  R.x = x; R.S = surf(R.x); R.v = 6.0; R.u = 0; R.ud = 0; R.h = H0; R.hd = 0; R.hs = 0; R.hsd = 0; R.air = false; R.pitch = R.S.th; R.pw = 0; R.brake = 0; R.st = Math.min(1, R.st + 0.35); R.crashed = false; RAG.on = false; R.travF = PH.sagF; R.travR = PH.sagR; R.travFd = R.travRd = 0; R.unloadT = 0; }
+/* =============== the crash: rider and bike part company, and both tumble on their own physics ===============
+   Eleven particles for the body (hips, shoulders, head, elbows, hands, knees, feet) joined by distance constraints
+   for the bones and minimum-distance constraints for the joint limits; two particles for the bike's axles joined
+   by the wheelbase. Verlet integration with the ground as a heightfield: push out, a little bounce, friction that
+   depends on what touched (a wheel rolls, a body scrapes). Position-based dynamics, five passes per step. */
+const RAG = { on: false, P: [], C: [], t: 0, rest: 0, kind: '' };
+const BONES = [['hip', 'sh', 0.50], ['sh', 'head', 0.17], ['sh', 'elbL', 0.31], ['elbL', 'handL', 0.29], ['sh', 'elbR', 0.31], ['elbR', 'handR', 0.29], ['hip', 'kneeL', 0.44], ['kneeL', 'footL', 0.44], ['hip', 'kneeR', 0.44], ['kneeR', 'footR', 0.44]];
+const LIMITS = [['head', 'hip', 0.54], ['sh', 'handL', 0.14], ['sh', 'handR', 0.14], ['hip', 'footL', 0.22], ['hip', 'footR', 0.22], ['sh', 'kneeL', 0.30], ['sh', 'kneeR', 0.30], ['head', 'kneeL', 0.40], ['head', 'kneeR', 0.40],
+  ['hip', 'axR', 0.40], ['hip', 'axF', 0.40], ['head', 'axR', 0.36], ['head', 'axF', 0.36], ['sh', 'axR', 0.36], ['sh', 'axF', 0.36]];
+const RAG_ID = ['hip', 'sh', 'head', 'elbL', 'handL', 'elbR', 'handR', 'kneeL', 'footL', 'kneeR', 'footR', 'axR', 'axF'];
+function crash(msg, kind){
+  const air = R.air, th = air ? R.pitch : R.S.th, c = Math.cos(th), s = Math.sin(th), vbx = air ? R.cv.x : R.v * c, vby = air ? R.cv.y : R.v * s, pw = air ? R.pw : 0;
+  R.crashed = true; R.crashT = 0; R.air = false; R.stats.crashes++; R.crashSnd = true; R.N = 0; R.crashRot = th; kind = kind || 'case';
+  /* the body as it sits on the bike now, frame-local, then into the world */
+  const bbx = R.x - bike.geo.bb * s, bby = R.S.y + bike.geo.bb * c, W = (lx, ly) => V2(bbx + lx * c - ly * s, bby + lx * s + ly * c);
+  const hip = V2(-0.22 + 0.85 * R.u - 0.10 * (R.h - H0), R.h - 0.30), tor = clamp(34 - 70 * R.u + 36 * (H0 - R.h), 8, 62) * D2R;
+  const sh = V2(hip.x + 0.5 * Math.cos(tor), hip.y + 0.5 * Math.sin(tor)), head = V2(sh.x + 0.17 * Math.cos(tor + 35 * D2R), sh.y + 0.17 * Math.sin(tor + 35 * D2R));
+  const ca = R.crank, pedL = V2(Math.sin(ca) * 0.165, Math.cos(ca) * 0.165), pedR = V2(-pedL.x, -pedL.y), hand = V2(G.BAR.x, G.BAR.y);
+  const mid = (a, b, ox, oy) => V2((a.x + b.x) / 2 + ox, (a.y + b.y) / 2 + oy);
+  const L = { hip, sh, head, elbL: mid(sh, hand, 0, -0.10), handL: hand, elbR: mid(sh, hand, 0, -0.10), handR: V2(hand.x, hand.y), kneeL: mid(hip, pedL, 0.12, 0), footL: pedL, kneeR: mid(hip, pedR, 0.12, 0), footR: pedR, axR: G.AX0, axF: G.axleF(PH.sagF) };
+  const MASS = { hip: 22, sh: 16, head: 6, elbL: 3, handL: 1.5, elbR: 3, handR: 1.5, kneeL: 5, footL: 2, kneeR: 5, footR: 2, axR: PH.mB / 2, axF: PH.mB / 2 };
+  const RAD = { hip: 0.13, sh: 0.13, head: 0.11, elbL: 0.05, handL: 0.045, elbR: 0.05, handR: 0.045, kneeL: 0.06, footL: 0.05, kneeR: 0.06, footR: 0.05, axR: bike.geo.rR, axF: bike.geo.rF };
+  /* the throw: over the bars sends the body forward and rolling, a loop-out sends it back, a case drops it */
+  const K = kind === 'otb' ? { kx: 1.6, ky: 1.6, w: -4.5, bw: -5 } : kind === 'loop' ? { kx: -1.2, ky: 1.2, w: 3.5, bw: 4 } : kind === 'wall' ? { kx: -0.8, ky: 1.4, w: -2.5, bw: -3 } : { kx: 1.0, ky: 0.8, w: -2.5, bw: -3 };
+  const hipW = W(hip.x, hip.y), bp = W(0, 0), dt = 1 / 600; RAG.P = []; RAG.C = []; RAG.t = 0; RAG.rest = 0; RAG.kind = kind; RAG.on = true;
+  for (const id of RAG_ID){ const p = W(L[id].x, L[id].y), isBike = id === 'axR' || id === 'axF', cx = isBike ? bp : hipW, wv = isBike ? pw + K.bw : pw + K.w;
+    const vx = vbx + (isBike ? 0.3 : K.kx) - wv * (p.y - cx.y), vy = vby + (isBike ? 0.2 : K.ky) + wv * (p.x - cx.x);
+    RAG.P.push({ id, x: p.x, y: p.y, px: p.x, py: p.y, vx, vy, w: 1 / MASS[id], r: RAD[id], f: isBike ? 0.12 : 0.55, hit: 0 }); }
+  const ix = id => RAG_ID.indexOf(id);
+  for (const b of BONES) RAG.C.push({ a: ix(b[0]), b: ix(b[1]), len: b[2] });
+  RAG.C.push({ a: ix('axR'), b: ix('axF'), len: Math.hypot(L.axF.x - L.axR.x, L.axF.y - L.axR.y) });
+  for (const l of LIMITS) RAG.C.push({ a: ix(l[0]), b: ix(l[1]), min: l[2] });
+  for (let it = 0; it < 14; it++) ragSolve();                                            // settle the joints onto the bones first, so the snap never becomes a throw
+  for (const p of RAG.P){ p.px = p.x - p.vx * dt; p.py = p.y - p.vy * dt; }
+  RAG.thumpT = 0;
+  R.travF = PH.sagF; R.travR = PH.sagR; R.travFd = R.travRd = 0;
   event(msg, 'bad');
+}
+function ragSolve(){ const P = RAG.P;
+  for (const c of RAG.C){ const a = P[c.a], b = P[c.b], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6; let corr;
+    if (c.min !== undefined){ if (d >= c.min) continue; corr = (d - c.min) / d; } else corr = (d - c.len) / d;
+    const wa = a.w / (a.w + b.w), wb = b.w / (a.w + b.w); a.x += wa * corr * dx; a.y += wa * corr * dy; b.x -= wb * corr * dx; b.y -= wb * corr * dy; }
+}
+function stepRag(dt){
+  RAG.t += dt; RAG.thumpT += dt; const P = RAG.P;
+  for (const p of P){ const vx = (p.x - p.px) * 0.999, vy = (p.y - p.py) * 0.999; p.px = p.x; p.py = p.y; p.x += vx; p.y += vy - G9 * dt * dt; }
+  for (let it = 0; it < 5; it++){
+    ragSolve();
+    for (const p of P){ const gy = COURSE.yS(p.x) + p.r; if (p.y < gy){ const vy = p.y - p.py, vx = p.x - p.px; p.y = gy; p.py = p.y + vy * 0.25; p.px = p.x - vx * (1 - p.f);
+        if (it === 0 && -vy / dt > 1.6){ p.hit = -vy / dt; } } }
+  }
+  let sp = 0, hitMax = 0; for (const p of P){ sp += Math.hypot(p.x - p.px, p.y - p.py) / dt; if (p.hit){ hitMax = Math.max(hitMax, p.hit); p.hit = 0; } } sp /= P.length;
+  if (hitMax > 2.2 && RAG.t > 0.05 && RAG.thumpT > 0.16){ R.thump = Math.min(hitMax, 8); RAG.thumpT = 0; }
+  RAG.rest = sp < 0.35 ? RAG.rest + dt : 0;
+  const hip = P[0]; R.camX = hip.x; R.camY = COURSE.yS(hip.x); R.v = Math.min(sp, 15); R.vBody = R.v; R.x = (P[11].x + P[12].x) / 2; R.S = { y: COURSE.yS(R.x), th: 0, k: 0, kp: 0 };
+  if (RAG.t > 2.8 || (RAG.t > 1.5 && RAG.rest > 0.45)){ RAG.on = false; respawn(); }
 }
 function suspStep(dt, load){                                                             // the fork and shock follow the load, with a bounce: visual, and where a landing's hit goes
   const g = bike.geo, tF = clamp(PH.sagF * load, 0, g.forkTravel), tR = clamp(PH.sagR * load, 0, g.travelR), w = 26;
@@ -503,10 +566,10 @@ function land(which){
   R.led.land -= lost;
   R.v = Math.max(0.3, vbt * Math.cos(mis)); R.lastLand = { gap, airT, into, mis, which };
   const deg = Math.round(Math.abs(mis) / D2R);
-  if (Math.abs(S.th) > 0.85) return crash('CAME UP SHORT · into the gap');
-  if (mis < -PH.misNose) return crash('OVER THE BARS · nose ' + deg + '° down into the landing');
-  if (mis > PH.misTail) return crash('LOOPED OUT · tail ' + deg + '° down');
-  if (into > PH.vCrit) return crash('CASED · ' + into.toFixed(1) + ' m/s into the ground is more than ' + Math.round(bike.geo.travelR * 1000) + ' mm can take');
+  if (Math.abs(S.th) > 0.85) return crash('CAME UP SHORT · into the gap', 'wall');
+  if (mis < -PH.misNose) return crash('OVER THE BARS · nose ' + deg + '° down into the landing', 'otb');
+  if (mis > PH.misTail) return crash('LOOPED OUT · tail ' + deg + '° down', 'loop');
+  if (into > PH.vCrit) return crash('CASED · ' + into.toFixed(1) + ' m/s into the ground is more than ' + Math.round(bike.geo.travelR * 1000) + ' mm can take', 'case');
   R.hsd -= into * 0.45; R.travFd += into * 0.9 * (which === 'front' ? 1 : 0.6); R.travRd += into * 0.9 * (which === 'rear' ? 1 : 0.6);
   R.pitch = S.th; R.pw = 0; R.stats.landings++;
   const clean = into < 2.4 && Math.abs(mis) < 0.17; if (clean) R.stats.clean++;
@@ -547,8 +610,8 @@ function stepGround(dt){
   const e = COURSE.edgeBetween(xPrev, R.x);
   if (e){ R.x = e.x - 0.01; R.S = surf(e.x - 0.06); takeoff(e.kind); return; }              // the lip ends, the ledge drops away: the bike leaves along the face it was on
   if (R.unloadT > 0.03){ const e2 = COURSE.nextEdge(R.x); takeoff(e2 && e2.x - R.x < 0.6 ? e2.kind : 'crest'); return; }   // it cannot pull: the wheels leave
-  if (S.th > 0.85) return crash('INTO THE WALL · came up short');
-  if (R.brake > 0.7 && R.u > 0.55 * U_MAX && S.th < -0.18 && v > 3) return crash('OVER THE BARS · hard on the brakes with your weight forward on a steep');
+  if (S.th > 0.85) return crash('INTO THE WALL · came up short', 'wall');
+  if (R.brake > 0.7 && R.u > 0.55 * U_MAX && S.th < -0.18 && v > 3) return crash('OVER THE BARS · hard on the brakes with your weight forward on a steep', 'otb');
   R.pitch = S.th; R.pw = 0; R.vBody = R.v * f;
   R.manual += ((-CTL.tilt > 0.72 && v > 2 ? (-CTL.tilt - 0.72) / 0.28 * 0.28 : 0) - R.manual) * Math.min(1, dt * 6);   // weight far back lifts the front wheel: a manual, visual only
 }
@@ -570,16 +633,10 @@ function stepAir(dt){
   const fPen = COURSE.yS(fX) - fY, rPen = COURSE.yS(rX) - rY;
   if (R.airT > 0.08 && (fPen >= 0 || (rPen >= 0 && R.x - R.tookOff > hw + 0.1))) land(fPen >= rPen ? 'front' : 'rear');   // the rear wheel is still on the lip or the ledge until the bike has moved half a wheelbase
 }
-function stepCrash(dt){
-  R.crashT += dt; const p = R.crashPos, cv = R.crashV;
-  cv.y -= G9 * dt; p.x += cv.x * dt; p.y += cv.y * dt; const gy = COURSE.yS(p.x) + 0.25;
-  if (p.y < gy){ p.y = gy; cv.y = Math.abs(cv.y) * 0.2; cv.x *= 0.6; R.crashSpin *= 0.5; }
-  R.crashRot += R.crashSpin * dt; R.x = p.x; R.S = { y: p.y, th: R.crashRot, k: 0, kp: 0 }; R.v = Math.hypot(cv.x, cv.y);
-  if (R.crashT > 1.7) respawn();
-}
 function step(dt){
   if (!R.done) R.time += dt;
-  if (R.crashed) stepCrash(dt); else if (R.air) stepAir(dt); else stepGround(dt);
+  if (R.crashed) stepRag(dt); else if (R.air) stepAir(dt); else stepGround(dt);
+  if (!R.crashed){ R.camX = R.x; R.camY = R.S.y; }
   if (!R.crashed){ R.stats.top = Math.max(R.stats.top, R.vBody || 0);
     const si = COURSE.sectionAt(R.x); if (si !== R.secIdx){ R.secIdx = si; event(COURSE.sections[si].name, 'gold'); }
     if (R.x >= COURSE.xFinish && !R.air){ R.done = true; event('FINISH', 'gold'); } }
@@ -780,48 +837,84 @@ function ik(a, b, l1, l2, prefer, maxDeg){ const bb = b.clone(); let dx = bb.x -
   if (d > dMax || d < dMin){ const f = clamp(d, dMin, dMax) / d; dx *= f; dy *= f; bb.x = a.x + dx; bb.y = a.y + dy; d = Math.hypot(dx, dy); }
   const ux = dx / d, uy = dy / d, al = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - al * al)); let px = uy, py = -ux;
   if ((prefer === 'fwd' && px < 0) || (prefer === 'down' && py > 0)){ px = -px; py = -py; } return { joint: new THREE.Vector3(a.x + ux * al + px * h, a.y + uy * al + py * h, (a.z + bb.z) / 2), end: bb }; }
-const CK = { tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, jersey: 0x2B3A4A, pants: 0x15161A, shoe: 0x25211E, lid: 0xD9A441 };
+const CK = { tire: 0x2B2622, wall: 0xC9A87A, rim: 0x1C1C1C, hub: 0x3A3A3A, skin: 0xD8AA80, jersey: 0x2F3E52, jersey2: 0x1F2A38, pants: 0x15161A, shoe: 0x25211E, sole: 0x4A4540, lid: 0xD9A441, lid2: 0x1d1a10, glove: 0x1E1A18, pad: 0x1E1E22, steel: 0xC9C2B0, rotor: 0x8E8E8E };
 const GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
-function wheel(r){ const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.TorusGeometry(r - 0.033, 0.036, 6, 18), mat(CK.tire)), new THREE.Mesh(new THREE.TorusGeometry(r - 0.075, 0.014, 5, 18), mat(CK.rim)), box(0.07, 0.07, 0.11, CK.hub));
-  for (let i = 0; i < 6; i++){ const s = box(0.008, (r - 0.075) * 2, 0.008, 0xC9C2B0); s.rotation.z = i * Math.PI / 6; s.position.z = (i % 2 ? 0.02 : -0.02); g.add(s); } return g; }
+const ball = (r, c, d = 1) => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(r, d), mat(c)); m.castShadow = true; return m; };
+const cyl = (r, h, c, n = 12) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, n).rotateX(Math.PI / 2), mat(c)); m.castShadow = true; return m; };
+function wheel(r, tanwall){ const g = new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.TorusGeometry(r - 0.033, 0.036, 7, 22), mat(CK.tire)), new THREE.Mesh(new THREE.TorusGeometry(r - 0.078, 0.014, 5, 22), mat(CK.rim)), cyl(0.03, 0.12, CK.hub, 8));
+  if (tanwall) g.add(new THREE.Mesh(new THREE.TorusGeometry(r - 0.052, 0.022, 5, 22), mat(CK.wall)));
+  for (let i = 0; i < 18; i++){ const k = box(0.028, 0.02, 0.026, CK.tire), a = i / 18 * Math.PI * 2; k.position.set(Math.cos(a) * (r - 0.006), Math.sin(a) * (r - 0.006), (i % 2 ? 0.024 : -0.024)); k.rotation.z = a; k.castShadow = false; g.add(k); }   // tread blocks, staggered
+  for (let i = 0; i < 8; i++){ const sp = box(0.007, (r - 0.078) * 2, 0.007, CK.steel); sp.rotation.z = i * Math.PI / 8; sp.position.z = (i % 2 ? 0.018 : -0.018); sp.castShadow = false; g.add(sp); }
+  const rotor = cyl(0.10, 0.006, CK.rotor, 16); rotor.position.z = -0.065; g.add(rotor); return g; }
 let RIG = null, RIGM = null;
 function buildRig(b){
   const P = b.paint, g = b.geo, e = !!b.motor, rig = new THREE.Group(); rig.rotation.order = 'YXZ'; const frame = new THREE.Group(); rig.add(frame);
   const tube = (a, b2, t, c, d) => { const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b2); return m; };
+  const add = (m, x, y, z, rz) => { m.position.set(x, y, z || 0); if (rz) m.rotation.z = rz; frame.add(m); return m; };
   tube(P3(G.HEAD_TOP.x - 0.01, G.HEAD_TOP.y - 0.01), P3(G.SEAT.x - 0.02, G.SEAT.y + 0.03), 0.048, P.frame, 0.056);
   tube(P3(G.HEAD_BOT.x, G.HEAD_BOT.y + 0.01), P3(e ? 0.10 : 0.06, e ? 0.10 : 0.05), e ? 0.125 : 0.072, P.frame, e ? 0.105 : 0.078);
   tube(P3(G.HEAD_BOT.x - 0.04, G.HEAD_BOT.y - 0.03), P3(0.15, 0.115), 0.02, P.decal, e ? 0.11 : 0.084);
   tube(P3(0.0, 0.0), P3(G.SEAT.x, G.SEAT.y + 0.05), 0.044, P.frame);
   tube(P3(G.HEAD_TOP.x + 0.012, G.HEAD_TOP.y + 0.025), P3(G.HEAD_BOT.x - 0.012, G.HEAD_BOT.y - 0.025), 0.062, P.frame);
-  if (e){ const mo = box(0.21, 0.15, 0.17, 0x1B1B1B); mo.position.set(0.035, 0.03, 0); frame.add(mo); }
-  const boss = box(0.05, 0.05, 0.11, P.link); boss.position.set(G.RP.x, G.RP.y, 0); frame.add(boss);
-  const mount = box(0.04, 0.04, 0.07, P.link); mount.position.set(G.F.x, G.F.y, 0); frame.add(mount);
+  add(cyl(0.05, 0.13, P.frame, 10), 0, 0, 0);                                                   // BB shell
+  if (e){ add(box(0.21, 0.15, 0.17, 0x1B1B1B), 0.035, 0.03, 0); add(box(0.06, 0.05, 0.12, 0x2A2A2A), G.HEAD_BOT.x - 0.02, G.HEAD_BOT.y - 0.06, 0); }   // motor, charge port
+  add(box(0.05, 0.05, 0.11, P.link), G.RP.x, G.RP.y, 0); add(box(0.04, 0.04, 0.07, P.link), G.F.x, G.F.y, 0);
+  add(cyl(0.062, 0.12, CK.hub, 10), 0, 0, 0);                                                   // cassette body sits at the axle; placed in pose
   const half = b.helmet === 'half';
-  const o = { rig, frame, wF: wheel(g.rF), wR: wheel(g.rR), prevRR: null,
+  const o = { rig, frame, wF: wheel(g.rF, true), wR: wheel(g.rR, true), prevRR: null,
     csL: limb(1, 0.05, 0.036, P.rear), csR: limb(1, 0.05, 0.036, P.rear), ssL: limb(1, 0.03, 0.026, P.rear), ssR: limb(1, 0.03, 0.026, P.rear), brace: limb(1, 0.028, 0.14, P.rear), bridge: limb(1, 0.03, 0.14, P.rear),
     rockR: limb(1, 0.032, 0.10, P.link), rockF: limb(1, 0.032, 0.10, P.link), lower: G.lower ? limb(1, G.lower === 'plate' ? 0.012 : 0.03, 0.11, G.lower === 'plate' ? 0x6A6E72 : P.link) : null,
-    shockBody: limb(1, 0.05, 0.05, P.shock), shockShaft: limb(1, 0.022, 0.022, 0xC9C2B0), spring: limb(1, 0.066, 0.066, P.spring),
-    stanchL: limb(1, 0.038, 0.038, P.forkUp), stanchR: limb(1, 0.038, 0.038, P.forkUp), lowerL: limb(1, 0.054, 0.054, P.forkLow), lowerR: limb(1, 0.054, 0.054, P.forkLow), crownB: box(0.06, 0.05, 0.21, P.forkLow),
-    post: limb(1, 0.031, 0.031, 0x1E1E1E), saddle: box(0.26, 0.045, 0.09, 0x1E1A18), stem: limb(1, 0.035, 0.035, 0x1E1E1E), bar: box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x1E1E1E),
-    crankL: limb(CRANK, 0.03, 0.025, 0x25211E), crankR: limb(CRANK, 0.03, 0.025, 0x25211E), pedL: box(0.1, 0.02, 0.07, 0x6F675A), pedR: box(0.1, 0.02, 0.07, 0x6F675A),
-    ring: new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.01, 12).rotateX(Math.PI / 2), mat(0x3A3A3A)),
-    torso: limb(0.5, 0.16, 0.24, CK.jersey), head: box(0.15, 0.15, 0.15, CK.skin), helmet: box(half ? 0.19 : 0.22, half ? 0.14 : 0.20, 0.21, CK.lid), visor: box(0.11, 0.025, 0.2, CK.lid), chin: box(0.075, 0.07, 0.19, CK.lid), goggle: box(0.02, half ? 0.035 : 0.06, 0.17, 0x1E1A18), hipBox: box(0.17, 0.14, 0.22, CK.pants),
-    uArmL: limb(0.31, 0.06, 0.06, CK.jersey), lArmL: limb(0.29, 0.05, 0.05, CK.jersey), uArmR: limb(0.31, 0.06, 0.06, CK.jersey), lArmR: limb(0.29, 0.05, 0.05, CK.jersey),
-    thighL: limb(0.44, 0.085, 0.085, CK.pants), shinL: limb(0.44, 0.065, 0.065, CK.pants), thighR: limb(0.44, 0.085, 0.085, CK.pants), shinR: limb(0.44, 0.065, 0.065, CK.pants), shoeL: box(0.15, 0.055, 0.08, CK.shoe), shoeR: box(0.15, 0.055, 0.08, CK.shoe) };
+    shockBody: limb(1, 0.05, 0.05, P.shock), shockShaft: limb(1, 0.022, 0.022, CK.steel), spring: limb(1, 0.066, 0.066, P.spring), resv: limb(1, 0.034, 0.034, P.shock),
+    stanchL: limb(1, 0.038, 0.038, P.forkUp), stanchR: limb(1, 0.038, 0.038, P.forkUp), lowerL: limb(1, 0.054, 0.054, P.forkLow), lowerR: limb(1, 0.054, 0.054, P.forkLow), crownB: box(0.06, 0.05, 0.21, P.forkLow), arch: limb(1, 0.03, 0.17, P.forkLow),
+    caliperF: box(0.07, 0.04, 0.03, 0x2A2A2A), caliperR: box(0.07, 0.04, 0.03, 0x2A2A2A), cassette: cyl(0.062, 0.06, CK.hub, 10), derail: box(0.05, 0.09, 0.03, 0x2A2A2A), chainT: limb(1, 0.008, 0.012, CK.steel), chainB: limb(1, 0.008, 0.012, CK.steel),
+    post: limb(1, 0.031, 0.031, 0x1E1E1E), saddle: box(0.26, 0.045, 0.09, 0x1E1A18), stem: limb(1, 0.035, 0.035, 0x1E1E1E), bar: box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x1E1E1E), gripL: box(0.04, 0.04, 0.13, P.decal), gripR: box(0.04, 0.04, 0.13, P.decal), leverL: box(0.09, 0.015, 0.02, 0x1E1E1E), leverR: box(0.09, 0.015, 0.02, 0x1E1E1E),
+    crankL: limb(CRANK, 0.03, 0.025, 0x25211E), crankR: limb(CRANK, 0.03, 0.025, 0x25211E), pedL: box(0.1, 0.02, 0.07, 0x6F675A), pedR: box(0.1, 0.02, 0.07, 0x6F675A), ring: cyl(0.085, 0.01, 0x3A3A3A, 16),
+    /* the rider: chest and belly, neck, a rounded head in a rounded helmet, joint balls at elbows and knees, gloves, knee pads, shoes with soles */
+    chest: limb(0.30, 0.20, 0.28, CK.jersey), belly: limb(0.22, 0.17, 0.25, CK.jersey), stripe: box(0.02, 0.18, 0.20, CK.lid), neck: limb(0.09, 0.07, 0.07, CK.skin), hipBox: box(0.18, 0.15, 0.25, CK.pants),
+    head: ball(0.085, CK.skin), helmet: ball(0.128, CK.lid), visor: box(0.13, 0.02, 0.19, CK.lid), chin: box(0.10, 0.07, 0.19, CK.lid), goggle: box(0.02, half ? 0.035 : 0.06, 0.17, CK.lid2), strap: box(0.02, 0.03, 0.26, CK.lid2),
+    uArmL: limb(0.31, 0.066, 0.066, CK.jersey), lArmL: limb(0.29, 0.056, 0.052, CK.jersey2), uArmR: limb(0.31, 0.066, 0.066, CK.jersey), lArmR: limb(0.29, 0.056, 0.052, CK.jersey2), elbL: ball(0.036, CK.jersey, 0), elbR: ball(0.036, CK.jersey, 0), bandL: box(0.075, 0.05, 0.075, P.frame), bandR: box(0.075, 0.05, 0.075, P.frame), handL: box(0.09, 0.05, 0.06, CK.glove), handR: box(0.09, 0.05, 0.06, CK.glove),
+    thighL: limb(0.44, 0.10, 0.10, CK.pants), shinL: limb(0.44, 0.078, 0.075, CK.pants), thighR: limb(0.44, 0.10, 0.10, CK.pants), shinR: limb(0.44, 0.078, 0.075, CK.pants), kneeL: ball(0.052, CK.pad, 0), kneeR: ball(0.052, CK.pad, 0), shoeL: box(0.26, 0.075, 0.10, CK.shoe), shoeR: box(0.26, 0.075, 0.10, CK.shoe), soleL: box(0.27, 0.02, 0.105, CK.sole), soleR: box(0.27, 0.02, 0.105, CK.sole) };
   if (half) o.chin.visible = false;
+  o.helmet.scale.set(1.0, 0.92, 1.0);
   for (const k of Object.keys(o)) if (o[k] && o[k].isObject3D && k !== 'rig' && k !== 'frame' && k !== 'wF' && k !== 'wR') frame.add(o[k]);
   rig.add(o.wF, o.wR);
   aimLimb(o.stem, P3(G.HEAD_TOP.x, G.HEAD_TOP.y), P3(G.BAR.x, G.BAR.y)); o.bar.position.set(G.BAR.x, G.BAR.y, 0);
+  o.gripL.position.set(G.BAR.x, G.BAR.y, GRIP_Z - 0.03); o.gripR.position.set(G.BAR.x, G.BAR.y, -GRIP_Z + 0.03); o.leverL.position.set(G.BAR.x + 0.06, G.BAR.y - 0.02, GRIP_Z - 0.13); o.leverR.position.set(G.BAR.x + 0.06, G.BAR.y - 0.02, -GRIP_Z + 0.13);
   const sad = P3(G.stDir.x * 0.46, G.stDir.y * 0.46); aimLimb(o.post, P3(G.SEAT.x, G.SEAT.y), sad); o.saddle.position.set(sad.x - 0.03, sad.y + 0.02, 0);
   o.ring.position.set(0, 0, 0.065); o.crownB.position.set(G.CROWN.x, G.CROWN.y, 0); o.crownB.rotation.z = Math.atan2(G.dDown.y, G.dDown.x) + Math.PI / 2;
   scene.add(rig); return o;
+}
+/* the body from its joints, frame-local: used for the ride (joints from the IK) and for the crash (joints from the ragdoll) */
+function poseBody(o, J){
+  const tor = Math.atan2(J.sh.y - J.hip.y, J.sh.x - J.hip.x), neck = Math.atan2(J.head.y - J.sh.y, J.head.x - J.sh.x);
+  _a.set(J.hip.x, J.hip.y, 0).lerp(_b.set(J.sh.x, J.sh.y, 0), 0.44); aimLimb(o.belly, _a, P3(J.hip.x, J.hip.y)); aimLimb(o.chest, P3(J.sh.x, J.sh.y), _a);
+  const cx = J.hip.x + 0.72 * (J.sh.x - J.hip.x), cy = J.hip.y + 0.72 * (J.sh.y - J.hip.y); o.stripe.position.set(cx + 0.10 * Math.sin(tor), cy - 0.10 * Math.cos(tor), 0); o.stripe.rotation.z = tor - Math.PI / 2;
+  o.hipBox.position.set(J.hip.x, J.hip.y + 0.01, 0); o.hipBox.rotation.z = tor - Math.PI / 2;
+  aimLimb(o.neck, P3(J.sh.x + 0.09 * Math.cos(neck), J.sh.y + 0.09 * Math.sin(neck)), P3(J.sh.x, J.sh.y));
+  o.head.position.set(J.head.x, J.head.y, 0); o.helmet.position.set(J.head.x - 0.012, J.head.y + 0.015, 0); o.helmet.rotation.z = neck - Math.PI / 2;
+  const fx = Math.cos(neck - Math.PI / 2), fy = Math.sin(neck - Math.PI / 2);                     // the face direction: forward of the helmet
+  o.visor.position.set(J.head.x + fx * 0.11 - fy * 0.10, J.head.y + fy * 0.11 + fx * 0.10, 0); o.visor.rotation.z = neck - Math.PI / 2 - 0.25;
+  o.chin.position.set(J.head.x + fx * 0.12 + fy * 0.05, J.head.y + fy * 0.12 - fx * 0.05, 0); o.chin.rotation.z = neck - Math.PI / 2;
+  o.goggle.position.set(J.head.x + fx * 0.10 - fy * 0.035, J.head.y + fy * 0.10 + fx * 0.035, 0); o.goggle.rotation.z = neck - Math.PI / 2; o.strap.position.set(J.head.x - fx * 0.02, J.head.y - fy * 0.02 + 0.04, 0); o.strap.rotation.z = neck - Math.PI / 2;
+  for (const [ua, la, el, bd, hd, e, h, zz] of [[o.uArmL, o.lArmL, o.elbL, o.bandL, o.handL, J.elbL, J.handL, 0.13], [o.uArmR, o.lArmR, o.elbR, o.bandR, o.handR, J.elbR, J.handR, -0.13]]){
+    _a.set(J.sh.x, J.sh.y - 0.02, zz); _b.set(e.x, e.y, zz * 3.5); _c.set(h.x, h.y, zz > 0 ? GRIP_Z : -GRIP_Z);
+    aimLimb(ua, _a, _b); aimLimb(la, _b, _c); el.position.copy(_b); bd.position.copy(_a).lerp(_b, 0.3); bd.quaternion.copy(ua.quaternion); hd.position.copy(_c); hd.quaternion.copy(la.quaternion); }
+  for (const [th, sn, kn, shoe, sole, k, f, zz] of [[o.thighL, o.shinL, o.kneeL, o.shoeL, o.soleL, J.kneeL, J.footL, 0.10], [o.thighR, o.shinR, o.kneeR, o.shoeR, o.soleR, J.kneeR, J.footR, -0.10]]){
+    _a.set(J.hip.x, J.hip.y, zz); _b.set(k.x, k.y, zz * 1.3); _c.set(f.x, f.y + 0.04, zz * 1.45);
+    aimLimb(th, _a, _b); aimLimb(sn, _b, _c); kn.position.copy(_b); shoe.position.set(f.x - 0.02, f.y + 0.045, _c.z); shoe.rotation.z = J.footAng !== undefined ? J.footAng : -0.2; sole.position.set(f.x - 0.02, f.y + 0.005, _c.z); sole.rotation.z = shoe.rotation.z; }
 }
 function poseRig(o, dt){
   const g = bike.geo, S = R.S, sus = susSolve(G, R.travR, o.prevRR); o.prevRR = sus.RR;
   const axR = sus.AX, axF = G.axleF(R.travF);
   const pl = Math.atan2((axR.y + g.rR) - (axF.y + g.rF), axF.x - axR.x);                 // the frame pitch that puts both tyres on the ground line
-  const base = R.crashed ? R.crashRot : S.th + R.manual;
-  o.rig.position.set(R.x, S.y, 0); o.frame.rotation.z = base + pl; const c = Math.cos(o.frame.rotation.z), s = Math.sin(o.frame.rotation.z);
+  let base = S.th + R.manual, ox = R.x, oy = S.y;
+  if (R.crashed && RAG.on){                                                               // the bike from the ragdoll's axle stick
+    const ar = RAG.P[11], af = RAG.P[12]; base = Math.atan2(af.y - ar.y, af.x - ar.x) - pl;
+    const cc = Math.cos(base + pl), ss = Math.sin(base + pl), liftY0 = -(axR.x * ss + axR.y * cc) + g.rR * Math.cos(base);
+    ox = ar.x - (axR.x * cc - axR.y * ss); oy = ar.y - (liftY0 + axR.x * ss + axR.y * cc);
+  }
+  o.rig.position.set(ox, oy, 0); o.frame.rotation.z = base + pl; const c = Math.cos(o.frame.rotation.z), s = Math.sin(o.frame.rotation.z);
   const liftY = -(axR.x * s + axR.y * c) + g.rR * Math.cos(base);                        // rear tyre on the ground line
   o.frame.position.set(0, liftY, 0);
   o.wF.position.set(axF.x * c - axF.y * s, liftY + axF.x * s + axF.y * c, 0); o.wR.position.set(axR.x * c - axR.y * s, liftY + axR.x * s + axR.y * c, 0);
@@ -829,23 +922,30 @@ function poseRig(o, dt){
   o.wF.rotation.z -= R.v / g.rF * dt; o.wR.rotation.z -= R.v / g.rR * dt * (skid ? 0.12 : 1);
   if (skid && DUST) DUST.spawn(R.x + (axR.x * c - axR.y * s), S.y + 0.05, 0.1, 2, -R.v * 0.3, 0.6);
   for (const [cs, ss, zz] of [[o.csL, o.ssL, 0.075], [o.csR, o.ssR, -0.075]]){ aimLimb(cs, P3(G.P1.x, G.P1.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(sus.SSA.x, sus.SSA.y, zz), P3(sus.RR.x, sus.RR.y, zz)); }
-  _a.set(sus.SSA.x, sus.SSA.y, 0).lerp(_b.set(sus.RR.x, sus.RR.y, 0), 0.5); _c.subVectors(_b, _a).normalize().multiplyScalar(0.035); aimLimb(o.brace, _b.copy(_a).sub(_c), _a.add(_c));   // the seatstay bridge
-  _a.set(G.P1.x, G.P1.y, 0).lerp(_b.set(axR.x, axR.y, 0), 0.35); _c.subVectors(_b, _a).normalize().multiplyScalar(0.035); aimLimb(o.bridge, _b.copy(_a).sub(_c), _a.add(_c));   // the chainstay bridge
+  _a.set(sus.SSA.x, sus.SSA.y, 0).lerp(_b.set(sus.RR.x, sus.RR.y, 0), 0.5); _c.subVectors(_b, _a).normalize().multiplyScalar(0.035); aimLimb(o.brace, _b.copy(_a).sub(_c), _a.add(_c));
+  _a.set(G.P1.x, G.P1.y, 0).lerp(_b.set(axR.x, axR.y, 0), 0.35); _c.subVectors(_b, _a).normalize().multiplyScalar(0.035); aimLimb(o.bridge, _b.copy(_a).sub(_c), _a.add(_c));
   aimLimb(o.rockR, P3(G.RP.x, G.RP.y), P3(sus.RR.x, sus.RR.y)); aimLimb(o.rockF, P3(G.RP.x, G.RP.y), P3(sus.RF.x, sus.RF.y));
   if (o.lower){ const ll = rot(V2(G.P1.x - 0.075, G.P1.y - 0.035), G.P1, sus.phi); aimLimb(o.lower, P3(G.P1.x + 0.01, G.P1.y + 0.01), P3(ll.x, ll.y)); }
   _a.set(G.F.x, G.F.y, 0); _b.set(sus.RF.x, sus.RF.y, 0); aimLimb(o.shockBody, _a, _c.copy(_a).lerp(_b, 0.52)); aimLimb(o.shockShaft, _c.copy(_a).lerp(_b, 0.45), _b); aimLimb(o.spring, _c.copy(_a).lerp(_b, 0.10), _a.clone().lerp(_b, 0.62));
+  _c.copy(_a).lerp(_b, 0.12); aimLimb(o.resv, _c, P3(_c.x + 0.02, _c.y + 0.07, 0));
   for (const [st, lo, zz] of [[o.stanchL, o.lowerL, 0.085], [o.stanchR, o.lowerR, -0.085]]){ _a.set(G.CROWN.x, G.CROWN.y, zz); _b.set(axF.x, axF.y, zz); aimLimb(st, _a, _c.copy(_a).lerp(_b, 0.55)); aimLimb(lo, _c.copy(_a).lerp(_b, 0.38), _b); }
-  /* cranks: level when coasting, turning when pedalling; the rider's hips follow the CoM fore-aft and up-down */
+  _a.set(G.CROWN.x, G.CROWN.y, 0).lerp(_b.set(axF.x, axF.y, 0), 0.42); aimLimb(o.arch, P3(_a.x - 0.02, _a.y, 0), P3(_a.x + 0.02, _a.y, 0)); o.arch.rotation.z += Math.PI / 2;
+  o.caliperF.position.set(axF.x - 0.02, axF.y + 0.09, -0.07); o.caliperR.position.set(axR.x + 0.02, axR.y + 0.09, -0.07); o.cassette.position.set(axR.x, axR.y, 0.07); o.derail.position.set(axR.x + 0.02, axR.y - 0.09, 0.08);
+  aimLimb(o.chainT, P3(0.0, 0.085, 0.066), P3(axR.x, axR.y + 0.055, 0.066)); aimLimb(o.chainB, P3(0.0, -0.085, 0.066), P3(axR.x, axR.y - 0.055, 0.066));
+  /* cranks: level when coasting, turning when pedalling */
   const ca = R.crank, pl2 = P3(Math.sin(ca) * CRANK, Math.cos(ca) * CRANK, PEDAL_Z), pr = P3(-Math.sin(ca) * CRANK, -Math.cos(ca) * CRANK, -PEDAL_Z);
   aimLimb(o.crankL, P3(0, 0, 0.1), _a.set(pl2.x, pl2.y, 0.1)); aimLimb(o.crankR, P3(0, 0, -0.1), _a.set(pr.x, pr.y, -0.1)); o.pedL.position.copy(pl2); o.pedR.position.copy(pr);
+  if (R.crashed && RAG.on){                                                               // the body from the ragdoll, into the frame's space
+    const ccx = Math.cos(o.frame.rotation.z), ssx = Math.sin(o.frame.rotation.z), L = p => { const dx = p.x - ox, dy = p.y - oy - liftY; return V2(dx * ccx + dy * ssx, -dx * ssx + dy * ccx); };
+    const J = {}; for (let i = 0; i < 11; i++) J[RAG.P[i].id] = L(RAG.P[i]); J.footAng = 0; poseBody(o, J); return;
+  }
+  /* the rider's hips follow the CoM fore-aft and up-down; hands on the grips, feet on the pedals */
   const hips = P3(-0.22 + 0.85 * R.u - 0.10 * (R.h - H0), R.h - 0.30, 0), tor = clamp(34 - 70 * R.u + 36 * (H0 - R.h), 8, 62) * D2R;
-  const sh = P3(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor), 0);
-  o.hipBox.position.set(hips.x, hips.y + 0.02, 0); aimLimb(o.torso, sh, hips);
-  const neck = tor + 35 * D2R; o.head.position.set(sh.x + 0.17 * Math.cos(neck), sh.y + 0.17 * Math.sin(neck), 0);
-  o.helmet.position.set(o.head.position.x - 0.01, o.head.position.y + 0.02, 0); o.helmet.rotation.z = neck - 90 * D2R; o.visor.position.set(o.head.position.x + 0.10, o.head.position.y + 0.11, 0); o.visor.rotation.z = -0.25;
-  o.chin.position.set(o.head.position.x + 0.12, o.head.position.y - 0.045, 0); o.goggle.position.set(o.head.position.x + 0.10, o.head.position.y + 0.035, 0);
-  for (const [ua, la, zz] of [[o.uArmL, o.lArmL, 0.13], [o.uArmR, o.lArmR, -0.13]]){ _a.set(sh.x, sh.y - 0.02, zz); const rr = ik(_a, P3(G.BAR.x, G.BAR.y, zz > 0 ? GRIP_Z : -GRIP_Z), 0.31, 0.29, 'down', 165); rr.joint.z = (zz > 0 ? 1 : -1) * 0.46; aimLimb(ua, _a, rr.joint); aimLimb(la, rr.joint, rr.end); }
-  for (const [th, sn, ped, zz, shoe] of [[o.thighL, o.shinL, pl2, 0.10, o.shoeL], [o.thighR, o.shinR, pr, -0.10, o.shoeR]]){ _a.set(hips.x, hips.y, zz); _b.set(ped.x, ped.y + 0.04, ped.z); const rr = ik(_a, _b, 0.44, 0.44, 'fwd', 168); aimLimb(th, _a, rr.joint); aimLimb(sn, rr.joint, rr.end); shoe.position.set(ped.x - 0.02, ped.y + 0.045, ped.z); shoe.rotation.z = -0.2; }
+  const sh = P3(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor), 0), neck = tor + 35 * D2R, head = P3(sh.x + 0.17 * Math.cos(neck), sh.y + 0.17 * Math.sin(neck), 0);
+  const J = { hip: hips, sh, head };
+  for (const [side, zz] of [['L', 0.13], ['R', -0.13]]){ _a.set(sh.x, sh.y - 0.02, zz); const rr = ik(_a, P3(G.BAR.x, G.BAR.y, zz > 0 ? GRIP_Z : -GRIP_Z), 0.31, 0.29, 'down', 165); J['elb' + side] = V2(rr.joint.x, rr.joint.y); J['hand' + side] = V2(rr.end.x, rr.end.y); }
+  for (const [side, ped, zz] of [['L', pl2, 0.10], ['R', pr, -0.10]]){ _a.set(hips.x, hips.y, zz); _b.set(ped.x, ped.y + 0.04, ped.z); const rr = ik(_a, _b, 0.44, 0.44, 'fwd', 168); J['knee' + side] = V2(rr.joint.x, rr.joint.y); J['foot' + side] = V2(ped.x, ped.y); }
+  poseBody(o, J);
 }
 /* one draw call for the bike and rider: every part stays an Object3D that pose() moves, and its world matrix is baked into one geometry each frame (from the Cascade Loop) */
 function mergeRig(rig){
@@ -873,9 +973,9 @@ function useBike(i){ if (RIGM) RIGM.dispose(); setBike(i); RIG = buildRig(bike);
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3(); let camSnap = true, camY = 0.55;
 function updateCamera(dt, t, showroom){
   if (showroom){ const cx = R.x, cy = R.S.y; camPos.set(cx + 0.3 + 4.6 * Math.cos(t * 0.22), cy + 1.35 + 0.25 * Math.sin(t * 0.31), 4.6 * Math.sin(t * 0.22) + 1.2); camLook.set(cx + 0.1, cy + 0.85, 0); camera.position.copy(camPos); camera.lookAt(camLook); camSnap = true; return; }
-  const lead = clamp(R.v * 0.32, 0.6, 4.6), dist = 12.2 + clamp(R.v, 0, 18) * 0.22, yT = R.S.y;
+  const cx = R.crashed ? R.camX : R.x, lead = R.crashed ? 0.5 : clamp(R.v * 0.32, 0.6, 4.6), dist = 12.2 + clamp(R.v, 0, 18) * 0.22, yT = R.crashed ? R.camY : R.S.y;
   camY += (yT - camY) * Math.min(1, dt * 5);
-  _a.set(R.x - 2.2 + lead * 0.5, camY + 2.7, dist); _b.set(R.x + 1.2 + lead, camY + 1.9, 0);
+  _a.set(cx - 2.2 + lead * 0.5, camY + 2.7, dist); _b.set(cx + 1.2 + lead, camY + 1.9, 0);
   if (camSnap){ camPos.copy(_a); camLook.copy(_b); camY = yT; camSnap = false; } else { camPos.lerp(_a, Math.min(1, dt * 6)); camLook.lerp(_b, Math.min(1, dt * 8)); }
   camera.position.copy(camPos); camera.lookAt(camLook);
 }
@@ -900,33 +1000,58 @@ function applyQuality(name){
 }
 
 /* =============== controls: the phone's roll, two thumbs, or the keyboard =============== */
-const keys = {}, ptrs = new Map(), TILT = { have: false, raw: 0, zero: 0, sgn: 1, k: 0 };
+const keys = {}, ptrs = new Map();
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+/* The sensor. Gravity in the phone's own frame, from the W3C orientation angles (Z-X'-Y''): g = (sin γ cos β, -sin β, -cos γ cos β).
+   The component along the phone's long axis is the roll we want, however far the screen is tilted back; the short axis says which way
+   the phone is held. When orientation events never arrive, the motion sensor's gravity vector is the same information (iOS reports it
+   with the opposite sign). When neither arrives, the page says so and the thumbs take over: slide a held thumb forward or back. */
+const SENS = { src: 'none', have: false, raw: 0, sm: 0, zero: 0, sgn: 1, n: 0, beta: 0, gamma: 0, gx: 0, gy: 0, gz: 0, blocked: false, perm: 'not asked', asked: false };
+function sensorGravity(gx, gy, gz){
+  const n = Math.hypot(gx, gy, gz) || 1; gx /= n; gy /= n; gz /= n;
+  let sgn = SENS.sgn;
+  if (gx < -0.35) sgn = 1; else if (gx > 0.35) sgn = -1;
+  else { const ang = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (typeof window.orientation === 'number' ? (window.orientation + 360) % 360 : 90); sgn = ang === 270 ? -1 : 1; }
+  SENS.sgn = sgn; SENS.gx = gx; SENS.gy = gy; SENS.gz = gz;
+  SENS.raw = Math.asin(clamp(-gy * sgn, -1, 1)) / D2R;                                  // + : right end down (clockwise as you look at it) : weight over the front axle
+  SENS.sm += (SENS.raw - SENS.sm) * 0.35; SENS.n++; SENS.have = true; SENS.blocked = false;
+}
+function onOrient(e){ if (e.beta == null || e.gamma == null) return; SENS.src = 'orientation'; SENS.beta = e.beta; SENS.gamma = e.gamma; const b = e.beta * D2R, g = e.gamma * D2R; sensorGravity(Math.sin(g) * Math.cos(b), -Math.sin(b), -Math.cos(g) * Math.cos(b)); }
+function onMotion(e){ if (SENS.src === 'orientation') return; const a = e.accelerationIncludingGravity; if (!a || a.x == null) return; SENS.src = 'motion'; const k = IOS ? 1 : -1; sensorGravity(a.x * k, a.y * k, a.z * k); }
+addEventListener('deviceorientation', onOrient); addEventListener('devicemotion', onMotion);
+function enableTilt(){                                                                   // from a tap: iPhone asks once, everything else just starts listening
+  SENS.asked = true;
+  const ps = [];
+  try { if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') ps.push(DeviceOrientationEvent.requestPermission()); } catch (e) {}
+  try { if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === 'function') ps.push(DeviceMotionEvent.requestPermission()); } catch (e) {}
+  if (ps.length) Promise.all(ps).then(r => { SENS.perm = r[0]; }).catch(() => { SENS.perm = 'error'; }); else SENS.perm = 'not needed';
+  addEventListener('deviceorientation', onOrient); addEventListener('devicemotion', onMotion);
+  setTimeout(() => { if (!SENS.have) SENS.blocked = true; }, 2500);
+}
+function tiltStatus(){
+  if (SENS.have) return ['LIVE · ' + SENS.src + ' · ' + (SENS.sm >= 0 ? '+' : '') + SENS.sm.toFixed(1) + '°', ''];
+  if (SENS.perm === 'denied') return ['Motion access denied. In Safari: the aA menu → Website Settings → Motion & Orientation Access → Allow, then reload.', 'warn'];
+  if (SENS.blocked || (SENS.asked && !IS_TOUCH)) return [IS_TOUCH ? 'No motion data is reaching the page. If this is open inside another app or a framed view, open the link in Safari or Chrome itself. Until then, slide a held thumb forward or back to shift your weight.' : 'No motion sensor on this device: use the arrow keys, or slide a held thumb.', 'warn'];
+  return [IOS && !SENS.asked ? 'Tap ENABLE TILT: iPhone asks for motion access once.' : 'Waiting for the sensor: roll the phone.', ''];
+}
 addEventListener('keydown', e => { keys[e.code] = true; if (/^(Arrow|Space)/.test(e.code)) e.preventDefault(); if (e.code === 'Escape' && STATE === 'riding') toMenu(); if (e.code === 'Enter' && (STATE === 'menu' || STATE === 'results')) startRun(); });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; ptrs.clear(); });
-function onOrient(e){
-  if (e.beta == null || e.gamma == null) return;
-  /* gravity in the phone's own frame from the W3C angles (Z-X'-Y''): g = (sin γ cos β, -sin β, -cos γ cos β).
-     The component along the phone's long axis is the roll we want, however far the screen is tilted back; the short axis says which way the phone is held. */
-  const b = e.beta * D2R, g = e.gamma * D2R, gx = Math.sin(g) * Math.cos(b), gy = -Math.sin(b);
-  let sgn = TILT.sgn;
-  if (gx < -0.35) sgn = 1; else if (gx > 0.35) sgn = -1;
-  else { const ang = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (typeof window.orientation === 'number' ? (window.orientation + 360) % 360 : 90); sgn = ang === 270 ? -1 : 1; }
-  TILT.sgn = sgn; TILT.raw = Math.asin(clamp(-gy * sgn, -1, 1)) / D2R; if (!TILT.have){ TILT.have = true; $('tiltState').textContent = 'Tilt: detected.'; }
-}
-addEventListener('deviceorientation', onOrient);
-const stage = $('stage');
-stage.addEventListener('pointerdown', e => { if (STATE !== 'riding' && STATE !== 'count') return; ptrs.set(e.pointerId, e.clientX < innerWidth / 2 ? 'L' : 'R'); e.preventDefault(); });
+const stage = $('stage'); const TILT = { k: 0 };
+stage.addEventListener('pointerdown', e => { unlockAudio(); if (STATE !== 'riding' && STATE !== 'count') return; ptrs.set(e.pointerId, { side: e.clientX < innerWidth / 2 ? 'L' : 'R', x0: e.clientX, x: e.clientX }); e.preventDefault(); });
 for (const ev of ['pointerup', 'pointercancel']) stage.addEventListener(ev, e => ptrs.delete(e.pointerId));
-stage.addEventListener('pointermove', e => { if (ptrs.has(e.pointerId)) ptrs.set(e.pointerId, e.clientX < innerWidth / 2 ? 'L' : 'R'); });
-$('coach').addEventListener('pointerdown', () => { TILT.zero = TILT.raw; toast('TILT RECENTRED', 'gold'); });
+stage.addEventListener('pointermove', e => { const p = ptrs.get(e.pointerId); if (p) p.x = e.clientX; });
+$('coach').addEventListener('pointerdown', () => { SENS.zero = SENS.sm; toast('TILT RECENTRED', 'gold'); });
 function readControls(dt){
-  let ped = 0, brk = 0; for (const v of ptrs.values()){ if (v === 'R') ped = 1; else brk = 1; }
+  let ped = 0, brk = 0, drag = 0, nd = 0; for (const p of ptrs.values()){ if (p.side === 'R') ped = 1; else brk = 1; drag += clamp((p.x - p.x0) / 90, -1, 1); nd++; }
   if (keys.ArrowUp || keys.KeyW || keys.ShiftLeft || keys.ShiftRight) ped = 1; if (keys.ArrowDown || keys.KeyS || keys.Space) brk = 1;
   const kt = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
   TILT.k += (kt - TILT.k) * Math.min(1, dt * 9);
   let tilt = TILT.k;
-  if (TILT.have && Math.abs(kt) < 0.01){ const d = TILT.raw - TILT.zero; tilt = clamp((Math.abs(d) < 1.5 ? 0 : d - Math.sign(d) * 1.5) / 20, -1, 1); }
+  if (Math.abs(kt) < 0.01){
+    if (SENS.have){ const d = SENS.sm - SENS.zero; tilt = clamp((Math.abs(d) < 1 ? 0 : d - Math.sign(d)) / 19, -1, 1); }
+    else if (nd) tilt = drag / nd;                                                        // no sensor: a held thumb slid forward or back
+  }
   CTL.tilt = tilt; CTL.pedal = ped; CTL.brake = brk;
   $('padL').classList.toggle('on', !!brk); $('padR').classList.toggle('on', !!ped);
 }
@@ -934,24 +1059,80 @@ function enterFullscreen(){
   const el = document.documentElement; try { const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null; if (p && p.catch) p.catch(() => {}); } catch (e) {}
   try { if (screen.orientation && screen.orientation.lock){ const p = screen.orientation.lock('landscape'); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
 }
+/* the tilt check: a little bike that rolls with the phone, the loaded wheel lit */
+const tcv = $('tcv'), tc = tcv.getContext('2d');
+function drawTiltCheck(){
+  const W = tcv.width, H = tcv.height; tc.clearRect(0, 0, W, H);
+  const lean = SENS.have ? SENS.sm - SENS.zero : TILT.k * 15, t = clamp(lean / 19, -1, 1);
+  tc.save(); tc.translate(W / 2, H * 0.58); tc.rotate(lean * D2R);
+  tc.strokeStyle = '#A39F88'; tc.lineWidth = 4; tc.lineJoin = 'round';
+  const wr = 22, rx = -62, fx = 62;
+  tc.beginPath(); tc.moveTo(rx, 0); tc.lineTo(-22, -34); tc.lineTo(26, -34); tc.lineTo(fx - 8, -6); tc.moveTo(-22, -34); tc.lineTo(2, 4); tc.lineTo(rx, 0); tc.moveTo(2, 4); tc.lineTo(26, -34); tc.lineTo(38, -46); tc.stroke();
+  for (const [x, load] of [[rx, -t], [fx, t]]){ tc.beginPath(); tc.arc(x, 0, wr, 0, 6.3); tc.strokeStyle = '#A39F88'; tc.stroke(); if (load > 0.05){ tc.fillStyle = 'rgba(217,164,65,' + (0.25 + 0.7 * load).toFixed(2) + ')'; tc.fill(); } }
+  tc.fillStyle = '#EFE8D6'; tc.beginPath(); tc.arc(2 + t * 34, -46, 7, 0, 6.3); tc.fill();               // the rider's weight
+  tc.restore();
+  tc.fillStyle = '#A39F88'; tc.font = '11px Silkscreen, monospace'; tc.textAlign = 'left'; tc.fillText('REAR', 8, H - 8); tc.textAlign = 'right'; tc.fillText('FRONT', W - 8, H - 8);
+  tc.textAlign = 'center'; tc.fillStyle = t > 0.08 ? '#D9A441' : t < -0.08 ? '#7FA6C9' : '#EFE8D6'; tc.fillText(t > 0.08 ? 'FRONT AXLE ' + Math.round(t * 100) + '%' : t < -0.08 ? 'REAR AXLE ' + Math.round(-t * 100) + '%' : 'CENTRED', W / 2, 16);
+  const [txt, cls] = tiltStatus(); const el = $('tiltState'); if (el.textContent !== txt) el.textContent = txt; el.className = 'v ' + cls;
+  $('tiltRaw').textContent = SENS.have ? (SENS.src === 'orientation' ? 'β ' + SENS.beta.toFixed(1) + '° · γ ' + SENS.gamma.toFixed(1) + '° · ' : '') + 'gravity along the long axis ' + SENS.gy.toFixed(2) + ' · held ' + (SENS.sgn > 0 ? 'top-left' : 'top-right') + ' · zero ' + SENS.zero.toFixed(1) + '°' : 'Clockwise (right end down) weights the front axle, counter-clockwise the rear.';
+}
 
-/* =============== sound: wind in the helmet, the freehub, the tyres, the motor, the landing =============== */
-const AUD = { ctx: null, on: true, hubT: 0,
+/* =============== sound: the unlock iPhone needs, wind, the freehub, the tyres, the motor, the landing, and the soundtrack =============== */
+const SILENT_WAV = 'data:audio/wav;base64,UklGRmQfAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUAfAACBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f4GBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYF/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/gYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgX9/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f3+BgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBgYGBf39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/f39/fw==';
+const AUD = { ctx: null, on: true, hubT: 0, el: null,
   init(){ if (this.ctx) return; try {
     const C = this.ctx = new (window.AudioContext || window.webkitAudioContext)(); const master = this.master = C.createGain(); master.gain.value = this.on ? 0.5 : 0; master.connect(C.destination);
-    const nb = C.createBuffer(1, C.sampleRate * 2, C.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const src = (f, type, freq, q) => { const s = C.createBufferSource(); s.buffer = nb; s.loop = true; const fl = C.createBiquadFilter(); fl.type = type; fl.frequency.value = freq; if (q) fl.Q.value = q; const g = C.createGain(); g.gain.value = 0; s.connect(fl); fl.connect(g); g.connect(master); s.start(); return g; };
-    this.wind = src(null, 'lowpass', 380); this.skid = src(null, 'bandpass', 1500, 1.2); this.hub = src(null, 'highpass', 3200);
+    const nb = this.noise = C.createBuffer(1, C.sampleRate * 2, C.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    const src = (type, freq, q) => { const s = C.createBufferSource(); s.buffer = nb; s.loop = true; const fl = C.createBiquadFilter(); fl.type = type; fl.frequency.value = freq; if (q) fl.Q.value = q; const g = C.createGain(); g.gain.value = 0; s.connect(fl); fl.connect(g); g.connect(master); s.start(); return g; };
+    this.wind = src('lowpass', 380); this.skid = src('bandpass', 1500, 1.2); this.hub = src('highpass', 3200);
     const o = C.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 200; const of = C.createBiquadFilter(); of.type = 'lowpass'; of.frequency.value = 700; const og = this.motor = C.createGain(); og.gain.value = 0; o.connect(of); of.connect(og); og.connect(master); o.start(); this.motorO = o;
+    MUSIC.init(C);
   } catch (e) { this.ctx = null; } },
   set(on){ this.on = on; if (this.master) this.master.gain.value = on ? 0.5 : 0; },
   tick(dt){ if (!this.ctx) return; const C = this.ctx, v = R.v, riding = STATE === 'riding' && !R.done, tc = 0.08;
     this.wind.gain.setTargetAtTime(riding ? clamp(v * v * 0.0022, 0, 0.5) : 0, C.currentTime, tc);
     this.skid.gain.setTargetAtTime(riding && !R.air && !R.crashed && R.brake > 0.5 && v > 1.5 ? 0.16 : 0, C.currentTime, tc);
-    const mot = riding && bike.motor && CTL.pedal && !R.air && v < 9.4; this.motor.gain.setTargetAtTime(mot ? 0.05 : 0, C.currentTime, tc); if (mot) this.motorO.frequency.setTargetAtTime(160 + v * 30, C.currentTime, tc);
-    if (riding && !CTL.pedal && !R.crashed && v > 1){ this.hubT += dt; const per = 1 / clamp(v * 18, 4, 170); if (this.hubT > per){ this.hubT = 0; const g = this.hub.gain; g.cancelScheduledValues(C.currentTime); g.setValueAtTime(0.12, C.currentTime); g.exponentialRampToValueAtTime(0.001, C.currentTime + 0.01); } } },
+    const mot = riding && bike.motor && CTL.pedal && !R.air && !R.crashed && v < 9.4; this.motor.gain.setTargetAtTime(mot ? 0.05 : 0, C.currentTime, tc); if (mot) this.motorO.frequency.setTargetAtTime(160 + v * 30, C.currentTime, tc);
+    if (riding && !CTL.pedal && !R.crashed && v > 1){ this.hubT += dt; const per = 1 / clamp(v * 18, 4, 170); if (this.hubT > per){ this.hubT = 0; const g = this.hub.gain; g.cancelScheduledValues(C.currentTime); g.setValueAtTime(0.12, C.currentTime); g.exponentialRampToValueAtTime(0.001, C.currentTime + 0.01); } }
+    MUSIC.tick(); },
   thump(v){ if (!this.ctx) return; const C = this.ctx, o = C.createOscillator(), g = C.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(90, C.currentTime); o.frequency.exponentialRampToValueAtTime(40, C.currentTime + 0.18); g.gain.setValueAtTime(clamp(v * 0.12, 0.05, 0.6), C.currentTime); g.gain.exponentialRampToValueAtTime(0.001, C.currentTime + 0.2); o.connect(g); g.connect(this.master); o.start(); o.stop(C.currentTime + 0.22); },
-  crash(){ if (!this.ctx) return; const C = this.ctx, s = C.createBufferSource(); s.buffer = C.createBuffer(1, Math.floor(C.sampleRate * 0.4), C.sampleRate); const d = s.buffer.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); const f = C.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500; const g = C.createGain(); g.gain.value = 0.5; s.connect(f); f.connect(g); g.connect(this.master); s.start(); }
+  crash(){ if (!this.ctx) return; const C = this.ctx, s = C.createBufferSource(); s.buffer = this.noise; const f = C.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500; const g = C.createGain(); g.gain.setValueAtTime(0.5, C.currentTime); g.gain.exponentialRampToValueAtTime(0.001, C.currentTime + 0.4); s.connect(f); f.connect(g); g.connect(this.master); s.start(); s.stop(C.currentTime + 0.45); }
+};
+function unlockAudio(){                                                                  // on any tap: iPhone plays Web Audio with the ringer switch off only after a media element has played
+  try { if (!AUD.el){ const el = document.createElement('audio'); el.setAttribute('playsinline', ''); el.setAttribute('webkit-playsinline', ''); el.loop = true; el.volume = 0.02; el.src = SILENT_WAV; AUD.el = el; } if (AUD.el.paused){ const p = AUD.el.play(); if (p && p.catch) p.catch(() => {}); } } catch (e) {}
+  AUD.init(); if (AUD.ctx && AUD.ctx.state === 'suspended') AUD.ctx.resume().catch(() => {});
+}
+/* the soundtrack: an NES's voices (two pulse waves, a triangle, noise) playing a synthwave loop in A minor at 120,
+   the bass pumping on the kick the way a French house record does. Sixteen bars, scheduled a quarter second ahead. */
+const MUSIC = { on: true, C: null, out: null, chans: {}, waves: {}, step: 0, next: 0, STEP: 60 / 120 / 4, started: false,
+  CHORDS: [[45, 0], [45, 0], [41, 1], [41, 1], [48, 1], [48, 1], [43, 1], [43, 1], [45, 0], [45, 0], [41, 1], [41, 1], [50, 0], [50, 0], [40, 1], [40, 1]],   // root, major?
+  LEAD: { 64: [64, 4], 68: [64, 4], 72: [67, 4], 76: [69, 4], 96: [64, 4], 100: [67, 4], 104: [69, 4], 108: [72, 4], 112: [71, 8],
+    128: [69, 6], 134: [72, 2], 136: [71, 4], 140: [67, 4], 144: [69, 8], 152: [76, 4], 156: [74, 4], 160: [72, 6], 166: [74, 2], 168: [72, 4], 172: [69, 4], 176: [67, 12],
+    192: [65, 4], 196: [69, 4], 200: [72, 4], 204: [74, 4], 208: [74, 8], 216: [72, 4], 220: [69, 4], 224: [76, 6], 230: [74, 2], 232: [72, 4], 236: [71, 4], 240: [71, 8], 248: [64, 8] },
+  init(C){ this.C = C; const out = this.out = C.createGain(); out.gain.value = this.on ? 0.22 : 0; out.connect(AUD.master);
+    const pulse = d => { const n = 32, re = new Float32Array(n), im = new Float32Array(n); for (let k = 1; k < n; k++){ re[k] = Math.sin(2 * Math.PI * k * d) / (k * Math.PI); im[k] = (1 - Math.cos(2 * Math.PI * k * d)) / (k * Math.PI); } return C.createPeriodicWave(re, im); };
+    this.waves = { p12: pulse(0.125), p25: pulse(0.25), p50: pulse(0.5) };
+    for (const [k, g] of [['bass', 0.55], ['arp', 0.22], ['lead', 0.30], ['drum', 0.8]]){ const gn = C.createGain(); gn.gain.value = g; gn.connect(out); this.chans[k] = gn; } },
+  set(on){ this.on = on; if (this.out) this.out.gain.setTargetAtTime(on ? 0.22 : 0, this.C.currentTime, 0.05); },
+  start(){ if (!this.C || this.started) return; this.started = true; this.step = 0; this.next = this.C.currentTime + 0.1; },
+  note(ch, wave, midi, t, len, vol, detune){ const C = this.C, o = C.createOscillator(); if (wave === 'tri') o.type = 'triangle'; else o.setPeriodicWave(this.waves[wave]); o.frequency.value = 440 * Math.pow(2, (midi - 69) / 12); if (detune) o.detune.value = detune;
+    const g = C.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.006); g.gain.setValueAtTime(vol, t + len * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + len); o.connect(g); g.connect(this.chans[ch]); o.start(t); o.stop(t + len + 0.02); },
+  drum(kind, t){ const C = this.C, ch = this.chans.drum;
+    if (kind === 'kick'){ const o = C.createOscillator(), g = C.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(170, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.10); g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.17); o.connect(g); g.connect(ch); o.start(t); o.stop(t + 0.2);
+      for (const k of ['arp', 'bass']){ const gg = this.chans[k].gain, base = k === 'arp' ? 0.22 : 0.55; gg.cancelScheduledValues(t); gg.setValueAtTime(base * 0.3, t); gg.linearRampToValueAtTime(base, t + 0.22); } return; }   // the pump
+    const s = C.createBufferSource(); s.buffer = AUD.noise; const f = C.createBiquadFilter(), g = C.createGain();
+    if (kind === 'snare'){ f.type = 'bandpass'; f.frequency.value = 1900; f.Q.value = 0.7; g.gain.setValueAtTime(0.45, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.13); const o = C.createOscillator(), og = C.createGain(); o.type = 'triangle'; o.frequency.value = 190; og.gain.setValueAtTime(0.35, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.05); o.connect(og); og.connect(ch); o.start(t); o.stop(t + 0.06); }
+    else { f.type = 'highpass'; f.frequency.value = 8000; g.gain.setValueAtTime(kind === 'ohat' ? 0.16 : 0.13, t); g.gain.exponentialRampToValueAtTime(0.001, t + (kind === 'ohat' ? 0.14 : 0.03)); }
+    s.connect(f); f.connect(g); g.connect(ch); s.start(t); s.stop(t + 0.2); },
+  tick(){ if (!this.started || !this.C) return; const C = this.C; if (this.next < C.currentTime - 0.4) this.next = C.currentTime + 0.05;   // back from a hidden tab: pick the loop up here, not in a burst
+    while (this.next < C.currentTime + 0.25){ const st = this.step % 256, bar = Math.floor(st / 16), i = st % 16, t = this.next, S = this.STEP;
+      const [root, maj] = this.CHORDS[bar], tones = maj ? [0, 4, 7] : [0, 3, 7];
+      if (i % 2 === 0){ const k = i / 2; this.note('bass', 'tri', root + [0, 0, 0, 12, 0, 0, 12, 0][k], t, S * 1.8, 0.9); }
+      const a = [0, 1, 2, 3, 4, 5, 4, 3][i % 8], ar = tones[a % 3] + 12 * Math.floor(a / 3); this.note('arp', 'p25', root + 12 + ar, t, S * 0.9, 0.5);
+      const L = this.LEAD[st]; if (L){ this.note('lead', 'p50', L[0], t, S * L[1] * 0.95, 0.55); this.note('lead', 'p25', L[0], t, S * L[1] * 0.95, 0.3, 7); }
+      if (i === 0 || i === 8 || (i === 14 && bar % 2 === 1)) this.drum('kick', t); if (i === 4 || i === 12) this.drum('snare', t); if (bar === 15 && i >= 12) this.drum('snare', t);
+      if (i % 2 === 0) this.drum(i === 6 || i === 14 ? 'ohat' : 'hat', t);
+      this.next += S; this.step++; } }
 };
 
 /* =============== the game: menu, countdown, the run, the results =============== */
@@ -967,14 +1148,16 @@ function buildCards(){
 }
 function wireUI(){
   $('rideBtn').addEventListener('click', startRun); $('againBtn').addEventListener('click', startRun); $('menuBtn').addEventListener('click', toMenu); $('quitBtn').addEventListener('click', toMenu);
+  $('tiltBtn').addEventListener('click', () => { unlockAudio(); enableTilt(); SENS.zero = SENS.sm; });
   const fx = () => applyQuality(QNAME === 'high' ? 'low' : 'high'); $('fxBtn').addEventListener('click', fx); $('fxBtn2').addEventListener('click', fx);
   const snd = () => { AUD.set(!AUD.on); for (const el of [$('sndBtn'), $('sndBtn2')]) el.textContent = 'SND · ' + (AUD.on ? 'ON' : 'OFF'); try { localStorage.setItem('pumprun.snd', AUD.on ? '1' : '0'); } catch (e) {} }; $('sndBtn').addEventListener('click', snd); $('sndBtn2').addEventListener('click', snd);
-  try { if (localStorage.getItem('pumprun.snd') === '0'){ AUD.on = false; for (const el of [$('sndBtn'), $('sndBtn2')]) el.textContent = 'SND · OFF'; } } catch (e) {}
+  const mus = () => { unlockAudio(); MUSIC.set(!MUSIC.on); if (MUSIC.on) MUSIC.start(); for (const el of [$('musBtn'), $('musBtn2')]) el.textContent = 'MUSIC · ' + (MUSIC.on ? 'ON' : 'OFF'); try { localStorage.setItem('pumprun.mus', MUSIC.on ? '1' : '0'); } catch (e) {} }; $('musBtn').addEventListener('click', mus); $('musBtn2').addEventListener('click', mus);
+  try { if (localStorage.getItem('pumprun.snd') === '0'){ AUD.on = false; for (const el of [$('sndBtn'), $('sndBtn2')]) el.textContent = 'SND · OFF'; } if (localStorage.getItem('pumprun.mus') === '0'){ MUSIC.on = false; for (const el of [$('musBtn'), $('musBtn2')]) el.textContent = 'MUSIC · OFF'; } } catch (e) {}
+  for (const el of document.querySelectorAll('.ov')) el.addEventListener('pointerdown', () => { if (AUD.ctx && AUD.ctx.state === 'suspended') unlockAudio(); });
 }
 function startRun(){
   if (STATE !== 'menu' && STATE !== 'results') return;
-  enterFullscreen(); AUD.init(); if (AUD.ctx && AUD.ctx.state === 'suspended') AUD.ctx.resume();
-  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') DeviceOrientationEvent.requestPermission().then(s => { if (s === 'granted') addEventListener('deviceorientation', onOrient); }).catch(() => {});
+  enterFullscreen(); unlockAudio(); if (MUSIC.on) MUSIC.start(); if (!SENS.asked) enableTilt();
   $('menu').classList.remove('on'); $('results').classList.remove('on'); $('hud').classList.add('on');
   resetRider(); ptrs.clear(); STATE = 'count'; countT = 3.4; camSnap = true; $('count').style.display = 'block'; $('coach').textContent = 'ROLL OFF THE DECK · PEDAL'; $('coach').className = 'coach';
   $('secName').textContent = COURSE.sections[0].name; $('bestT').textContent = BEST[bike.id] ? 'best ' + fmt(BEST[bike.id]) : 'no time yet';
@@ -991,7 +1174,7 @@ function showResults(){
   const rows = [['PUMP · LEGS', L.pump, ''], ['PEDAL', L.ped, 'ped'], ['MOTOR', L.mot, 'mot'], ['GRAVITY · THE DESCENT', L.grav, 'grav'], ['BRAKES', L.brake, 'neg'], ['AIR AND ROLLING DRAG', L.drag, 'neg'], ['LANDINGS', L.land, 'neg']].filter(r => Math.abs(r[1]) > 5 || r[0] === 'PUMP · LEGS');
   const mx = Math.max(100, ...rows.map(r => Math.abs(r[1]))); $('ledger').innerHTML = rows.map(r => '<div class="k">' + r[0] + '</div><div class="bar"><i class="' + (r[1] < 0 ? 'neg' : r[2]) + '" style="width:' + (Math.abs(r[1]) / mx * 100).toFixed(1) + '%"></i></div><div>' + (r[1] >= 0 ? '+' : '−') + (Math.abs(r[1]) / 1000).toFixed(1) + ' kJ</div>').join('');
 }
-/* the HUD: speed, section, the coach line, the clock, the legs, and the weight dot on a little bike */
+/* the HUD: speed, section, the coach line, the clock, the legs, the lean, and the weight dot on a little bike */
 const wcv = $('wcv'), wc = wcv.getContext('2d');
 function drawWeight(){
   const W = wcv.width, H = wcv.height; wc.clearRect(0, 0, W, H);
@@ -1006,10 +1189,11 @@ function hud(dt){
   $('timer').textContent = fmt(R.time); $('secName').textContent = COURSE.sections[R.secIdx].name;
   const [line, cls] = coachLine(); const co = $('coach'); if (co.textContent !== line) co.textContent = line; co.className = 'coach ' + cls;
   const st = $('stam'); st.style.width = (R.st * 100).toFixed(0) + '%'; st.className = R.st < 0.2 ? 'low' : '';
+  const ln = $('lean'), tl = CTL.tilt, src = SENS.have ? (SENS.src === 'orientation' ? 'TILT' : 'MOTION') : ptrs.size ? 'THUMB' : 'KEYS'; ln.textContent = src + ' · ' + (Math.abs(tl) < 0.05 ? 'CENTRED' : (tl > 0 ? 'FRONT ' : 'REAR ') + Math.round(Math.abs(tl) * 100) + '%'); ln.className = 'lean ' + (tl > 0.05 ? 'f' : tl < -0.05 ? 'r' : '');
   drawWeight();
   if (R.events.length){ const e = R.events.shift(); toast(e.text, e.cls); }
   if (R.crashSnd){ R.crashSnd = false; AUD.crash(); if (DUST) DUST.spawn(R.x, R.S.y, 0, 16, R.v * 0.4, 1.5); }
-  if (R.thump){ AUD.thump(R.thump); if (DUST) DUST.spawn(R.x, R.S.y + 0.05, 0, Math.round(clamp(R.thump * 3, 3, 14)), R.v * 0.3, 0.8); R.thump = 0; }
+  if (R.thump){ AUD.thump(R.thump); if (DUST) DUST.spawn(R.crashed ? R.camX : R.x, R.crashed ? R.camY : R.S.y + 0.05, 0, Math.round(clamp(R.thump * 3, 3, 14)), R.v * 0.3, 0.8); R.thump = 0; }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
 }
 
@@ -1019,7 +1203,7 @@ function tick(now){
   requestAnimationFrame(tick);
   const dtReal = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
   readControls(dtReal);
-  if (STATE === 'count'){ countT -= dtReal; const n = Math.ceil(countT - 0.4); const el = $('count'); el.textContent = n > 0 ? String(n) : 'GO'; if (countT <= 0){ STATE = 'riding'; el.style.display = 'none'; TILT.zero = TILT.raw; R.time = 0; } }
+  if (STATE === 'count'){ countT -= dtReal; const n = Math.ceil(countT - 0.4); const el = $('count'); el.textContent = n > 0 ? String(n) : 'GO'; if (countT <= 0){ STATE = 'riding'; el.style.display = 'none'; SENS.zero = SENS.sm; R.time = 0; } }
   if (STATE === 'riding'){ acc += dtReal; let n = 0; while (acc >= PDT && n < 60){ step(PDT); acc -= PDT; n++; } if (acc > 0.1) acc = 0;
     if (R.done){ R.finT += dtReal; if (R.finT > 1.4) showResults(); } }
   if (RIG){ poseRig(RIG, STATE === 'riding' ? dtReal : 0); RIGM.update(); }
@@ -1027,7 +1211,7 @@ function tick(now){
   sun.position.set(R.x - 18, R.S.y + 42, 30); sun.target.position.set(R.x, R.S.y, 0);
   animateWorld(t, dtReal, camera.position.x);
   if (FX && composer) composer.render(); else renderer.render(scene, camera);
-  if ((frame++ & 1) === 0 && STATE === 'riding') hud(dtReal * 2);
+  if ((frame++ & 1) === 0){ if (STATE === 'riding') hud(dtReal * 2); else if (STATE === 'menu') drawTiltCheck(); }
   AUD.tick(dtReal);
   fpsEma += (dtReal - fpsEma) * 0.05;                                                    // a slow phone drops to the low tier on its own, and says so
   if (STATE === 'riding' && QNAME === 'high'){ slowT = fpsEma > 1 / 26 ? slowT + dtReal : 0; if (slowT > 4){ applyQuality('low'); toast('FX · LOW FOR A SMOOTH RIDE', 'gold'); slowT = 0; } }
@@ -1046,7 +1230,7 @@ function start(data){
   requestAnimationFrame(run);
   addEventListener('resize', resize); if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', () => setTimeout(resize, 60));
 }
-window.PR = { get R(){ return R; }, get STATE(){ return STATE; }, COURSE, get Q(){ return QNAME; } };
+window.PR = { get R(){ return R; }, get STATE(){ return STATE; }, COURSE, get Q(){ return QNAME; }, SENS, get RAG(){ return RAG; }, crash: (m, k) => crash(m, k) };
 const hot = window.claude && window.claude.hot;
 try { if (hot && typeof hot.snapshot === 'function') hot.snapshot(() => ({ bike: bikeIdx })); } catch (e) {}
 if (hot && typeof hot.ready === 'function') hot.ready(start); else start((hot && hot.data) || {});
