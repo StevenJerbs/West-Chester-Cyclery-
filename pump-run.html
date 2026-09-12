@@ -132,14 +132,14 @@
     <div class="bikes" id="bikes"></div>
     <p class="blurb" id="blurb"></p>
     <div class="howto">
-      <div class="how tilt"><div class="k">TILT THE PHONE</div><div class="v">Roll it like the bars: right end down puts your weight over the front, left end down sends it back. Keys: ← →</div></div>
-      <div class="how ped"><div class="k">RIGHT THUMB · PEDAL</div><div class="v">Hold to pedal. Stamina runs out; coast to get it back. Key: ↑ or W</div></div>
-      <div class="how brk"><div class="k">LEFT THUMB · BRAKE</div><div class="v">Hold to brake. Brake hard with your weight forward on a steep and you go over the bars. Key: ↓ or S</div></div>
+      <div class="how tilt"><div class="k">TILT THE PHONE</div><div class="v">Roll it like the bars: right end down puts your weight over the front, left end down sends it back. Keys: ← → · Pad: left stick</div></div>
+      <div class="how ped"><div class="k">RIGHT THUMB · PEDAL</div><div class="v">Hold to pedal. Stamina runs out; coast to get it back. Key: ↑ or W · Pad: right trigger or A</div></div>
+      <div class="how brk"><div class="k">LEFT THUMB · BRAKE</div><div class="v">Hold to brake. Brake hard with your weight forward on a steep and you go over the bars. Key: ↓ or S · Pad: left trigger or B</div></div>
     </div>
     <p class="sub pump"><b>Pumping:</b> come up tall through the bottom of the trough, press forward over the crest, pull back and up off a lip, weight back off a drop, level the bike to the landing. Cased landings cost speed; a bad one costs the run.</p>
     <div class="tiltcheck"><canvas id="tcv" width="420" height="120"></canvas><div class="tcTxt"><div class="lbl">TILT CHECK · ROLL THE PHONE</div><div class="v" id="tiltState">Waiting for the sensor</div><div class="tiny" id="tiltRaw">Clockwise (right end down) weights the front axle, counter-clockwise the rear.</div><button type="button" id="tiltBtn">ENABLE TILT</button></div></div>
     <div class="row"><button type="button" class="pri big" id="rideBtn">TAP TO RIDE</button><span class="sp"></span><button type="button" id="fxBtn2">FX · HIGH</button><button type="button" id="musBtn2">MUSIC · ON</button><button type="button" id="sndBtn2">SND · ON</button></div>
-    <div class="tiny">Full screen in landscape. On iPhone, motion access is asked once; sound needs the ringer switch on or the volume buttons up.</div>
+    <div class="tiny">Full screen in landscape. On iPhone, motion access is asked once; sound needs the ringer switch on or the volume buttons up. <span id="padState">Controller: press a button on it to connect.</span></div>
   </div>
 </div>
 
@@ -424,16 +424,16 @@ const COURSE = (() => {
     const s = add(lip, t => t < xa ? R - Math.sqrt(Math.max(0, R * R - t * t)) : ya + (t - xa) * Math.tan(th), 'stepup'); edges.push({ x: s.x1, kind: 'lip', H: 0.2 }); rocks.push([s.x0, s.x1 + 6]); return s; };
 
   sec('THE START');          flat(14);
-  sec('WARM-UP ROLLERS');    rollers(4, 8, 0.50, 0, true); flat(6);
-  sec('TORTUGA TABLE');      table(0.7, 22, 3.5, 2.7, 24, undefined, 0.8); flat(8, -0.02);
+  sec('WARM-UP ROLLERS');    rollers(4, 8, 0.50, 0, true); flat(6, -0.05);
+  sec('TORTUGA TABLE');      table(0.7, 20, 3.5, 3.0, 24, undefined, 1.0); flat(8, -0.02);
   sec('THE FALL LINE');      rollers(6, 7, 0.36, -0.07); flat(6, -0.04);
   sec('THE STEPS');          flat(7); drop(0.6); flat(5); flat(9, 0.10); drop(0.9); flat(5); flat(10, 0.10); drop(1.2); flat(6); flat(14, 0.12);   // a climb after each step checks the speed for the next
-  sec('TABLE TRIO');         table(0.8, 22, 3.5, 3.0, 24, undefined, 1.0); flat(7); table(1.0, 24, 3.8, 3.5, 25, undefined, 1.0); flat(7); table(1.2, 25, 4.0, 4.0, 26, undefined, 1.2); flat(8);
+  sec('TABLE TRIO');         flat(6, -0.06); table(0.8, 20, 3.5, 5.0, 25, undefined, 1.2); flat(7, -0.06); table(1.0, 20, 3.8, 5.5, 26, undefined, 1.4); flat(7, -0.06); table(1.2, 20, 4.0, 6.0, 26, undefined, 1.6); flat(8);   // sized for 25 mph: a 20 degree lip lands about eight metres out at deck height
   sec('WHOOPS');             rollers(8, 4, 0.18); flat(4);
   sec('GRUNT CLIMB');        flat(45, 0.08); flat(6);
   sec('RIDGE ROLLERS');      rollers(5, 9, 0.60, -0.03); flat(6); flat(12, 0.09);
-  sec('STEP-UP AND DROP');   stepup(1.0, 25, 3.5); flat(6); drop(1.0); flat(14);
-  sec('THE BIG DOUBLE');     double(1.1, 27, 3.8, 3.0, 27); flat(8);
+  sec('STEP-UP AND DROP');   stepup(1.0, 25, 3.5); flat(6); drop(1.0); flat(14, -0.05);
+  sec('THE BIG TABLE');      table(1.2, 20, 4.2, 6.0, 26, undefined, 1.6); flat(8);
   sec('RUN-OUT');            rollers(4, 8, 0.45, -0.05); flat(22, -0.02);
   const xFinish = x - 5, len = x;
   const xs = segs.map(s => s.x0);
@@ -589,11 +589,11 @@ function stepGround(dt){
      f = 1 - k h, capped as the Pump Lab caps it because on a feature tighter than the rider is tall the body stops following the normal */
   const raw = 1 - S.k * R.h, f = clamp(raw, 0.8, 1.05), inR = raw > 0.8 && raw < 1.05, fs = inR ? -S.kp * R.h : 0, fh = inR ? -S.k : 0;
   const gt = -G9 * s;                                                                   // gravity along the direction of travel: positive downhill
-  const pedal = CTL.pedal && !R.done ? 1 : 0;
-  R.st = clamp(R.st + (pedal ? -dt / 14 : dt / 26), 0, 1);
-  const P = 390 * (R.st > 0.18 ? 1 : 0.45) * clamp((16.5 - v) / 3.5, 0, 1);            // a hard effort, halved when the legs are gone, spun out near 37 mph
-  const Fped = pedal ? Math.min(P / Math.max(v, 0.6), 420) : 0;
-  const Fmot = bike.motor && pedal ? Math.min(600 / Math.max(v, 0.8), 420) * clamp((9.4 - v) / 1.8, 0, 1) : 0;   // class-1 assist: 250 W nominal, out by 21 mph
+  const pedal = R.done ? 0 : clamp(CTL.pedal, 0, 1);                                    // a trigger gives it in degrees, a thumb or a key gives it all
+  R.st = clamp(R.st + (pedal > 0.02 ? -dt * pedal / 14 : dt / 26), 0, 1);
+  const P = 390 * pedal * (R.st > 0.18 ? 1 : 0.45) * clamp((16.5 - v) / 3.5, 0, 1);    // a hard effort, halved when the legs are gone, spun out near 37 mph
+  const Fped = pedal > 0.02 ? Math.min(P / Math.max(v, 0.6), 420 * pedal) : 0;
+  const Fmot = bike.motor && pedal > 0.02 ? Math.min(600 / Math.max(v, 0.8), 420) * pedal * clamp((9.4 - v) / 1.8, 0, 1) : 0;   // class-1 assist: 250 W nominal, out by 21 mph
   R.brake += (CTL.brake - R.brake) * Math.min(1, dt * (CTL.brake > R.brake ? 4 : 10));   // a progressive squeeze, a quick release
   R.wet = clamp(R.wet - R.brake * (v > 1 ? 1 : 0) * dt * 0.09 + (R.brake < 0.1 ? dt * 0.012 : 0), 0, 1);   // wet rotors dry as they are used, and the mist wets them again
   const Nc = M * G9 * c, Fbr = v > 0.05 ? R.brake * 0.45 * Nc : 0, Fdrag = v > 0.02 ? 0.5 * 1.2 * 0.65 * v * v + PH.crr * Nc + 0.10 * M * G9 * clamp((v - 10) / 5, 0, 1) : 0;   // air, tyres, and the chatter of a trail ridden past 22 mph
@@ -613,7 +613,7 @@ function stepGround(dt){
   R.unloadT = (R.N < -0.12 * M * G9 && S.k < -0.03) ? R.unloadT + dt : 0;
   R.v = vNew; const xPrev = R.x; R.x += R.v * c * dt;
   suspStep(dt, clamp(R.N, 0, 4 * M * G9) / (M * G9));
-  if (pedal && v > 0.3) R.crank += (v / 6.5) * 2 * Math.PI * dt; else { const m = ((R.crank - Math.PI / 2) % Math.PI + Math.PI) % Math.PI; R.crank -= (m < Math.PI / 2 ? m : m - Math.PI) * Math.min(1, dt * 6); }   // cranks level when coasting
+  if (pedal > 0.02 && v > 0.3) R.crank += (v / 6.5) * 2 * Math.PI * dt; else { const m = ((R.crank - Math.PI / 2) % Math.PI + Math.PI) % Math.PI; R.crank -= (m < Math.PI / 2 ? m : m - Math.PI) * Math.min(1, dt * 6); }   // cranks level when coasting
   const e = COURSE.edgeBetween(xPrev, R.x);
   if (e){ R.x = e.x - 0.01; R.S = surf(e.x - 0.06); takeoff(e.kind); return; }              // the lip ends, the ledge drops away: the bike leaves along the face it was on
   if (R.unloadT > 0.03){ const e2 = COURSE.nextEdge(R.x); takeoff(e2 && e2.x - R.x < 0.6 ? e2.kind : 'crest'); return; }   // it cannot pull: the wheels leave
@@ -660,7 +660,7 @@ function coachLine(){                                                           
   if (R.air){ const L = predictLanding(), need = L.th - R.pitch, d = Math.round(Math.abs(need) / D2R); return ['AIR · ' + (d < 4 ? 'HOLD IT · LANDING ' + Math.round(L.th / D2R) + '°' : need < 0 ? 'NOSE DOWN ' + d + '° TO THE LANDING' : 'NOSE UP ' + d + '° TO THE LANDING'), 'air']; }
   const e = COURSE.nextEdge(R.x), de = e ? e.x - R.x : 1e9;
   if (e && e.kind === 'drop' && de < clamp(R.v * 0.7, 3, 9)) return ['DROP · WEIGHT BACK' + (R.v > 11 ? ' · SCRUB SPEED' : ''), 'go'];
-  if (e && e.kind === 'lip' && de < clamp(R.v * 1.0, 4, 10)) return [de > 2.5 ? 'LIP AHEAD · CROUCH FORWARD' : 'LIP · STAND TALL, THEN BACK', 'go'];
+  if (e && e.kind === 'lip' && de < clamp(R.v * 1.0, 4, 10)) return [de > 2.5 ? (R.v > 13.5 ? 'LIP AHEAD · SCRUB SPEED' : 'LIP AHEAD · CROUCH FORWARD') : 'LIP · STAND TALL, THEN BACK', 'go'];
   const Sa = surf(R.x + clamp(R.v * 0.3, 0.8, 4));
   if (Sa.k > 0.03) return ['TROUGH · COME UP TALL', 'go']; if (Sa.k < -0.03) return ['CREST · PRESS FORWARD', 'go'];
   if (Sa.th > 0.05) return ['CLIMB · PEDAL', '']; if (Sa.th < -0.05) return ['DESCENT · LET IT RUN', ''];
@@ -1055,18 +1055,33 @@ stage.addEventListener('pointerdown', e => { unlockAudio(); if (STATE !== 'ridin
 for (const ev of ['pointerup', 'pointercancel']) stage.addEventListener(ev, e => ptrs.delete(e.pointerId));
 stage.addEventListener('pointermove', e => { const p = ptrs.get(e.pointerId); if (p) p.x = e.clientX; });
 $('coach').addEventListener('pointerdown', () => { SENS.zero = SENS.sm; toast('TILT RECENTRED', 'gold'); });
+/* a controller, for the desk: left stick or d-pad for the weight, right trigger or A to pedal, left trigger or B to brake, Start to ride, Back for the menu */
+const PAD = { id: '', prevStart: false, prevBack: false, rumbleT: 0, active: false };
+function pollPad(){
+  if (!navigator.getGamepads) return null; let g = null; try { for (const p of navigator.getGamepads()) if (p && p.connected){ g = p; break; } } catch (e) { return null; } if (!g) return null;
+  const ax = i => g.axes[i] || 0, bt = i => { const b = g.buttons[i]; return b ? (typeof b.value === 'number' ? b.value : (b.pressed ? 1 : 0)) : 0; };
+  let x = ax(0); x = Math.abs(x) < 0.12 ? 0 : Math.sign(x) * (Math.abs(x) - 0.12) / 0.88; if (bt(15) > 0.5) x = 1; if (bt(14) > 0.5) x = -1;
+  if (PAD.id !== g.id){ PAD.id = g.id; const el = $('padState'); if (el) el.textContent = 'Controller: ' + g.id.replace(/\(.*$/, '').trim() + ' · left stick weight · RT/A pedal · LT/B brake · Start rides.'; }
+  return { g, tilt: x, pedal: Math.max(bt(7), bt(0)), brake: Math.max(bt(6), bt(1)), start: bt(9) > 0.5, back: bt(8) > 0.5 };
+}
+function rumble(strong, weak, ms){ const p = pollPad(); if (!p) return; try { const act = p.g.vibrationActuator; if (act && act.playEffect) act.playEffect('dual-rumble', { duration: ms, strongMagnitude: clamp(strong, 0, 1), weakMagnitude: clamp(weak, 0, 1) }).catch(() => {}); } catch (e) {} }
 function readControls(dt){
-  let ped = 0, brk = 0, drag = 0, nd = 0; for (const p of ptrs.values()){ if (p.side === 'R') ped = 1; else brk = 1; drag += clamp((p.x - p.x0) / 90, -1, 1); nd++; }
+  let ped = 0, brk = 0, drag = 0, nd = 0;
+  const pad = pollPad();
+  if (pad){ ped = Math.max(ped, pad.pedal); brk = Math.max(brk, pad.brake); PAD.active = Math.abs(pad.tilt) > 0 || pad.pedal > 0 || pad.brake > 0;
+    if (pad.start && !PAD.prevStart){ if (STATE === 'menu' || STATE === 'results') startRun(); } if (pad.back && !PAD.prevBack && STATE === 'riding') toMenu(); PAD.prevStart = pad.start; PAD.prevBack = pad.back;
+    if (STATE === 'riding' && !R.air && !R.crashed && R.brake > 0.85 && R.v > 2.5){ PAD.rumbleT += dt; if (PAD.rumbleT > 0.1){ PAD.rumbleT = 0; rumble(0, 0.25, 110); } } } for (const p of ptrs.values()){ if (p.side === 'R') ped = 1; else brk = 1; drag += clamp((p.x - p.x0) / 90, -1, 1); nd++; }
   if (keys.ArrowUp || keys.KeyW || keys.ShiftLeft || keys.ShiftRight) ped = 1; if (keys.ArrowDown || keys.KeyS || keys.Space) brk = 1;
   const kt = (keys.ArrowRight || keys.KeyD ? 1 : 0) - (keys.ArrowLeft || keys.KeyA ? 1 : 0);
   TILT.k += (kt - TILT.k) * Math.min(1, dt * 9);
   let tilt = TILT.k;
-  if (Math.abs(kt) < 0.01){
+  if (pad && Math.abs(pad.tilt) > 0) tilt = pad.tilt;
+  else if (Math.abs(kt) < 0.01){
     if (SENS.have){ const d = SENS.sm - SENS.zero; tilt = clamp((Math.abs(d) < 1 ? 0 : d - Math.sign(d)) / 19, -1, 1); }
     else if (nd) tilt = drag / nd;                                                        // no sensor: a held thumb slid forward or back
   }
   CTL.tilt = tilt; CTL.pedal = ped; CTL.brake = brk;
-  $('padL').classList.toggle('on', !!brk); $('padR').classList.toggle('on', !!ped);
+  $('padL').classList.toggle('on', brk > 0.05); $('padR').classList.toggle('on', ped > 0.05);
 }
 function enterFullscreen(){
   const el = document.documentElement; try { const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : el.webkitRequestFullscreen ? el.webkitRequestFullscreen() : null; if (p && p.catch) p.catch(() => {}); } catch (e) {}
@@ -1119,7 +1134,7 @@ const AUD = { ctx: null, on: true, hubT: 0, el: null,
   tick(dt){ if (!this.ctx) return; const C = this.ctx, v = R.v, riding = STATE === 'riding' && !R.done, tc = 0.08;
     this.wind.gain.setTargetAtTime(riding ? clamp(v * v * 0.0014, 0, 0.35) : 0, C.currentTime, tc); this.wind2.gain.setTargetAtTime(riding ? clamp(v * v * 0.0007, 0, 0.18) : 0, C.currentTime, tc);
     this.breeze.gain.setTargetAtTime(STATE === 'menu' || STATE === 'results' ? 0.03 : 0.02, C.currentTime, 0.5);
-    if (riding && R.st < 0.25 && CTL.pedal && !R.crashed && C.currentTime > this.breathNext){ this.breathNext = C.currentTime + 0.75;   // legs gone: breathing hard
+    if (riding && R.st < 0.25 && CTL.pedal > 0.05 && !R.crashed && C.currentTime > this.breathNext){ this.breathNext = C.currentTime + 0.75;   // legs gone: breathing hard
       const br = C.createBufferSource(), bf = C.createBiquadFilter(), bgn = C.createGain(); br.buffer = this.noise; bf.type = 'bandpass'; bf.frequency.value = 1100; bf.Q.value = 0.6; const t0 = C.currentTime + 0.01;
       bgn.gain.setValueAtTime(0.0001, t0); bgn.gain.linearRampToValueAtTime(0.03, t0 + 0.12); bgn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34); br.connect(bf); bf.connect(bgn); bgn.connect(this.master); br.start(t0); br.stop(t0 + 0.36); }
     if ((STATE === 'menu' || STATE === 'results' || riding) && C.currentTime > this.birdNext){ this.chirp(C.currentTime + 0.05, 1 - clamp(v / 14, 0, 0.75)); this.birdNext = C.currentTime + 1.4 + Math.random() * 4.5; }
@@ -1128,8 +1143,8 @@ const AUD = { ctx: null, on: true, hubT: 0, el: null,
     this.skid.gain.setTargetAtTime(braking && R.brake > 0.85 && v > 2.5 ? 0.05 : 0, C.currentTime, tc);                                 // the tyre, only when it is locked
     const sqA = braking && R.wet > 0.25 ? R.brake * R.wet * clamp((v - 1.5) / 4, 0, 1) * 0.045 : 0; this.squealA.gain.setTargetAtTime(sqA, C.currentTime, 0.08);   // the wet-rotor turkey call, quietly
     if (sqA > 0.001){ this.sqLfo.frequency.setTargetAtTime(7 + v * 0.3, C.currentTime, 0.1); this.sqO.frequency.setTargetAtTime(1600 + 700 * R.wet, C.currentTime, 0.1); }
-    const mot = riding && bike.motor && CTL.pedal && !R.air && !R.crashed && v < 9.4; this.motor.gain.setTargetAtTime(mot ? 0.05 : 0, C.currentTime, tc); if (mot) this.motorO.frequency.setTargetAtTime(160 + v * 30, C.currentTime, tc);
-    const coasting = riding && !CTL.pedal && !R.crashed && v > 0.7;
+    const mot = riding && bike.motor && CTL.pedal > 0.05 && !R.air && !R.crashed && v < 9.4; this.motor.gain.setTargetAtTime(mot ? 0.05 : 0, C.currentTime, tc); if (mot) this.motorO.frequency.setTargetAtTime(160 + v * 30, C.currentTime, tc);
+    const coasting = riding && CTL.pedal < 0.05 && !R.crashed && v > 0.7;
     if (coasting){ const rate = 44 * v / (2 * Math.PI * bike.geo.rR), now = C.currentTime, vol = clamp(0.3 + v / 14, 0.3, 0.8);   // 44 clicks per turn of the wheel
       if (this.hubNext < now) this.hubNext = now + 0.005;
       while (this.hubNext < now + 0.13){ const s = C.createBufferSource(); s.buffer = this.click; const g = C.createGain(); g.gain.value = vol * (0.85 + Math.random() * 0.3); s.connect(g); g.connect(this.hubF); s.start(this.hubNext); s.stop(this.hubNext + 0.013); this.hubNext += 1 / rate; } }
@@ -1178,6 +1193,16 @@ const AUD = { ctx: null, on: true, hubT: 0, el: null,
       bgn.gain.setValueAtTime(floor, t + bt); bgn.gain.linearRampToValueAtTime(bg, t + bt + 0.02); bgn.gain.exponentialRampToValueAtTime(floor, t + bt + bl); br.connect(bf); bf.connect(bgn); bgn.connect(this.master); br.start(t + bt); br.stop(t + bt + bl + 0.02); }
     for (const kt of (P.k || [])){ const s = C.createBufferSource(), kg = C.createGain(); s.buffer = this.click; kg.gain.value = 0.25; s.connect(kg); kg.connect(this.master); s.start(t + kt); s.stop(t + kt + 0.013); }   // a t or a p
   },
+  beep(f, len, vol){ if (!this.ctx) return; const C = this.ctx, t = C.currentTime, o = C.createOscillator(), g = C.createGain(); if (MUSIC.waves.p50) o.setPeriodicWave(MUSIC.waves.p50); else o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol || 0.12, t + 0.005); g.gain.setValueAtTime(vol || 0.12, t + len * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + len); o.connect(g); g.connect(this.master); o.start(t); o.stop(t + len + 0.02); },
+  ping(){ if (!this.ctx) return; const C = this.ctx, t = C.currentTime; for (const [f, dt0] of [[1046, 0], [1568, 0.09]]){ const o = C.createOscillator(), g = C.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t + dt0); g.gain.linearRampToValueAtTime(0.06, t + dt0 + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + dt0 + 0.25); o.connect(g); g.connect(this.master); o.start(t + dt0); o.stop(t + dt0 + 0.3); } },
+  /* the line: a level-clear fanfare in the game's own voices, a triangle root under it, and a distant crowd that swells and settles; a new best adds a rising run */
+  fanfare(best){ if (!this.ctx || !MUSIC.C) return; const C = this.ctx, t = C.currentTime + 0.05, S = 0.11, n = (m, at, len, vol, w) => MUSIC.note('lead', w || 'p50', m, t + at, len, vol);
+    [[72, 0], [76, 1], [79, 2], [84, 3]].forEach(([m, k]) => n(m, k * S, S * 0.95, 0.45)); n(79, 4 * S, S * 1.2, 0.4); n(84, 5.3 * S, S * 4, 0.5); n(84, 5.3 * S, S * 4, 0.25, 'p25');
+    MUSIC.note('bass', 'tri', 48, t, S * 5, 0.8); MUSIC.note('bass', 'tri', 48, t + 5.3 * S, S * 4, 0.8);
+    if (best) [[84, 10], [88, 11], [91, 12], [96, 13], [100, 14], [103, 15], [108, 16]].forEach(([m, k]) => n(m, k * S, S * 0.9, 0.4));
+    const br = C.createBufferSource(), bf = C.createBiquadFilter(), bg = C.createGain(); br.buffer = this.noise; bf.type = 'bandpass'; bf.frequency.value = 1000; bf.Q.value = 0.5;
+    bg.gain.setValueAtTime(0.0001, t); bg.gain.linearRampToValueAtTime(0.055, t + 0.7); bg.gain.setValueAtTime(0.055, t + 1.6); bg.gain.exponentialRampToValueAtTime(0.0001, t + 3.6); br.connect(bf); bf.connect(bg); bg.connect(this.master); br.start(t); br.stop(t + 3.7);
+    const lf = C.createOscillator(), lg = C.createGain(); lf.type = 'sine'; lf.frequency.value = 3.7; lg.gain.value = 0.015; lf.connect(lg); lg.connect(bg.gain); lf.start(t); lf.stop(t + 3.7); },
   thump(v){ if (!this.ctx) return; const C = this.ctx, o = C.createOscillator(), g = C.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(90, C.currentTime); o.frequency.exponentialRampToValueAtTime(40, C.currentTime + 0.18); g.gain.setValueAtTime(clamp(v * 0.12, 0.05, 0.6), C.currentTime); g.gain.exponentialRampToValueAtTime(0.001, C.currentTime + 0.2); o.connect(g); g.connect(this.master); o.start(); o.stop(C.currentTime + 0.22); },
   crash(){ if (!this.ctx) return; const C = this.ctx, s = C.createBufferSource(); s.buffer = this.noise; const f = C.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500; const g = C.createGain(); g.gain.setValueAtTime(0.3, C.currentTime); g.gain.exponentialRampToValueAtTime(0.001, C.currentTime + 0.4); s.connect(f); f.connect(g); g.connect(this.master); s.start(); s.stop(C.currentTime + 0.45); }
 };
@@ -1242,13 +1267,14 @@ function startRun(){
   if (STATE !== 'menu' && STATE !== 'results') return;
   enterFullscreen(); unlockAudio(); if (MUSIC.on) MUSIC.start(); if (!SENS.asked) enableTilt();
   $('menu').classList.remove('on'); $('results').classList.remove('on'); $('hud').classList.add('on');
-  resetRider(); ptrs.clear(); STATE = 'count'; countT = 3.4; camSnap = true; $('count').style.display = 'block'; $('coach').textContent = 'ROLL OFF THE DECK · PEDAL'; $('coach').className = 'coach';
+  resetRider(); ptrs.clear(); STATE = 'count'; countT = 3.4; lastCount = 99; camSnap = true; $('count').style.display = 'block'; $('coach').textContent = 'ROLL OFF THE DECK · PEDAL'; $('coach').className = 'coach';
   $('secName').textContent = COURSE.sections[0].name; $('bestT').textContent = BEST[bike.id] ? 'best ' + fmt(BEST[bike.id]) : 'no time yet';
 }
 function toMenu(){ STATE = 'menu'; $('hud').classList.remove('on'); $('results').classList.remove('on'); $('menu').classList.add('on'); $('count').style.display = 'none'; resetRider(); ptrs.clear(); camSnap = true; buildCards(); selectBike(bikeIdx); }
 function showResults(){
   STATE = 'results'; $('hud').classList.remove('on'); $('results').classList.add('on');
   const t = R.time, prev = BEST[bike.id], isBest = !prev || t < prev; if (isBest){ BEST[bike.id] = t; try { localStorage.setItem('pumprun.best.' + bike.id, String(t)); } catch (e) {} }
+  AUD.fanfare(isBest);
   $('resBike').textContent = bike.name + ' · ' + bike.line; $('resNew').textContent = isBest ? 'NEW BEST' : ''; $('rTime').textContent = fmt(t); $('rBest').textContent = fmt(BEST[bike.id]); $('rBest').className = 'v ' + (isBest ? 'gold' : '');
   $('rTop').textContent = (R.stats.top * MPH).toFixed(1) + ' mph'; $('rAir').textContent = R.stats.airMax.toFixed(1) + ' m'; $('rCrash').textContent = String(R.stats.crashes); $('rCrash').className = 'v ' + (R.stats.crashes ? 'warn' : 'good');
   $('rLand').textContent = R.stats.clean + ' / ' + R.stats.landings; $('rPump').textContent = (R.led.pump / 1000).toFixed(1) + ' kJ'; $('rPump').className = 'v ' + (R.led.pump > 500 ? 'good' : R.led.pump < -200 ? 'warn' : '');
@@ -1273,22 +1299,22 @@ function hud(dt){
   const [line, cls] = coachLine(); const co = $('coach'); if (co.textContent !== line) co.textContent = line; co.className = 'coach ' + cls;
   const st = $('stam'); st.style.width = (R.st * 100).toFixed(0) + '%'; st.className = R.st < 0.2 ? 'low' : '';
   $('padL').querySelector('.tag').textContent = '◀ BRAKE' + (R.wet > 0.5 ? ' · WET' : '');
-  const ln = $('lean'), tl = CTL.tilt, src = SENS.have ? (SENS.src === 'orientation' ? 'TILT' : 'MOTION') : ptrs.size ? 'THUMB' : 'KEYS'; ln.textContent = src + ' · ' + (Math.abs(tl) < 0.05 ? 'CENTRED' : (tl > 0 ? 'FRONT ' : 'REAR ') + Math.round(Math.abs(tl) * 100) + '%'); ln.className = 'lean ' + (tl > 0.05 ? 'f' : tl < -0.05 ? 'r' : '');
+  const ln = $('lean'), tl = CTL.tilt, src = PAD.active ? 'PAD' : SENS.have ? (SENS.src === 'orientation' ? 'TILT' : 'MOTION') : ptrs.size ? 'THUMB' : 'KEYS'; ln.textContent = src + ' · ' + (Math.abs(tl) < 0.05 ? 'CENTRED' : (tl > 0 ? 'FRONT ' : 'REAR ') + Math.round(Math.abs(tl) * 100) + '%'); ln.className = 'lean ' + (tl > 0.05 ? 'f' : tl < -0.05 ? 'r' : '');
   drawWeight();
-  if (R.events.length){ const e = R.events.shift(); toast(e.text, e.cls); if (e.text === 'FINISH') AUD.say(['yahoo', 'woohoo', 'yeehaw', 'ohyeah']); }
-  if (R.crashSnd){ R.crashSnd = false; AUD.crash(); AUD.say(AUD.OUCHES); if (DUST) DUST.spawn(R.x, R.S.y, 0, 16, R.v * 0.4, 1.5); }
+  if (R.events.length){ const e = R.events.shift(); toast(e.text, e.cls); if (e.text === 'FINISH') AUD.say(['yahoo', 'woohoo', 'yeehaw', 'ohyeah']); else if (e.cls === 'gold') AUD.ping(); }
+  if (R.crashSnd){ R.crashSnd = false; AUD.crash(); AUD.say(AUD.OUCHES); rumble(1, 0.6, 450); if (DUST) DUST.spawn(R.x, R.S.y, 0, 16, R.v * 0.4, 1.5); }
   if (R.whoop){ R.whoop = false; AUD.say(AUD.WHOOPS); } if (R.hoot){ R.hoot = false; AUD.say(AUD.HOOTS); } if (R.grunt){ R.grunt = false; AUD.voice('unh'); } if (R.hup){ R.hup = false; AUD.voice('hup'); }
-  if (R.thump){ AUD.thump(R.thump); if (DUST) DUST.spawn(R.crashed ? R.camX : R.x, R.crashed ? R.camY : R.S.y + 0.05, 0, Math.round(clamp(R.thump * 3, 3, 14)), R.v * 0.3, 0.8); R.thump = 0; }
+  if (R.thump){ AUD.thump(R.thump); rumble(clamp(R.thump / 6, 0.2, 1), clamp(R.thump / 4, 0.2, 1), 90 + R.thump * 30); if (DUST) DUST.spawn(R.crashed ? R.camX : R.x, R.crashed ? R.camY : R.S.y + 0.05, 0, Math.round(clamp(R.thump * 3, 3, 14)), R.v * 0.3, 0.8); R.thump = 0; }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
 }
 
 /* =============== the loop =============== */
-const PDT = 1 / 600; let last = performance.now(), acc = 0, frame = 0;
+const PDT = 1 / 600; let last = performance.now(), acc = 0, frame = 0, lastCount = 99;
 function tick(now){
   requestAnimationFrame(tick);
   const dtReal = Math.min(0.05, (now - last) / 1000); last = now; const t = now / 1000;
   readControls(dtReal);
-  if (STATE === 'count'){ countT -= dtReal; const n = Math.ceil(countT - 0.4); const el = $('count'); el.textContent = n > 0 ? String(n) : 'GO'; if (countT <= 0){ STATE = 'riding'; el.style.display = 'none'; SENS.zero = SENS.sm; R.time = 0; } }
+  if (STATE === 'count'){ countT -= dtReal; const n = Math.ceil(countT - 0.4); const el = $('count'); if (n !== lastCount){ lastCount = n; AUD.beep(n > 0 ? 660 : 990, n > 0 ? 0.09 : 0.32, n > 0 ? 0.1 : 0.14); } el.textContent = n > 0 ? String(n) : 'GO'; if (countT <= 0){ STATE = 'riding'; el.style.display = 'none'; SENS.zero = SENS.sm; R.time = 0; } }
   if (STATE === 'riding'){ acc += dtReal; let n = 0; while (acc >= PDT && n < 60){ step(PDT); acc -= PDT; n++; } if (acc > 0.1) acc = 0;
     if (R.done){ R.finT += dtReal; if (R.finT > 1.4) showResults(); } }
   if (RIG){ poseRig(RIG, STATE === 'riding' ? dtReal : 0); RIGM.update(); }
