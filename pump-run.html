@@ -470,7 +470,7 @@ const CTL = { tilt: 0, pedal: 0, brake: 0 };                                    
 const R = { events: [] };
 function resetRider(){
   Object.assign(R, { x: 0, v: 0, vd: 0, u: 0, ud: 0, udd: 0, h: H0, hd: 0, hdd: 0, hs: 0, hsd: 0, air: false, airT: 0, pitch: 0, pw: 0, N: PH.M * G9, brake: 0, st: 1, crashed: false, crashT: 0, done: false, time: 0,
-    tookOff: 0, unloadT: 0, secIdx: 0, checkpoint: 0, travF: PH.sagF, travR: PH.sagR, travFd: 0, travRd: 0, crank: Math.PI / 2, lastKind: '', by: 0, manual: 0, vSm: 0, finT: 0, vBody: 0, thump: 0, crashSnd: false, camX: 0, camY: 0, wet: 1, bottom: 0, whoop: false, whoopPending: false });
+    tookOff: 0, unloadT: 0, secIdx: 0, checkpoint: 0, travF: PH.sagF, travR: PH.sagR, travFd: 0, travRd: 0, crank: Math.PI / 2, lastKind: '', by: 0, manual: 0, vSm: 0, finT: 0, vBody: 0, thump: 0, crashSnd: false, camX: 0, camY: 0, wet: 1, bottom: 0, whoop: false, whoopPending: false, hoot: false, hootPending: false, grunt: false, hup: false });
   RAG.on = false;
   R.S = surf(0); R.com = V2(0, 0); R.cv = V2(0, 0); R.led = { pump: 0, ped: 0, mot: 0, brake: 0, drag: 0, land: 0, grav: 0 }; R.stats = { top: 0, airMax: 0, crashes: 0, landings: 0, clean: 0 }; R.events.length = 0; R.lastLand = null;
 }
@@ -561,7 +561,7 @@ function takeoff(kind){                                                         
   else if (kind === 'drop') pw = Math.max(-3, -(G9 / Math.max(v, 1.2)) * 0.9) * (1 - back) + 0.7 * back;   // the front falls over the ledge until the rear follows, unless the rider lifts it
   else pw = -0.25 * (1 - back) + 0.6 * back;
   R.pitch = th; R.pw = pw; R.air = true; R.airT = 0; R.tookOff = R.x; R.unloadT = 0; R.N = 0; R.lastKind = kind;
-  const L = predictLanding(); R.whoopPending = L.t > 0.85 || R.cv.y > 3.3;                   // a big one: the rider lets it out once the wheels are well clear
+  const L = predictLanding(); R.whoopPending = L.t > 0.85 || R.cv.y > 3.3; R.hootPending = !R.whoopPending && L.t > 0.5 && Math.random() < 0.35; if (kind === 'lip' && R.hd > 0.6 && !R.whoopPending) R.hup = true;   // a big one: the rider lets it out once the wheels are well clear; a middling one sometimes gets a hoot
 }
 function land(which){
   const S = surf(R.x), tx = Math.cos(S.th), ty = Math.sin(S.th), nx = -ty, ny = tx, FR = PH.FR, ptx = Math.cos(R.pitch), pty = Math.sin(R.pitch), pnx = -pty, pny = ptx;
@@ -576,7 +576,7 @@ function land(which){
   if (mis < -PH.misNose) return crash('OVER THE BARS · nose ' + deg + '° down into the landing', 'otb');
   if (mis > PH.misTail) return crash('LOOPED OUT · tail ' + deg + '° down', 'loop');
   if (into > PH.vCrit) return crash('CASED · ' + into.toFixed(1) + ' m/s into the ground is more than ' + Math.round(bike.geo.travelR * 1000) + ' mm can take', 'case');
-  R.hsd -= into * 0.45; R.travFd += into * 1.3 * (which === 'front' ? 1 : 0.6); R.travRd += into * 1.3 * (which === 'rear' ? 1 : 0.6);
+  R.hsd -= into * 0.45; R.travFd += into * 1.3 * (which === 'front' ? 1 : 0.6); R.travRd += into * 1.3 * (which === 'rear' ? 1 : 0.6); if (into > 3.5) R.grunt = true;
   R.pitch = S.th; R.pw = 0; R.stats.landings++;
   const clean = into < 2.4 && Math.abs(mis) < 0.17; if (clean) R.stats.clean++;
   if (gap > 2.5) event(clean ? 'CLEAN · ' + gap.toFixed(1) + ' m' : into > 3.6 ? 'CASED · ' + into.toFixed(1) + ' m/s into the ground' : Math.abs(mis) > 0.3 ? (mis < 0 ? 'NOSE HEAVY · ' : 'TAIL HEAVY · ') + deg + '°' : 'LANDED · ' + gap.toFixed(1) + ' m', clean ? 'good' : into > 3.6 || Math.abs(mis) > 0.3 ? 'bad' : '');
@@ -624,7 +624,7 @@ function stepGround(dt){
 }
 function stepAir(dt){
   R.airT += dt; riderStep(dt, false);
-  if (R.whoopPending && R.airT > 0.12){ R.whoopPending = false; R.whoop = true; }
+  if (R.whoopPending && R.airT > 0.12){ R.whoopPending = false; R.whoop = true; } if (R.hootPending && R.airT > 0.12){ R.hootPending = false; R.hoot = true; }
   const a = clamp(Math.abs(CTL.tilt) * 1.6, 0, 1), pwCmd = -2.6 * CTL.tilt;               // arms and legs steer the bike's attitude; with no input it keeps what the lip gave it, less a little air damping
   R.pw += ((pwCmd - R.pw) * 11 * a - R.pw * 1.0 * (1 - a)) * dt;
   R.pitch = clamp(R.pitch + R.pw * dt, -1.45, 1.45);
@@ -1100,7 +1100,7 @@ const AUD = { ctx: null, on: true, hubT: 0, el: null,
     this.wind = src('lowpass', 380); this.wind2 = src('bandpass', 900, 0.6); this.skid = src('bandpass', 1500, 1.2);
     /* the valley: a faint breeze in the firs that swells and fades, and birds */
     this.breeze = src('lowpass', 520); const bl = C.createOscillator(); bl.type = 'sine'; bl.frequency.value = 0.09; const blg = C.createGain(); blg.gain.value = 0.012; bl.connect(blg); blg.connect(this.breeze.gain); bl.start(); this.breeze.gain.value = 0.02;
-    const bg = this.birdG = C.createGain(); bg.gain.value = 0.035; bg.connect(master); this.birdNext = C.currentTime + 1.5;
+    const bg = this.birdG = C.createGain(); bg.gain.value = 0.035; bg.connect(master); this.birdNext = C.currentTime + 1.5; this.breathNext = 0;
     /* the freehub: a Hope Pro 4, 44 points of engagement. Every click is its own short metallic tick, scheduled on the audio clock at the wheel's rate; above a hundred a second they blur into the buzz a fast coast makes */
     const cl = this.click = C.createBuffer(1, Math.floor(C.sampleRate * 0.012), C.sampleRate), cd = cl.getChannelData(0);
     for (let i = 0; i < cd.length; i++){ const t = i / C.sampleRate; cd[i] = (Math.random() * 2 - 1) * Math.exp(-t / 0.0008) * 0.4 + Math.sin(2 * Math.PI * 2600 * t) * Math.exp(-t / 0.0018) * 0.5 + Math.sin(2 * Math.PI * 4100 * t) * Math.exp(-t / 0.0010) * 0.15; }
@@ -1119,6 +1119,9 @@ const AUD = { ctx: null, on: true, hubT: 0, el: null,
   tick(dt){ if (!this.ctx) return; const C = this.ctx, v = R.v, riding = STATE === 'riding' && !R.done, tc = 0.08;
     this.wind.gain.setTargetAtTime(riding ? clamp(v * v * 0.0014, 0, 0.35) : 0, C.currentTime, tc); this.wind2.gain.setTargetAtTime(riding ? clamp(v * v * 0.0007, 0, 0.18) : 0, C.currentTime, tc);
     this.breeze.gain.setTargetAtTime(STATE === 'menu' || STATE === 'results' ? 0.03 : 0.02, C.currentTime, 0.5);
+    if (riding && R.st < 0.25 && CTL.pedal && !R.crashed && C.currentTime > this.breathNext){ this.breathNext = C.currentTime + 0.75;   // legs gone: breathing hard
+      const br = C.createBufferSource(), bf = C.createBiquadFilter(), bgn = C.createGain(); br.buffer = this.noise; bf.type = 'bandpass'; bf.frequency.value = 1100; bf.Q.value = 0.6; const t0 = C.currentTime + 0.01;
+      bgn.gain.setValueAtTime(0.0001, t0); bgn.gain.linearRampToValueAtTime(0.03, t0 + 0.12); bgn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.34); br.connect(bf); bf.connect(bgn); bgn.connect(this.master); br.start(t0); br.stop(t0 + 0.36); }
     if ((STATE === 'menu' || STATE === 'results' || riding) && C.currentTime > this.birdNext){ this.chirp(C.currentTime + 0.05, 1 - clamp(v / 14, 0, 0.75)); this.birdNext = C.currentTime + 1.4 + Math.random() * 4.5; }
     const braking = riding && !R.air && !R.crashed;
     this.hiss.gain.setTargetAtTime(braking ? R.brake * clamp(v / 6, 0, 1) * 0.035 : 0, C.currentTime, tc);                            // pads on the rotor
@@ -1138,16 +1141,43 @@ const AUD = { ctx: null, on: true, hubT: 0, el: null,
     if (kind < 0.45){ const n = 2 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) note(t + i * 0.16, f, f * 1.3, 0.07, v); }                               // tweet
     else if (kind < 0.8){ const n = 6 + Math.floor(Math.random() * 4); for (let i = 0; i < n; i++) note(t + i * 0.055, i % 2 ? f * 1.15 : f, i % 2 ? f * 1.1 : f * 1.05, 0.035, v * 0.8); }   // trill
     else { note(t, f * 1.3, f * 0.85, 0.22, v); note(t + 0.3, f * 0.9, f * 1.25, 0.18, v * 0.9); } },                                                              // whistle
-  /* the rider's voice: a buzzing source through two moving vowel formants. 'yeah' rides the whoop from ee through aa to o; 'oof' is short and falls */
-  voice(kind){ if (!this.ctx) return; const C = this.ctx, t = C.currentTime, o = C.createOscillator(), vib = C.createOscillator(), vg = C.createGain(), f1 = C.createBiquadFilter(), f2 = C.createBiquadFilter(), g = C.createGain(), br = C.createBufferSource(), bf = C.createBiquadFilter(), bgn = C.createGain();
+  /* the rider's voice: a buzzing source through two moving vowel formants (F1, F2), with breath for the h's and a click for a t.
+     Each call is a little score: [time, pitch, F1, F2, gain] points; a gain at the floor is a gap between syllables. */
+  PHRASES: {
+    yeah:   { p: [[0, 300, 280, 2300, 0], [0.05, 350, 300, 2200, 0.2], [0.42, 330, 720, 1300, 0.2], [0.8, 280, 600, 1050, 0.15], [1.05, 190, 420, 800, 0]] },
+    yippee: { p: [[0, 340, 280, 2300, 0], [0.03, 345, 400, 2000, 0.2], [0.12, 335, 400, 2000, 0.18], [0.15, 335, 400, 2000, 0], [0.2, 380, 280, 2300, 0], [0.23, 400, 280, 2300, 0.2], [0.5, 440, 280, 2300, 0.18], [0.62, 380, 280, 2300, 0]], k: [0.19] },
+    woohoo: { p: [[0, 260, 300, 700, 0], [0.05, 280, 300, 750, 0.18], [0.3, 330, 320, 800, 0.16], [0.36, 330, 320, 800, 0], [0.42, 380, 300, 700, 0], [0.47, 400, 320, 780, 0.2], [0.8, 360, 320, 780, 0.15], [0.95, 300, 320, 760, 0]], b: [[0.36, 0.09, 0.03]] },
+    yahoo:  { p: [[0, 300, 280, 2300, 0], [0.04, 320, 700, 1250, 0.2], [0.25, 340, 700, 1250, 0.18], [0.3, 340, 700, 1250, 0], [0.36, 420, 300, 720, 0], [0.4, 440, 320, 780, 0.2], [0.75, 400, 320, 780, 0.15], [0.9, 330, 320, 760, 0]], b: [[0.3, 0.09, 0.03]] },
+    whoa:   { p: [[0, 300, 300, 700, 0], [0.05, 320, 300, 700, 0.18], [0.2, 330, 500, 900, 0.2], [0.6, 290, 650, 1100, 0.18], [0.92, 220, 600, 950, 0]] },
+    ahhh:   { p: [[0, 280, 650, 1100, 0], [0.06, 300, 650, 1100, 0.2], [0.5, 320, 650, 1100, 0.2], [0.9, 260, 600, 1000, 0.14], [1.12, 220, 600, 1000, 0]] },
+    yeehaw: { p: [[0, 340, 280, 2300, 0], [0.05, 370, 280, 2300, 0.2], [0.3, 420, 280, 2300, 0.2], [0.35, 420, 280, 2300, 0], [0.4, 380, 600, 950, 0], [0.44, 360, 600, 950, 0.22], [0.7, 330, 600, 950, 0.18], [0.92, 240, 600, 950, 0]], b: [[0.35, 0.08, 0.03]] },
+    wooo:   { p: [[0, 260, 300, 700, 0], [0.06, 280, 300, 720, 0.18], [0.5, 360, 320, 800, 0.18], [1.0, 340, 320, 800, 0.15], [1.22, 280, 320, 760, 0]] },
+    hey:    { p: [[0, 320, 550, 1800, 0], [0.05, 340, 550, 1800, 0.2], [0.25, 330, 400, 2000, 0.18], [0.42, 300, 300, 2200, 0]], b: [[0, 0.06, 0.03]] },
+    ohyeah: { p: [[0, 280, 500, 900, 0], [0.04, 290, 500, 900, 0.18], [0.25, 280, 500, 900, 0.16], [0.3, 280, 500, 900, 0], [0.34, 330, 280, 2300, 0], [0.38, 340, 550, 1800, 0.2], [0.6, 320, 700, 1250, 0.18], [0.87, 240, 550, 1100, 0]] },
+    haha:   { p: [[0, 300, 650, 1100, 0], [0.03, 310, 650, 1100, 0.18], [0.14, 290, 650, 1100, 0], [0.2, 285, 650, 1100, 0], [0.23, 290, 650, 1100, 0.17], [0.34, 270, 650, 1100, 0], [0.4, 265, 650, 1100, 0], [0.43, 270, 650, 1100, 0.16], [0.56, 240, 650, 1100, 0]], b: [[0, 0.05, 0.03], [0.2, 0.05, 0.03], [0.4, 0.05, 0.03]] },
+    wheee:  { p: [[0, 300, 300, 700, 0], [0.04, 320, 300, 700, 0.16], [0.15, 360, 280, 2300, 0.2], [0.7, 440, 280, 2300, 0.2], [0.92, 400, 280, 2300, 0]], b: [[0, 0.05, 0.02]] },
+    sendit: { p: [[0, 320, 550, 1800, 0], [0.09, 320, 550, 1800, 0], [0.12, 330, 550, 1800, 0.2], [0.3, 320, 550, 1800, 0], [0.34, 340, 400, 2000, 0], [0.37, 350, 400, 2000, 0.18], [0.5, 330, 400, 2000, 0]], b: [[0, 0.1, 0.035]], k: [0.53] },
+    oof:    { p: [[0, 230, 620, 1050, 0], [0.03, 220, 620, 1050, 0.22], [0.2, 190, 560, 980, 0.16], [0.42, 130, 480, 900, 0]] },
+    ouch:   { p: [[0, 320, 650, 1100, 0], [0.03, 330, 650, 1100, 0.22], [0.2, 300, 650, 1100, 0]], b: [[0.2, 0.1, 0.035]] },
+    nooo:   { p: [[0, 280, 400, 900, 0], [0.05, 300, 300, 720, 0.2], [0.4, 290, 300, 720, 0.18], [0.72, 220, 300, 700, 0]] },
+    ahh:    { p: [[0, 360, 650, 1100, 0], [0.03, 380, 650, 1100, 0.22], [0.3, 300, 650, 1100, 0.18], [0.5, 200, 600, 1000, 0]] },
+    unh:    { p: [[0, 230, 500, 1000, 0], [0.03, 240, 520, 1000, 0.2], [0.14, 210, 500, 980, 0.14], [0.28, 170, 480, 950, 0]] },
+    hup:    { p: [[0, 260, 480, 1000, 0], [0.03, 300, 500, 1000, 0.18], [0.12, 280, 500, 1000, 0]], b: [[0, 0.05, 0.03], [0.12, 0.05, 0.02]] }
+  },
+  WHOOPS: ['yeah', 'yippee', 'woohoo', 'yahoo', 'whoa', 'ahhh', 'yeehaw', 'wooo', 'hey', 'ohyeah', 'haha', 'wheee', 'sendit'], HOOTS: ['wooo', 'hey', 'wheee', 'whoa', 'yeah'], OUCHES: ['oof', 'ouch', 'nooo', 'ahh'], lastSaid: '',
+  say(list){ let n = list[Math.floor(Math.random() * list.length)]; if (n === this.lastSaid) n = list[(list.indexOf(n) + 1) % list.length]; this.lastSaid = n; this.voice(n); },
+  voice(name){ if (!this.ctx) return; const P = this.PHRASES[name]; if (!P) return; const C = this.ctx, t = C.currentTime, o = C.createOscillator(), vib = C.createOscillator(), vg = C.createGain(), f1 = C.createBiquadFilter(), f2 = C.createBiquadFilter(), g = C.createGain();
     o.type = 'sawtooth'; vib.type = 'sine'; vib.frequency.value = 5.5; vg.gain.value = 7; vib.connect(vg); vg.connect(o.frequency); f1.type = 'bandpass'; f1.Q.value = 5; f2.type = 'bandpass'; f2.Q.value = 6;
-    const P = kind === 'oof' ? { f: [[0, 230], [0.08, 210], [0.38, 130]], F1: [[0, 620], [0.38, 480]], F2: [[0, 1050], [0.38, 900]], g: [[0, 0.0001], [0.03, 0.22], [0.2, 0.16], [0.4, 0.0001]], end: 0.42 }
-      : { f: [[0, 300], [0.12, 350], [0.45, 330], [0.75, 280], [1.05, 190]], F1: [[0, 280], [0.14, 300], [0.42, 720], [0.8, 600], [1.05, 420]], F2: [[0, 2300], [0.14, 2200], [0.42, 1300], [0.8, 1050], [1.05, 800]], g: [[0, 0.0001], [0.05, 0.2], [0.5, 0.2], [0.85, 0.15], [1.08, 0.0001]], end: 1.1 };
-    const ramp = (p, pts, exp) => { p.setValueAtTime(pts[0][1], t); for (let i = 1; i < pts.length; i++) (exp ? p.exponentialRampToValueAtTime(pts[i][1], t + pts[i][0]) : p.linearRampToValueAtTime(pts[i][1], t + pts[i][0])); };
-    ramp(o.frequency, P.f, true); ramp(f1.frequency, P.F1, true); ramp(f2.frequency, P.F2, true); ramp(g.gain, P.g, true);
+    const end = P.p[P.p.length - 1][0] + 0.05, floor = 0.0001;
+    for (const [param, idx] of [[o.frequency, 1], [f1.frequency, 2], [f2.frequency, 3], [g.gain, 4]]){
+      param.setValueAtTime(Math.max(floor, P.p[0][idx]), t);
+      for (let i = 1; i < P.p.length; i++){ const pt = P.p[i], v = Math.max(floor, pt[idx]); if (idx === 4 && P.p[i - 1][4] <= 0 && v > floor) param.setValueAtTime(floor, t + P.p[i - 1][0]); param.exponentialRampToValueAtTime(v, t + pt[0]); } }
     o.connect(f1); o.connect(f2); f1.connect(g); f2.connect(g); g.connect(this.master);
-    br.buffer = this.noise; bf.type = 'bandpass'; bf.frequency.value = 2200; bf.Q.value = 0.8; bgn.gain.setValueAtTime(0.0001, t); bgn.gain.linearRampToValueAtTime(0.012, t + 0.05); bgn.gain.exponentialRampToValueAtTime(0.0001, t + P.end); br.connect(bf); bf.connect(bgn); bgn.connect(this.master);
-    o.start(t); vib.start(t); br.start(t); o.stop(t + P.end + 0.05); vib.stop(t + P.end + 0.05); br.stop(t + P.end + 0.05); },
+    o.start(t); vib.start(t); o.stop(t + end); vib.stop(t + end);
+    for (const [bt, bl, bg] of (P.b || [])){ const br = C.createBufferSource(), bf = C.createBiquadFilter(), bgn = C.createGain(); br.buffer = this.noise; bf.type = 'bandpass'; bf.frequency.value = 2200; bf.Q.value = 0.8;   // breath
+      bgn.gain.setValueAtTime(floor, t + bt); bgn.gain.linearRampToValueAtTime(bg, t + bt + 0.02); bgn.gain.exponentialRampToValueAtTime(floor, t + bt + bl); br.connect(bf); bf.connect(bgn); bgn.connect(this.master); br.start(t + bt); br.stop(t + bt + bl + 0.02); }
+    for (const kt of (P.k || [])){ const s = C.createBufferSource(), kg = C.createGain(); s.buffer = this.click; kg.gain.value = 0.25; s.connect(kg); kg.connect(this.master); s.start(t + kt); s.stop(t + kt + 0.013); }   // a t or a p
+  },
   thump(v){ if (!this.ctx) return; const C = this.ctx, o = C.createOscillator(), g = C.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(90, C.currentTime); o.frequency.exponentialRampToValueAtTime(40, C.currentTime + 0.18); g.gain.setValueAtTime(clamp(v * 0.12, 0.05, 0.6), C.currentTime); g.gain.exponentialRampToValueAtTime(0.001, C.currentTime + 0.2); o.connect(g); g.connect(this.master); o.start(); o.stop(C.currentTime + 0.22); },
   crash(){ if (!this.ctx) return; const C = this.ctx, s = C.createBufferSource(); s.buffer = this.noise; const f = C.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500; const g = C.createGain(); g.gain.setValueAtTime(0.3, C.currentTime); g.gain.exponentialRampToValueAtTime(0.001, C.currentTime + 0.4); s.connect(f); f.connect(g); g.connect(this.master); s.start(); s.stop(C.currentTime + 0.45); }
 };
@@ -1245,9 +1275,9 @@ function hud(dt){
   $('padL').querySelector('.tag').textContent = '◀ BRAKE' + (R.wet > 0.5 ? ' · WET' : '');
   const ln = $('lean'), tl = CTL.tilt, src = SENS.have ? (SENS.src === 'orientation' ? 'TILT' : 'MOTION') : ptrs.size ? 'THUMB' : 'KEYS'; ln.textContent = src + ' · ' + (Math.abs(tl) < 0.05 ? 'CENTRED' : (tl > 0 ? 'FRONT ' : 'REAR ') + Math.round(Math.abs(tl) * 100) + '%'); ln.className = 'lean ' + (tl > 0.05 ? 'f' : tl < -0.05 ? 'r' : '');
   drawWeight();
-  if (R.events.length){ const e = R.events.shift(); toast(e.text, e.cls); }
-  if (R.crashSnd){ R.crashSnd = false; AUD.crash(); AUD.voice('oof'); if (DUST) DUST.spawn(R.x, R.S.y, 0, 16, R.v * 0.4, 1.5); }
-  if (R.whoop){ R.whoop = false; AUD.voice('yeah'); }
+  if (R.events.length){ const e = R.events.shift(); toast(e.text, e.cls); if (e.text === 'FINISH') AUD.say(['yahoo', 'woohoo', 'yeehaw', 'ohyeah']); }
+  if (R.crashSnd){ R.crashSnd = false; AUD.crash(); AUD.say(AUD.OUCHES); if (DUST) DUST.spawn(R.x, R.S.y, 0, 16, R.v * 0.4, 1.5); }
+  if (R.whoop){ R.whoop = false; AUD.say(AUD.WHOOPS); } if (R.hoot){ R.hoot = false; AUD.say(AUD.HOOTS); } if (R.grunt){ R.grunt = false; AUD.voice('unh'); } if (R.hup){ R.hup = false; AUD.voice('hup'); }
   if (R.thump){ AUD.thump(R.thump); if (DUST) DUST.spawn(R.crashed ? R.camX : R.x, R.crashed ? R.camY : R.S.y + 0.05, 0, Math.round(clamp(R.thump * 3, 3, 14)), R.v * 0.3, 0.8); R.thump = 0; }
   if (toastT > 0){ toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
 }
