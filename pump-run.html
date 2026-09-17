@@ -458,7 +458,7 @@ setBike(1);
 /* =============== the courses: one line down the valley, and a freeride line down a Utah ridge =============== */
 const LEVELS = {
   valley:  { name: 'THE VALLEY', sub: 'Pump Lab\'s line: rollers, tables, drops. Judged on time.', judge: 'time', biome: 'pnw' },
-  rampage: { name: 'RAMPAGE', sub: 'A freeride line down a Utah ridge: a 40% roll-in, a 20 ft spine drop, a 36 ft canyon gap, a booter, a 30 ft cliff, a 40 ft step-down, a 25 ft flat drop. Judged on tricks and landings.', judge: 'score', biome: 'desert' }
+  rampage: { name: 'RAMPAGE', sub: 'A freeride line off a Utah ridge: the start gate on the ridge top, an 85% chute into a 56 ft canyon gap, a 20 ft spine drop, a booter, a 30 ft cliff, a 40 ft step-down, a 25 ft flat drop. Judged on tricks and landings.', judge: 'score', biome: 'desert' }
 };
 let LEVEL = 'valley', COURSE = null;
 function buildCourse(level){
@@ -486,22 +486,28 @@ function buildCourse(level){
     const w = 0.12, te = 2 * b * Lp, len = w + Lp + Ro;
     const s = add(len, t => t < w ? -H * smooth(t / w) : t < w + Lp ? -H - b * (t - w) * (t - w) : -H - b * Lp * Lp - te * Ro * (q => q - q * q / 2)((t - w - Lp) / Ro), 'drop');
     edges.push(Object.assign({ x: s.x0, kind: 'drop', H, name: opt.name || 'DROP' }, opt)); rocks.push([s.x0 - 5, s.x0 + 8]); return s; };
+  const flight = (v, thDeg, y0) => {                                                                 // the rider's centre of mass off a lip: the game's own drag, sampled; the CoM starts 0.8 m over the lip and the wheels touch about 1 m below it
+    const th = thDeg * D2R; let x = 0, y = y0, vx = v * Math.cos(th), vy = v * Math.sin(th); const xs = [0], ys = [y0], dt = 0.005;
+    for (let t = 0; t < 7 && y > y0 - 80; t += dt){ const sp = Math.hypot(vx, vy), ad = 0.5 * 1.2 * 0.55 * sp * sp / 90; vx -= ad * vx / sp * dt; vy -= (G9 + ad * vy / sp) * dt; x += vx * dt; y += vy * dt; xs.push(x); ys.push(y); }
+    const apex = xs[ys.indexOf(Math.max(...ys))];
+    const at = X => { if (X <= 0) return y0; let lo = 0, hi = xs.length - 1; if (X >= xs[hi]) return -1e9; while (lo < hi - 1){ const m = (lo + hi) >> 1; if (xs[m] <= X) lo = m; else hi = m; } return lerp(ys[lo], ys[hi], (X - xs[lo]) / (xs[hi] - xs[lo] || 1)); };
+    return { wheel: X => at(X) - 1.0, apex, meet: (yGround, from) => { for (let X = Math.max(from || 0, apex); X < xs[xs.length - 1]; X += 0.05) if (at(X) - 1.0 <= yGround(X)) return X; return -1; } }; };
   const fdrop = (H, landDeg, runout, extra, opt = {}) => {                                          // a freeride drop, built the way the big ones are dug: a short knuckle, a straight face at landDeg carrying the height and `extra` more, a round-out. Overshoot the knuckle and you still land on the face at the face's angle; what kills is the flat, and the flat is a long way down
     const tn = Math.tan(landDeg * D2R), w = 0.12, kn = 1.2, Hf = H + extra, Ro = Math.max(2.5, 0.15 * Hf / tn + 1.5), faceL = Math.max(0.5, Hf / tn - kn / 2 - Ro / 2), hK = -tn * kn / 2, hF = hK - tn * faceL, landL = kn + faceL + Ro;
     const yFace = u => u < kn ? -H * 0.12 - tn * u * u / (2 * kn) : u < kn + faceL ? -H * 0.12 + hK - tn * (u - kn) : u < landL ? (q => -H * 0.12 + hF - tn * q + tn * q * q / (2 * Ro))(u - kn - faceL) : -H * 0.12 + hF - tn * Ro / 2;
     const s = add(w + landL + runout, t => t < w ? -H * smooth(t / w) * 0.12 : yFace(t - w), 'fdrop');     // the ledge: a small lip over the edge, then air
-    let vHit = 3; for (let v = 3; v <= 22; v += 0.25){ let hit = false; for (let t = 0.02; t < 5; t += 0.01){ const u = v * t - w, y = -0.5 * G9 * t * t; if (u <= 0) continue; if (u > kn + faceL) break; if (y <= yFace(u)){ hit = true; break; } } if (hit) vHit = v; else break; }   // the fastest level launch that still meets the face
+    let vHit = 3; for (let v = 3; v <= 22; v += 0.25){ const X = flight(v, 0, 0.8).meet(X => yFace(X - w), 0.5); if (X > 0 && X - w <= kn + faceL) vHit = v; else break; }   // the fastest level launch that still meets the face
     edges.push(Object.assign({ x: s.x0, kind: 'drop', H, name: opt.name || 'DROP', vMax: Math.round(vHit * 0.85 * 4) / 4 }, opt)); rocks.push([s.x0 - 6, s.x0 + 4]); return s; };
   const booter = (H, lipDeg, R, vLip, landDeg, kind, extra, opt = {}) => {                   // a freeride booter, sized from the design flight at vLip off the lip: radiused transition, straight face, deck, then the landing.
     /* a table: the knuckle sits at deck height and the deck runs to where that flight comes down, touching 2.5 m past the knuckle.
        a step-down: the deck ends before the flight comes back to its level, the ground rolls away over four metres, and the knuckle sits where the flight is 2.5 m past it */
     const th = lipDeg * D2R, xa = R * Math.sin(th), ya = R * (1 - Math.cos(th)), lip = xa + (H - ya) / Math.tan(th), tl = Math.tan(landDeg * D2R), kn = 1.6, Ro = 4.5;
-    const vx = vLip * Math.cos(th), vy = vLip * Math.sin(th), yTraj = x => H + vy * (x / vx) - 0.5 * G9 * (x / vx) * (x / vx);
+    const F = flight(vLip, lipDeg, H + 0.8);
     let deck, top, kn2 = kn;
-    if (kind === 'stepdown'){ top = H; kn2 = 2.2; deck = Math.max(3, 2 * vx * vy / G9 - 4.0); }                                     // the deck ends four metres before the flight comes back to its level: the face starts there, and a short rider rolls off a drop onto it
-    else { top = H; const yT = top - tl * kn / 2 - tl * 2.5, tf = (vy + Math.sqrt(vy * vy + 2 * G9 * (H - yT))) / G9; deck = Math.max(2.5, vx * tf - kn - 2.5); }
+    if (kind === 'stepdown'){ top = H; kn2 = 2.2; deck = Math.max(3, F.meet(() => H) - 4.0); }                                       // the deck ends four metres before the flight comes back to its level: the face starts there, and a short rider rolls off a drop onto it
+    else { top = H; const yT = top - tl * kn / 2 - tl * 2.5; deck = Math.max(2.5, F.meet(() => yT) - kn - 2.5); }                     // a table: the wheels touch 2.5 m past the knuckle
     let ramp = (top + extra) / tl;
-    if (kind === 'stepdown'){ for (let t = 0.05; t < 6; t += 0.01){ const u = vx * t - deck, y = H + vy * t - 0.5 * G9 * t * t; if (u > kn2 && y <= top - tl * kn2 / 2 - tl * (u - kn2)){ ramp = Math.max(ramp, u - kn2 + 4.0); break; } } }
+    if (kind === 'stepdown'){ const X = F.meet(X => X - deck > kn2 ? top - tl * kn2 / 2 - tl * (X - deck - kn2) : -1e9, deck + kn2); if (X > 0) ramp = Math.max(ramp, X - deck - kn2 + 4.0); }
     const land = kn2 + ramp + Ro, len = lip + deck + land;
     const s = add(len, t => { if (t < 0) return 0; if (t < xa) return R - Math.sqrt(Math.max(0, R * R - t * t)); if (t < lip) return ya + (t - xa) * Math.tan(th);
       if (t < lip + deck) return H; const u = t - lip - deck;
@@ -512,25 +518,27 @@ function buildCourse(level){
     s.lip = s.x0 + lip; s.deckEnd = s.lip + deck; s.H = H; const vMin = Math.sqrt(vLip * vLip + 2 * G9 * H);   // the speed the coach asks for is read on the run-in: the climb up the lip costs 2gH
     edges.push(Object.assign({ x: s.lip, kind: 'lip', H, deck, name: opt.name || 'BOOTER', vMin, vMaxLip: vMin + (kind === 'stepdown' ? 4.0 : 3.0), x0: s.x0, y0: s.y0, vLip }, opt)); rocks.push([s.x0, s.x1]); return s; };
   const gap = (Hlip, lipDeg, R, gapLen, vLip, landDeg, faceL, opt = {}) => {                     // a canyon gap: the lip, the canyon (nine metres down, sheer walls), the far wall's knuckle set where the design flight comes down, a long face beyond it
-    const th = lipDeg * D2R, xa = R * Math.sin(th), ya = R * (1 - Math.cos(th)), lip = xa + (Hlip - ya) / Math.tan(th), tl = Math.tan(landDeg * D2R), kn = 2.5, Ro = 5, W = 1.2, floor = -9, len = lip + gapLen + kn + faceL + Ro;
-    const vx = vLip * Math.cos(th), vy = vLip * Math.sin(th), tf = (gapLen + kn + 3.0) / vx, top = Hlip + vy * tf - 0.5 * G9 * tf * tf + tl * (kn / 2 + 3.0);
+    const th = lipDeg * D2R, xa = R * Math.sin(th), ya = R * (1 - Math.cos(th)), lip = xa + (Hlip - ya) / Math.tan(th), tl = Math.tan(landDeg * D2R), kn = opt.kn || 2.5, Ro = 5, W = 1.2, floor = -9, len = lip + gapLen + kn + faceL + Ro;
+    const top = flight(vLip, lipDeg, Hlip + 0.8).wheel(gapLen + kn + 5.0) + tl * (kn / 2 + 5.0);                      // the far knuckle sits where the design flight's wheels come down 5 m onto the face: a slower rider still meets the face, not the knuckle
     const s = add(len, t => { if (t < xa) return R - Math.sqrt(Math.max(0, R * R - t * t)); if (t < lip) return ya + (t - xa) * Math.tan(th);
       const g = t - lip; if (g < W) return Hlip + (floor - Hlip) * smooth(g / W); if (g < gapLen - W) return floor; if (g < gapLen) return floor + (top - floor) * smooth((g - gapLen + W) / W);
       const u = g - gapLen; if (u < kn) return top - tl * u * u / (2 * kn); if (u < kn + faceL) return top - tl * kn / 2 - tl * (u - kn);
       if (u < kn + faceL + Ro){ const q = u - kn - faceL; return top - tl * kn / 2 - tl * faceL - tl * q + tl * q * q / (2 * Ro); } return top - tl * kn / 2 - tl * faceL - tl * Ro / 2; }, 'gap');
-    s.lip = s.x0 + lip; s.H = Hlip; s.gap = gapLen; const vMin = Math.sqrt(vLip * vLip + 2 * G9 * Hlip) + 0.7;
+    s.lip = s.x0 + lip; s.H = Hlip; s.gap = gapLen; const vMin = Math.sqrt(vLip * vLip + 2 * G9 * Hlip) + 0.2;
     edges.push(Object.assign({ x: s.lip, kind: 'lip', H: Hlip, gap: gapLen, name: opt.name || 'GAP', vMin, vMaxLip: vMin + 2.5, x0: s.x0, y0: s.y0, vLip }, opt)); rocks.push([s.x0, s.lip + 0.5]); rocks.push([s.lip + gapLen - 0.5, s.x1]); return s; };
   const stepup = (H, faceDeg, R) => { const th = faceDeg * D2R, xa = R * Math.sin(th), ya = R * (1 - Math.cos(th)), lip = xa + (H - ya) / Math.tan(th);
     const s = add(lip, t => t < xa ? R - Math.sqrt(Math.max(0, R * R - t * t)) : ya + (t - xa) * Math.tan(th), 'stepup'); edges.push({ x: s.x1, kind: 'lip', H: 0.2, name: 'STEP-UP' }); rocks.push([s.x0, s.x1 + 6]); return s; };
 
   if (level === 'rampage'){
-    sec('START GATE');         flat(8);
-    sec('RIDGE ROLL-IN');      chute(20, 0.40);                                                       // 40%: 22 degrees
+    sec('START GATE');         flat(6);                                                              // the deck on the ridge top
+    sec('RIDGE TOP');          flat(10, -0.05); rollers(2, 8, 0.22, -0.06); flat(5, -0.08);           // slowly off the ridge
+    const chuteTop = x;
+    sec('THE CHUTE');          chute(26, 0.85, 3, 9); flat(5, -0.03);                                // 85%: 40 degrees, and it feeds the gap
+    sec('CANYON GAP · 56 FT'); gap(1.5, 28, 7.0, 17.0, 13.3, 44, 9, { name: 'CANYON GAP', kn: 5.0, trick: true, respawn: { x: chuteTop - 3, v: 4 } }); flat(8, -0.05);
+    sec('BRAKING TRAVERSE');   flat(42, -0.03);
     sec('THE SPINE');          rollers(3, 10, 0.6, -0.20); flat(4, -0.16);
     sec('SPINE DROP · 20 FT'); fdrop(6.0, 40, 9, 4.0, { name: 'SPINE DROP' }); flat(6, -0.10);
-    sec('CANYON RUN-IN');      chute(36, 0.26, 4, 8); flat(6, -0.05);
-    sec('CANYON GAP · 36 FT'); gap(1.2, 26, 6.0, 11.0, 10.5, 32, 10, { name: 'CANYON GAP' }); flat(10, -0.06);
-    sec('THE BOOTER');         flat(16, -0.16); booter(2.6, 30, 8.0, 10.5, 35, 'table', 3.0, { name: 'THE BOOTER', trick: true }); flat(8, -0.04);
+    sec('THE BOOTER');         chute(18, 0.32, 4, 6); flat(6, -0.06); booter(2.6, 30, 8.0, 10.5, 35, 'table', 3.0, { name: 'THE BOOTER', trick: true }); flat(8, -0.04);
     sec('CLIFF RUN-IN');       chute(14, 0.28, 4, 6); flat(4, -0.08);
     sec('THE CLIFF · 30 FT');  fdrop(9.0, 38, 12, 5.0, { name: 'THE CLIFF' }); flat(6, -0.06);
     sec('STEP-DOWN · 40 FT');  flat(10, -0.12); booter(1.0, 22, 6.0, 10.5, 34, 'stepdown', 3.0, { name: 'STEP-DOWN', trick: true }); flat(6, -0.05);
@@ -595,7 +603,7 @@ function resetRider(){
 }
 const event = (text, cls) => R.events.push({ text, cls: cls || '' });
 function respawn(){ const sec = COURSE.sections[R.secIdx]; let x = Math.max(0.5, sec.x0 - 14);   /* back on the run-in, with a push and room to pedal; a lip that needs speed gets forty metres of it */
-  let v0 = 8.0; { const e = COURSE.nextEdge(x); if (e && e.vMin && e.x - x < 50){ x = Math.max(0.5, e.x - 50); v0 = clamp(e.vMin - 1.5, 8, 11); } }
+  let v0 = 8.0; { const e = COURSE.nextEdge(x); if (e && e.respawn && e.x - x < 80){ x = e.respawn.x; v0 = e.respawn.v; } else if (e && e.vMin && e.x - x < 50){ x = Math.max(0.5, e.x - 50); v0 = clamp(e.vMin - 1.5, 8, 11); } }
   while (x < sec.x0 - 2 && (Math.abs(surf(x).th) > 0.6 || COURSE.edges.some(e => x >= e.x - 0.5 && x < e.x + 1.5))) x += 0.5;
   R.x = x; R.S = surf(R.x); R.v = v0; R.u = 0; R.ud = 0; R.h = H0; R.hd = 0; R.hs = 0; R.hsd = 0; R.air = false; R.pitch = R.S.th; R.pw = 0; R.brake = 0; R.st = Math.min(1, R.st + 0.35); R.crashed = false; RAG.on = false; R.travF = PH.sagF; R.travR = PH.sagR; R.travFd = R.travRd = 0; R.unloadT = 0; R.trk = newTrick(); R.wobble = 0; R.slap = 0; }
 /* =============== the crash: rider and bike part company, and both tumble on their own physics ===============
@@ -845,6 +853,7 @@ function coachLine(){                                                           
     if (e.vMin) return [e.name + ' · ' + mph(ve) + ' MPH IS GOOD' + (e.trick ? ' · TRICK IT' : ' · SEND IT'), 'go'];
     return [de > 2.5 ? (R.v > 13.5 ? 'LIP AHEAD · SCRUB SPEED' : 'LIP AHEAD · CROUCH FORWARD') : 'LIP · STAND TALL, THEN BACK', 'go']; }
   const Sa = surf(R.x + clamp(R.v * 0.3, 0.8, 4));
+  if (e && e.kind === 'lip' && e.vMin && de < 60 && Sa.th < -0.25) return [e.name + ' · NO BRAKES · THE CHUTE FEEDS IT', 'go'];
   if (Sa.k > 0.03) return ['TROUGH · COME UP TALL', 'go']; if (Sa.k < -0.03) return ['CREST · PRESS FORWARD', 'go'];
   if (Sa.th > 0.05) return ['CLIMB · PEDAL', '']; if (Sa.th < -0.25) return ['STEEP · WEIGHT BACK · FEATHER THE BRAKE', '']; if (Sa.th < -0.05) return ['DESCENT · LET IT RUN', ''];
   return [R.st < 0.2 ? 'LEGS GONE · COAST TO RECOVER' : 'FLAT · PEDAL OR PUMP', ''];
@@ -888,7 +897,7 @@ function terrainH(x, z){
   const w = smooth((az - 2.2) / 3.5), open = smooth((az - 6) / 20), far = z < 0 ? smooth((az - 3) / 44) : 0, near = z > 0 ? smooth((az - 3) / 34) : 0;
   if (BIOME === BIOMES.desert){
     const n = (vnoise(x * 0.10 + 3, z * 0.10) - 0.5) * 1.2 + (vnoise(x * 0.03, z * 0.03 + 9) - 0.5) * 6.0;
-    const wall = far * far * 22 + far * 6 * vnoise(x * 0.04, z * 0.04 + 40);
+    const sx = smooth((x - 4) / 40), wall = (far * far * 22 + far * 6 * vnoise(x * 0.04, z * 0.04 + 40)) * sx - (1 - sx) * (far * 14 + far * far * 8);   // the ridge top at the start gate falls away on both sides; the wall rises by the chute
     const y = base + n * (0.25 + 0.75 * open) + wall - near * 16 - near * near * 10;
     const bench = 1.8, q = (y - base) / bench, fl = Math.floor(q), yT = base + (fl + smooth((q - fl - 0.4) / 0.25)) * bench;   // strata: flat benches, short steep risers
     return lane * (1 - w) + w * lerp(y, yT, 0.7 * open);
@@ -1066,12 +1075,35 @@ function buildFar(){
   for (let i = 0; i < pa.count; i++){ const t = clamp(pa.getY(i) / 320, -0.2, 1); _tc.copy(t < 0.25 ? hz.clone().lerp(mid, clamp(t / 0.25, 0, 1)) : mid.clone().lerp(top, (t - 0.25) / 0.75)); cols[i * 3] = _tc.r; cols[i * 3 + 1] = _tc.g; cols[i * 3 + 2] = _tc.b; }
   g.setAttribute('color', new THREE.BufferAttribute(cols, 3)); const sky = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false })); WORLD.add(sky);
   const sd = new THREE.Vector3(-18, 42, 30).normalize(), disc = new THREE.Mesh(new THREE.SphereGeometry(9, 12, 8), new THREE.MeshBasicMaterial({ color: BIOME.disc, fog: false })); WORLD.add(disc);
-  /* the start deck, and the finish banner */
+  /* the start deck; on the ridge, the start gate: a timber arch over the line, a scaffold tower on the far side carrying the sponsor board, scrim on the near rail, pennants along the ridge top */
   PNW.instanced(WORLD, 'startdeck', [{ x: -3.0, y: COURSE.yS(-3) - 0.04, z: 0, ry: 0, s: 1 }], 0);
-  { const xf = COURSE.xFinish, yf = COURSE.yS(xf), gate = new THREE.Group(); for (const z of [-2.6, 2.6]){ const p = box(0.09, 3.2, 0.09, 0xEFE8D6); p.position.set(0, 1.6, z); gate.add(p); }
-    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 96; const c2 = cv.getContext('2d'); const draw = () => { c2.fillStyle = '#D9A441'; c2.fillRect(0, 0, 512, 96); c2.fillStyle = '#1d1a10'; c2.font = 'bold 54px Silkscreen, monospace'; c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.fillText('FINISH', 256, 52); tex.needsUpdate = true; };
+  const NAVY = 0x14306B, RED = 0xD52B36, YELLOW = 0xF2C230, SILVER = 0xE3E8EF, WOOD = 0x4A3524;
+  const board = (text, sub, w, h, dark) => {                                                                   // a printed board that faces the camera
+    const cv = document.createElement('canvas'); cv.width = 1024; cv.height = Math.round(1024 * h / w); const c2 = cv.getContext('2d'), H = cv.height;
+    const draw = () => { c2.fillStyle = dark ? '#14306B' : '#D9A441'; c2.fillRect(0, 0, 1024, H); const r = H * 0.36, cx = H * 0.5 + 10, cy = H * 0.5;
+      if (dark){ c2.fillStyle = '#F2C230'; c2.beginPath(); c2.arc(cx, cy, r, 0, 6.3); c2.fill(); c2.fillStyle = '#D52B36'; c2.beginPath(); c2.moveTo(cx - r * 0.9, cy + r * 0.5); c2.lineTo(cx - r * 0.35, cy - r * 0.5); c2.lineTo(cx, cy + r * 0.05); c2.lineTo(cx + r * 0.4, cy - r * 0.35); c2.lineTo(cx + r * 0.9, cy + r * 0.5); c2.closePath(); c2.fill(); }
+      c2.fillStyle = dark ? '#E3E8EF' : '#1d1a10'; c2.textAlign = 'left'; c2.textBaseline = 'middle'; const x0 = dark ? cx + r + 26 : 40;
+      c2.font = 'bold ' + Math.round(H * (sub ? 0.46 : 0.56)) + 'px Silkscreen, monospace'; c2.fillText(text, x0, sub ? H * 0.42 : H * 0.5);
+      if (sub){ c2.fillStyle = '#F2C230'; c2.font = 'bold ' + Math.round(H * 0.17) + 'px Silkscreen, monospace'; c2.fillText(sub, x0 + 4, H * 0.79); } tex.needsUpdate = true; };
     const tex = new THREE.CanvasTexture(cv); draw(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
-    const board = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.6, 5.4), [mat(0x1d1a10), mat(0x1d1a10), mat(0x1d1a10), mat(0x1d1a10), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 }), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8 })]); board.position.set(0, 2.9, 0); board.castShadow = true; gate.add(board); gate.position.set(xf, yf, 0); WORLD.add(gate); }
+    const bm = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.75 }), side = mat(dark ? NAVY : 0x1d1a10), m = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.06), [side, side, side, side, bm, side]); m.castShadow = true; return m; };
+  if (desert){
+    const gate = new THREE.Group(), y0 = COURSE.yS(2.0);
+    for (const z of [-2.9, 2.9]){ for (const dx of [-0.32, 0.32]){ const p = box(0.15, 5.4, 0.15, WOOD); p.position.set(dx, 2.7, z); gate.add(p); } for (const yy of [1.8, 3.6]){ const br = box(0.8, 0.1, 0.1, WOOD); br.position.set(0, yy, z); gate.add(br); } }
+    const beam = box(0.8, 0.2, 6.4, WOOD); beam.position.set(0, 5.4, 0); gate.add(beam);
+    for (let i = 0; i < 7; i++){ const f = box(0.02, 0.26, 0.42, [RED, YELLOW, NAVY][i % 3]); f.position.set(0.2, 5.15, -2.5 + i * 0.83); gate.add(f); }   // pennants under the beam
+    const bd = board('HARSHMALLOW', 'RIDGE LINE · FREERIDE', 4.6, 1.15, true); bd.position.set(0.4, 4.35, -2.85); gate.add(bd);                            // the sponsor board on the far tower
+    const rail = board('HARSHMALLOW', '', 3.0, 0.5, true); rail.position.set(-2.4, 0.95, 2.35); gate.add(rail);                                           // scrim on the deck's near rail
+    for (const [x, y, z] of [[-0.9, 0.2, 2.85], [0.9, 0.2, 2.85]]){ const r = box(0.06, 0.5, 0.06, WOOD); r.position.set(x, y + 0.3, z); gate.add(r); }
+    gate.position.set(2.0, y0, 0); WORLD.add(gate);
+    for (let i = 0; i < 9; i++){ const x = -4 + i * 3.2, f = new THREE.Group(), pole = box(0.04, 1.4, 0.04, SILVER); pole.position.y = 0.7; const pen = box(0.02, 0.22, 0.42, [RED, YELLOW, NAVY][i % 3]); pen.position.set(0, 1.25, 0.2); f.add(pole, pen); f.position.set(x, COURSE.yS(x), -2.5); WORLD.add(f); }   // pennants along the ridge top
+  }
+  { const xf = COURSE.xFinish, yf = COURSE.yS(xf), gate = new THREE.Group();
+    for (const z of [-2.6, 2.6]){ const p = box(0.09, 3.2, 0.09, desert ? WOOD : 0xEFE8D6); p.position.set(0, 1.6, z); gate.add(p); }
+    const beam = box(0.12, 0.12, 5.3, desert ? WOOD : 0xEFE8D6); beam.position.set(0, 3.15, 0); gate.add(beam);
+    const bd = board(desert ? 'HARSHMALLOW' : 'FINISH', desert ? 'FINISH' : '', 5.0, desert ? 0.9 : 0.6, desert); bd.position.set(0, 2.7, -2.55); gate.add(bd);
+    const p2 = box(0.09, 3.2, 0.09, desert ? WOOD : 0xEFE8D6); p2.position.set(2.6, 1.6, -2.6); gate.add(p2); const p3 = p2.clone(); p3.position.x = -2.6; gate.add(p3);
+    gate.position.set(xf, yf, 0); WORLD.add(gate); }
   return { sky, disc, sd };
 }
 /* pollen (or dust motes) drifting in the light near the rider, dust off the tyres, ravens over the ridge, butterflies on the valley's flowers */
@@ -1614,7 +1646,7 @@ function startRun(){
   if (STATE !== 'menu' && STATE !== 'results') return;
   enterFullscreen(); unlockAudio(); if (MUSIC.on) MUSIC.start(); if (TILTON && !SENS.asked) enableTilt();
   $('menu').classList.remove('on'); $('results').classList.remove('on'); $('hud').classList.add('on'); $('hud').classList.toggle('score', judgedByScore()); requestAnimationFrame(measureHud);
-  resetRider(); ptrs.clear(); STATE = 'count'; countT = 3.4; lastCount = 99; camSnap = true; $('count').style.display = 'block'; $('coach').textContent = LEVEL === 'rampage' ? 'DROP IN · THE ROLL-IN IS 40%' : 'ROLL OFF THE DECK · PEDAL'; $('coach').className = 'coach';
+  resetRider(); ptrs.clear(); STATE = 'count'; countT = 3.4; lastCount = 99; camSnap = true; $('count').style.display = 'block'; $('coach').textContent = LEVEL === 'rampage' ? 'DROP IN OFF THE RIDGE · THE CHUTE FEEDS THE GAP' : 'ROLL OFF THE DECK · PEDAL'; $('coach').className = 'coach';
   $('secName').textContent = COURSE.sections[0].name; $('score').textContent = '0';
   $('bestT').textContent = judgedByScore() ? (BESTS[bike.id] ? 'best ' + BESTS[bike.id] + ' pts' : 'no score yet') : (BEST[bike.id] ? 'best ' + fmt(BEST[bike.id]) : 'no time yet');
 }
