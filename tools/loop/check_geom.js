@@ -3,7 +3,9 @@
    run it after every course edit, before spending time on the physics. */
 const C = require('./course.js');
 const CL = require('./clearance.js');
-const L = C.makeCourse('loop');
+const COURSE_ID = process.argv.indexOf('--course') >= 0 ? process.argv[process.argv.indexOf('--course') + 1] : 'loop';
+const L = C.makeCourse(COURSE_ID);
+const RET_ZONE = L.COURSE[L.COURSE.length - 1].zone;
 
 const zones = [];
 for (const g of L.COURSE){
@@ -16,7 +18,7 @@ for (const g of L.COURSE){
 }
 
 const totLen = L.COURSE_LEN;
-const descent = L.COURSE.filter(g => g.zone !== 'MILL GRADE' && g.name !== 'RETURN CLIMB');
+const descent = L.COURSE.filter(g => g.zone !== RET_ZONE && g.name !== 'RETURN CLIMB');
 const descLen = descent.reduce((a, g) => a + g.len, 0);
 const descDh = descent.reduce((a, g) => a + g.grade * g.len + (g.hEnd || 0), 0);
 const turnSum = L.COURSE.reduce((a, g) => a + (g.turn || 0), 0);

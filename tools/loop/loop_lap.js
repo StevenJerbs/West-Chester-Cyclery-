@@ -27,7 +27,9 @@ const head = lab.slice(iHead, iCourse);          // constants, V10 geometry, VPP
 const tail = lab.slice(iTail, iEnd);             // springs, dampers, bodies, rider posture, the physics step
 
 /* ---- the course, exposed as the bare globals the lab's physics expects ------------------------------ */
-const L = C.makeCourse('loop');
+const COURSE_ID = process.argv.indexOf('--course') >= 0 ? process.argv[process.argv.indexOf('--course') + 1] : 'loop';
+const L = C.makeCourse(COURSE_ID);
+const RET_ZONE = L.COURSE[L.COURSE.length - 1].zone;
 const courseGlue = `
 const COURSE = __L.COURSE, COURSE_LEN = __L.COURSE_LEN, PATH = __L.PATH, OBST = __L.OBST;
 const pathAt = __L.pathAt, segAt = __L.segAt, terrainAt = __L.terrainAt, groundAt = __L.groundAt;
@@ -36,18 +38,24 @@ const bankAt = __L.bankAt, lineLimit = __L.lineLimit;
 `;
 
 /* ---- the UI the lab's physics reads its setup from ------------------------------------------------- */
-/* the same bike and setup the page uses (tools/loop/page/ui.js): the Starling Murmur, 450 lb/in coil, rebound slowed */
-const DEF = { rlb: 150, effort: 300, vcap: 26, rSpring: 450, rLsc: 7, rHsc: 5, rLsr: 10, rHsr: 6,
-              fSpring: 92, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
+/* the same bike and setup the page uses (tools/loop/page/ui.js): the Starling Murmur, 450 lb/in coil, rebound slowed
+   on the loop; the V10 on its lab setup, with a freeride speed cap, on Rampage */
+const DEF = COURSE_ID === 'rampage'
+  ? { rlb: 150, effort: 300, vcap: 34, rSpring: 475, rLsc: 8, rHsc: 4, rLsr: 8, rHsr: 4, fSpring: 72, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 }
+  : { rlb: 150, effort: 300, vcap: 26, rSpring: 450, rLsc: 7, rHsc: 5, rLsr: 10, rHsr: 6, fSpring: 92, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
+const BIKE_ID = COURSE_ID === 'rampage' ? 'v10' : 'murmur';
 if (process.env.SETUP) Object.assign(DEF, JSON.parse(process.env.SETUP));   // e.g. SETUP='{"rSpring":450,"rHsc":5}' for a sweep
 const uiGlue = `
-const BIKE = 'murmur';
+const BIKE = '${BIKE_ID}';
+const RET_ZONE = '${RET_ZONE}';
+const __crashes = [];
+const TRICK = { flip: 0, tuck: 0, hands: 1, grab: 0, onEvent: e => { if (e.type === 'crash') __crashes.push(Object.assign({ s: scroll, seg: segAt(scroll)[0].name }, e)); } };
 const ui = new Proxy({}, { get: (t, k) => t[k] || (t[k] = { value: __DEF[k] !== undefined ? __DEF[k] : 0, textContent: '', style: {} }) });
 `;
 
 const src = uiGlue + head + courseGlue + tail + `
 /* ---- run one lap, recording what matters per zone -------------------------------------------------- */
-riderMode = '${rider}'; applyTuning(); reset();
+riderMode = '${rider}'; applyTuning(); vCap = ${DEF.vcap} * 0.447; reset();   // the speed cap is a slider handler in the lab, not part of applyTuning
 const FPS = 30, traj = [], zones = new Map(), events = [];
 let t = 0, nextRec = 0, wasAir = false, airStart = 0, airStartS = 0, airStartPhi = 0, minV = 1e9, stalls = 0;
 const zoneOf = u => { const g = segAt(u)[0]; return g.zone || 'RETURN'; };
@@ -67,7 +75,7 @@ for (let i = 0; i < 600 * 400; i++){
   Z.states.add(poseState); if (air) Z.air += PDT;
   Z.boF2 = wheelF.bo; Z.boR2 = wheelR.bo;
   Z.maxUse = Math.max(Z.maxUse, corner.usage); if (corner.sliding) Z.slid += PDT;
-  if (g.zone !== 'MILL GRADE' && zn !== 'RETURN'){ minV = Math.min(minV, v); if (v < 2.0) stalls += PDT; }
+  if (g.zone !== RET_ZONE && zn !== 'RETURN'){ minV = Math.min(minV, v); if (v < 2.0) stalls += PDT; }
   /* takeoff / landing bookkeeping on every jump */
   if (air && !wasAir){ airStart = t; airStartS = scroll; airStartPhi = chassis.phi; }
   if (!air && wasAir){
@@ -89,7 +97,7 @@ for (let i = 0; i < 600 * 400; i++){
       +cur.torso.toFixed(2), poseState, +crank.toFixed(3), +corner.lean.toFixed(4), +brakeF.toFixed(0),
       air ? 1 : 0, +wheelF.y.toFixed(4), +wheelR.y.toFixed(4), +dropper.toFixed(3)]); }
 }
-__report({ rider: '${rider}', lapTime: t, minV, stalls, zones: [...zones.values()], events, traj,
+__report({ rider: '${rider}', lapTime: t, minV, stalls, zones: [...zones.values()], events, traj, crashes: __crashes,
   COURSE, COURSE_LEN, GEO, PATH,
   groundSamples: (() => { const a = []; for (let s = 0; s < COURSE_LEN; s += 0.25) a.push(+groundAt(s).toFixed(4)); return a; })() });
 `;
@@ -132,7 +140,7 @@ for (const g of jumps){
   const e = ev[0];
   /* a drop or a huck is a roll-off, not a launch; a road gap is the biggest air on the trail by design */
   const lo = (g.jump.kind === 'drop' || g.jump.kind === 'huck') ? 0.22 : 0.45;
-  const hi = g.jump.kind === 'roadgap' ? 1.75 : 1.45;
+  const hi = COURSE_ID === 'rampage' ? 2.8 : g.jump.kind === 'roadgap' ? 1.75 : 1.45;
   if (e.dur < lo) bad(g.name + ': air ' + e.dur + ' s is under ' + lo);
   else if (e.dur > hi) bad(g.name + ': air ' + e.dur + ' s is over ' + hi);
   if (Math.abs(e.mis) > 22) bad(g.name + ': landed ' + e.mis + ' deg off the landing slope');
@@ -145,15 +153,16 @@ for (const g of jumps){
   }
 }
 for (const Z of R.zones){
-  if (Z.name === 'MILL GRADE' || Z.name === 'RETURN') continue;
+  if (Z.name === RET_ZONE || Z.name === 'RETURN') continue;
   const boF = Z.boF2 - Z.boF, boR = Z.boR2 - Z.boR, cap = R.rider === 'pro' ? 1 : 3;
   if (boF > cap || boR > cap) bad(Z.name + ': ' + boF + '/' + boR + ' bottom-outs (cap ' + cap + ')');
   if (Z.maxUse > (R.rider === 'pro' ? 1.00 : 1.15)) bad(Z.name + ': grip usage peaked at ' + Z.maxUse.toFixed(2));
   if (Z.slid > 0.35) bad(Z.name + ': sliding for ' + Z.slid.toFixed(2) + ' s');
 }
-const mill = R.zones.find(z => z.name === 'MILL GRADE');
+const mill = R.zones.find(z => z.name === RET_ZONE);
 if (mill && mill.vMin < 1.5) bad('MILL GRADE: stalled to ' + (mill.vMin / 0.447).toFixed(1) + ' mph');
 if (R.stalls > 0.5) bad('descent: ' + R.stalls.toFixed(2) + ' s under 2 m/s');
+for (const c of R.crashes) bad('CRASH at ' + c.seg + ' (' + c.s.toFixed(0) + ' m): ' + c.why + ' [mis ' + (c.mis * 57.3).toFixed(0) + ' deg, ' + c.vImpact.toFixed(1) + ' m/s]');
 if (R.lapTime < 150 || R.lapTime > 420) warn('lap time ' + R.lapTime.toFixed(0) + ' s is outside 150-420 s');
 
 console.log(fails ? '\n' + fails + ' FAILURES, ' + warns + ' warnings — not rideable yet' : '\nall checks passed' + (warns ? ' (' + warns + ' warnings)' : ''));

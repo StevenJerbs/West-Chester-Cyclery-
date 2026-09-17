@@ -216,10 +216,11 @@ const PNW = (() => {
     };
     return m;
   }
-  function instanced(scene, name, places, windAmp){
+  function instanced(scene, name, places, windAmp, tint){
     if (!places.length) return null;
     (window.PNW_PLACES = window.PNW_PLACES || {})[name] = (window.PNW_PLACES[name] || []).concat(places);   // every placement, for the Blender light bake
     const m = windAmp ? swayMat(windAmp) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
+    if (tint) m.color.setHex(tint).multiplyScalar(1.6);                          // a biome recolour of an asset's baked vertex colours
     const im = new THREE.InstancedMesh(geo(name), m, places.length);
     const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), S = new THREE.Vector3(), T = new THREE.Vector3();
     places.forEach((p, i) => { E.set(0, p.ry || 0, 0); Q.setFromEuler(E); S.setScalar(p.s || 1); T.set(p.x, p.y, p.z); M.compose(T, Q, S); im.setMatrixAt(i, M); });
@@ -256,9 +257,9 @@ const PNW = (() => {
       v.b.rotation.y = -a - Math.PI / 2; v.b.rotation.z = 0.18 * Math.sin(t * 4.2 + v.a0 * 3.0); } };
   }
   /* gradient sky dome: fog-matched horizon fading to a deeper grey-green zenith */
-  function sky(scene, cx, cz, R){
+  function sky(scene, cx, cz, R, hHex, tHex){
     const g = new THREE.SphereGeometry(R, 18, 10), pa = g.attributes.position, cols = new Float32Array(pa.count * 3);
-    const h = new THREE.Color(0xAFBEB2), t = new THREE.Color(0x87988E), c2 = new THREE.Color();
+    const h = new THREE.Color(hHex || 0xAFBEB2), t = new THREE.Color(tHex || 0x87988E), c2 = new THREE.Color();
     for (let i = 0; i < pa.count; i++){ const f = Math.pow(Math.max(0, Math.min(1, pa.getY(i) / R)), 0.7);
       c2.copy(h).lerp(t, f); cols[i * 3] = c2.r; cols[i * 3 + 1] = c2.g; cols[i * 3 + 2] = c2.b; }
     g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
@@ -271,13 +272,14 @@ const PNW = (() => {
     return new THREE.BufferAttribute(a, 2);
   }
   function bakedMat(opts, kind){                                       // MeshStandardMaterial whose direct light is scaled by the baked sun visibility and whose ambient by the baked AO
-    const m = new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: 0.93, metalness: 0 }, opts || {}));
+    opts = Object.assign({}, opts || {}); const moss = opts.moss !== undefined ? opts.moss : 0.65; delete opts.moss;
+    const m = new THREE.MeshStandardMaterial(Object.assign({ vertexColors: true, roughness: 0.93, metalness: 0 }, opts));
     m.onBeforeCompile = sh => {
-      sh.uniforms.uT = uTime;
+      sh.uniforms.uT = uTime; sh.uniforms.uMoss = { value: moss };
       sh.vertexShader = ('attribute vec2 bake; varying vec2 vBake; varying vec3 vWp; varying vec3 vVx; varying vec3 vVz;\n' + sh.vertexShader)
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvBake = bake; vVx = normalMatrix * vec3(1.0, 0.0, 0.0); vVz = normalMatrix * vec3(0.0, 0.0, 1.0);')
         .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-      let fs = ('uniform float uT; varying vec2 vBake; varying vec3 vWp; varying vec3 vVx; varying vec3 vVz;\n' + NOISE_GLSL + '\n' + sh.fragmentShader)
+      let fs = ('uniform float uT; uniform float uMoss; varying vec2 vBake; varying vec3 vWp; varying vec3 vVx; varying vec3 vVz;\n' + NOISE_GLSL + '\n' + sh.fragmentShader)
         .replace('#include <lights_fragment_begin>', '#include <lights_fragment_begin>\nreflectedLight.directDiffuse *= mix(0.16, 1.0, vBake.x); reflectedLight.directSpecular *= mix(0.16, 1.0, vBake.x);')
         .replace('#include <lights_fragment_end>', '#include <lights_fragment_end>\nreflectedLight.indirectDiffuse *= mix(0.45, 1.0, vBake.y);');
       if (kind === 'track') fs = fs                                     // grain and pebbles in the dirt; the dark packed ruts read wet
@@ -288,7 +290,7 @@ const PNW = (() => {
          and a broad mottle so a hectare of vertex colour is not one flat tone */
       if (kind === 'ground') fs = fs
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ vec2 q = vWp.xz * 2.3; float e = 0.08; float gx = pnwN(q + vec2(e, 0.0)) - pnwN(q - vec2(e, 0.0)), gz = pnwN(q + vec2(0.0, e)) - pnwN(q - vec2(0.0, e)); vec2 q2 = vWp.xz * 11.0; float e2 = 0.03; gx += 0.5 * (pnwN(q2 + vec2(e2, 0.0)) - pnwN(q2 - vec2(e2, 0.0))); gz += 0.5 * (pnwN(q2 + vec2(0.0, e2)) - pnwN(q2 - vec2(0.0, e2))); normal = normalize(normal + (vVx * gx + vVz * gz) * 1.1); }')
-        .replace('#include <color_fragment>', '#include <color_fragment>\n{ float m1 = pnwN(vWp.xz * 0.55 + 3.0), m2 = pnwN(vWp.xz * 4.7); float lum = dot(diffuseColor.rgb, vec3(0.3, 0.5, 0.2)); float mossMask = smoothstep(0.42, 0.72, m1 * 0.7 + m2 * 0.3) * (1.0 - 0.55 * vBake.x); vec3 moss = vec3(0.14, 0.22, 0.08) * (0.5 + 2.2 * lum); diffuseColor.rgb = mix(diffuseColor.rgb, moss, mossMask * 0.65); diffuseColor.rgb *= 0.84 + 0.32 * m2; }');
+        .replace('#include <color_fragment>', '#include <color_fragment>\n{ float m1 = pnwN(vWp.xz * 0.55 + 3.0), m2 = pnwN(vWp.xz * 4.7); float lum = dot(diffuseColor.rgb, vec3(0.3, 0.5, 0.2)); float mossMask = smoothstep(0.42, 0.72, m1 * 0.7 + m2 * 0.3) * (1.0 - 0.55 * vBake.x); vec3 moss = vec3(0.14, 0.22, 0.08) * (0.5 + 2.2 * lum); diffuseColor.rgb = mix(diffuseColor.rgb, moss, mossMask * uMoss); diffuseColor.rgb *= 0.84 + 0.32 * m2; }');
       if (kind === 'water') fs = fs
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{ float dx = sin(vWp.x * 2.9 + uT * 1.2) * 0.05 + sin((vWp.x + vWp.z) * 5.3 - uT * 0.8) * 0.03, dz = cos(vWp.z * 2.3 + uT * 1.05) * 0.05 + cos((vWp.x - vWp.z) * 4.1 + uT * 0.7) * 0.03; normal = normalize(normal + vVx * dx + vVz * dz); }');
       sh.fragmentShader = fs;
@@ -879,7 +881,7 @@ const SFX = (() => {
     ready = true; booting = false;
   }
   function voice(r, pan, mix){
-    if (!st.has(r)) st.set(r, { pan, mix, roll: loop('roll', pan, 3000), rough: loop('rough', pan, 4000), buzz: loop(pan < 0 ? 'buzz2' : 'buzz', pan, 9000), wind: loop('wind', pan, 6000),
+    if (!st.has(r)) st.set(r, { pan, mix, roll: loop('roll', pan, 3000), rough: loop('rough', pan, 4000), buzz: loop(pan < 0 ? 'buzz2' : 'buzz', pan, 4200), wind: loop('wind', pan, 6000),
                                wasAir: r.air, lastU: r.u, lastX: r.x, roughT: 0, cool: 0 });
     return st.get(r);
   }
@@ -899,7 +901,7 @@ const SFX = (() => {
     set(s.rough.src.playbackRate, (0.8 + 0.4 * sp) * rateMul, 0.1);
     /* the freehub: coasting on the ground only; a pedal stroke engages the ratchet and it goes quiet */
     const pedalling = typeof r.phase === 'string' && r.phase.indexOf('PEDALLING') === 0;
-    set(s.buzz.g.gain, ground && !pedalling ? mix * 0.35 * clamp01(v / 6) : 0, 0.04);
+    set(s.buzz.g.gain, ground && !pedalling ? mix * 0.11 * clamp01(v / 6) * (0.55 + 0.45 * sp) : 0, 0.04);   // minimal: a hint under the tyres, not a lead line
     set(s.buzz.src.playbackRate, Math.max(0.3, v / 7.5) * rateMul, 0.06);
     /* wind: a little at speed, much more in the air with the tyres gone */
     const w = clamp01(v / 14), wg = (r.air ? 0.55 : 0.12) * w * w * (live && !r.done ? 1 : 0);

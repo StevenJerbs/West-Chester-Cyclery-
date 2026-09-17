@@ -1,0 +1,46 @@
+{
+ "retIn": -141.6,
+ "retM": 2,
+ "turns": [
+  {
+   "name": "RIDGE ROLL-IN",
+   "turn": -3
+  },
+  {
+   "name": "THE SPINE",
+   "turn": -35
+  },
+  {
+   "name": "CANYON RUN-IN",
+   "turn": -52
+  },
+  {
+   "name": "CLIFF RUN-IN",
+   "turn": -26
+  },
+  {
+   "name": "LOWER TRAVERSE",
+   "turn": 1
+  },
+  {
+   "name": "FINISH SPRINT",
+   "turn": -36
+  },
+  {
+   "name": "SHUTTLE ROAD 1",
+   "turn": 13
+  },
+  {
+   "name": "SHUTTLE ROAD 2",
+   "turn": -6
+  },
+  {
+   "name": "SHUTTLE ROAD 3",
+   "turn": -3
+  },
+  {
+   "name": "SHUTTLE ROAD 4",
+   "turn": -23
+  }
+ ]
+}

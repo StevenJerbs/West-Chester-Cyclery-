@@ -21,13 +21,15 @@ renderer.shadowMap.enabled = Q.shadow > 0;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xA9B8AE);
-scene.fog = new THREE.FogExp2(0xA8B7AC, Q.fog);   // exponential: distance reads as depth rather than as a wall
+/* the biome comes with the course: PNW forest for the loop, Utah desert for Rampage */
+const BIOME = LOOP.biome || 'pnw', DESERT = BIOME === 'desert';
+scene.background = new THREE.Color(DESERT ? 0xD2BC9C : 0xA9B8AE);
+scene.fog = new THREE.FogExp2(DESERT ? 0xCDB595 : 0xA8B7AC, Q.fog * (DESERT ? 0.62 : 1));   // exponential: distance reads as depth rather than as a wall; desert air is clearer
 const camera = new THREE.PerspectiveCamera(46, 16 / 9, 0.1, 900);
 let camAz = 0, camEl = 0;
 const camPos = new THREE.Vector3(-4, 3, 4), camLook = new THREE.Vector3();
 
-const sun = new THREE.DirectionalLight(0xF6F2E4, Q.sun);
+const sun = new THREE.DirectionalLight(DESERT ? 0xFFF0D2 : 0xF6F2E4, Q.sun * (DESERT ? 1.18 : 1));
 sun.position.set(25, 80, 12);
 if (Q.shadow > 0){
   sun.castShadow = true;
@@ -38,7 +40,7 @@ if (Q.shadow > 0){
   sun.shadow.bias = -0.0012;
 }
 scene.add(sun, sun.target);
-scene.add(new THREE.HemisphereLight(0xC3D2C6, 0x2C3524, Q.hemi));
+scene.add(new THREE.HemisphereLight(DESERT ? 0xBFD8F2 : 0xC3D2C6, DESERT ? 0x6E4A34 : 0x2C3524, Q.hemi * (DESERT ? 1.1 : 1)));
 
 const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.88, metalness: 0 });
 const box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
@@ -127,7 +129,13 @@ function vnoise(x, z){
 }
 const fbm = (x, z) => 0.6 * vnoise(x, z) + 0.3 * vnoise(x * 2.3 + 5.1, z * 2.3 - 3.7) + 0.1 * vnoise(x * 5.7, z * 5.7 + 9.4);
 
-function hills(x, z){
+function hillsDesert(x, z){
+  /* mesa country: broad relief that stacks into sandstone benches, with the ledges rounded by fine noise */
+  const base = 14 * (fbm(x * 0.009 + 3, z * 0.009 - 5) - 0.5) + 6 * (fbm(x * 0.026, z * 0.026) - 0.5) + 1.6 * (fbm(x * 0.08 + 11, z * 0.08) - 0.5);
+  const step = 3.4, f = base / step, i = Math.floor(f), r = f - i;
+  return step * (i + smooth((r - 0.55) / 0.45)) + 0.45 * (fbm(x * 0.21, z * 0.21) - 0.5);
+}
+function hillsPNW(x, z){
   return 3.6 * Math.sin(x * 0.0165 + 1.3) * Math.cos(z * 0.0142 - 0.4)
        + 2.4 * Math.sin(x * 0.032 - z * 0.024 + 2.0)
        + 1.3 * Math.cos(z * 0.052 + x * 0.009)
@@ -135,6 +143,7 @@ function hills(x, z){
        + 2.1 * (fbm(x * 0.021, z * 0.021) - 0.5)
        + 0.7 * (fbm(x * 0.085 + 17, z * 0.085 - 4) - 0.5);
 }
+const hills = DESERT ? hillsDesert : hillsPNW;
 /* Out past the corridor the ground is hillside; inside it, it is whatever cross-section the ribbon is using, so
    the bench cut, the berm walls and their backs are one surface with the trail rather than a plane it floats on. */
 function worldHeight(x, z, ti){
@@ -169,7 +178,13 @@ buildStep('terrain', () => {
     const i1 = ix + 1 < n ? i + 1 : i, i2 = iz + 1 < n ? i + n : i;
     const slope = Math.hypot((hs[i1] - hs[i]) / cell, (hs[i2] - hs[i]) / cell);
     const nz = fbm(x * 0.055, z * 0.055), patch = fbm(x * 0.017 + 11, z * 0.017 - 7);
-    if (slope > 0.80) c.setHSL(0.30, 0.06, 0.20 + 0.10 * nz);                     // scree and exposed rock on the steeps
+    if (DESERT){
+      if (slope > 0.75) c.setHSL(0.035, 0.42, 0.20 + 0.08 * nz);                   // desert varnish on the cliff bands
+      else if (patch > 0.62) c.setHSL(0.06, 0.48, 0.34 + 0.07 * nz);              // red sandstone
+      else if (patch < 0.34) c.setHSL(0.09, 0.32, 0.40 + 0.08 * nz);              // pale sand and grit
+      else c.setHSL(0.05 + 0.02 * nz, 0.44, 0.28 + 0.08 * nz);
+    }
+    else if (slope > 0.80) c.setHSL(0.30, 0.06, 0.20 + 0.10 * nz);                // scree and exposed rock on the steeps
     else if (patch > 0.60) c.setHSL(0.075, 0.30, 0.085 + 0.055 * nz);             // needle duff under closed canopy
     else if (patch < 0.36) c.setHSL(0.24, 0.30, 0.10 + 0.07 * nz);                // moss and salal in the openings
     else c.setHSL(0.30 + 0.035 * nz, 0.22, 0.075 + 0.06 * nz);
@@ -186,7 +201,7 @@ buildStep('terrain', () => {
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.setAttribute('bake', PNW.bakeAttr('bake_terrain', n * n));
   g.setIndex(idx); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, PNW.bakedMat({ flatShading: true, roughness: 0.96 }, 'ground'));
+  const m = new THREE.Mesh(g, PNW.bakedMat({ flatShading: true, roughness: 0.96, moss: DESERT ? 0 : 0.65 }, 'ground'));
   m.receiveShadow = true; scene.add(m); WORLD.terrain = m;
 });
 const CUT_R = 7.0;    // the band reaches 10 m, so the tiers overlap by 3 m — a tight berm folds the band's normals and a butt joint would show sky
@@ -221,7 +236,12 @@ buildStep('corridor', () => {
         const y = w > 0 ? lerp(near, worldHeight(x, z), w) : near;
         pos[k] = x; pos[k + 1] = row[j] = y - 0.03; pos[k + 2] = z;
         const a = Math.abs(l), nz = fbm(x * 0.28, z * 0.28), lit = fbm(x * 0.06 + 3, z * 0.06 + 8);
-        if (a < 1.5) c.setHex(gt === 'rock' ? 0x4E564C : gt === 'built' ? 0x59492F : 0x33261A).offsetHSL(0, 0, 0.03 * nz - 0.015 - 0.012 * a);
+        if (DESERT){
+          if (a < 1.5) c.setHex(gt === 'rock' ? 0x8E5D40 : gt === 'built' ? 0x8A5A3A : 0x7A4E34).offsetHSL(0, 0, 0.04 * nz - 0.02 - 0.012 * a);
+          else if (lit > 0.58) c.setHSL(0.05, 0.42, 0.24 + 0.06 * nz);            // the red dirt the line cut threw up
+          else c.setHSL(0.08 + 0.02 * nz, 0.34, 0.33 + 0.07 * nz);                // sand, grit, dry grass
+        }
+        else if (a < 1.5) c.setHex(gt === 'rock' ? 0x4E564C : gt === 'built' ? 0x59492F : 0x33261A).offsetHSL(0, 0, 0.03 * nz - 0.015 - 0.012 * a);
         else if (lit > 0.58) c.setHSL(0.075, 0.28, 0.075 + 0.05 * nz);            // the litter berm the trail cut threw up
         else c.setHSL(0.29 + 0.04 * nz, 0.22, 0.070 + 0.055 * nz);
         col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
@@ -240,7 +260,7 @@ buildStep('corridor', () => {
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
     g.setAttribute('bake', new THREE.BufferAttribute(bk, 2));
     g.setIndex(idx); g.computeVertexNormals();
-    const m = new THREE.Mesh(g, PNW.bakedMat({ roughness: 0.95 }, 'ground'));
+    const m = new THREE.Mesh(g, PNW.bakedMat({ roughness: 0.95, moss: DESERT ? 0 : 0.65 }, 'ground'));
     m.receiveShadow = true; scene.add(m); WORLD.corridor.push(m);
   }
 });
@@ -266,8 +286,8 @@ const RIB_CHUNKS = Q.chunks;
 buildStep('trail', () => {
   const NL = RIB_L.length, NR = Math.floor(COURSE_LEN / RIB_DS);
   const rows = Math.ceil(NR / RIB_CHUNKS);
-  const GC = { dirt: 0x35281B, rock: 0x555D52, built: 0x6A5637, water: 0x2C2A22 };
-  const c = new THREE.Color(), LITTER = new THREE.Color(0x2A2415);
+  const GC = DESERT ? { dirt: 0x7A4E34, rock: 0x8E5D40, built: 0x8A5A3A, water: 0x4A3A2A } : { dirt: 0x35281B, rock: 0x555D52, built: 0x6A5637, water: 0x2C2A22 };
+  const c = new THREE.Color(), LITTER = new THREE.Color(DESERT ? 0x9A7550 : 0x2A2415);
   for (let ch = 0; ch < RIB_CHUNKS; ch++){
     const r0 = ch * rows, r1 = Math.min(NR, r0 + rows) + 1, nr = r1 - r0;
     if (nr < 2) continue;
@@ -509,6 +529,21 @@ buildStep('forest', () => {
   };
   const F = Q.flora;
   const H = (q, o) => worldHeight(q.x, q.z, q.ti) + (o || 0);
+  if (DESERT){
+    /* Utah: juniper and pinyon (the conifers, small and tinted olive), sage (salal, grey-green), dry grass, and a
+       great deal of red sandstone. Nothing crowds the line the way the forest does; the exposure is the point. */
+    P.juniper = []; P.pinyon = []; P.sage = []; P.dryg = [];
+    for (let i = 0; i < Math.round(700 * F); i++){ const q = near(4.5, 40); if (q) put(rnd() < 0.55 ? P.juniper : P.pinyon, q.x, q.z, H(q, -0.15), 0.16, 0.34); }
+    for (let i = 0; i < Math.round(500 * F); i++){ const q = far(); if (q) put(rnd() < 0.5 ? P.juniper : P.pinyon, q.x, q.z, H(q, -0.2), 0.18, 0.38); }
+    for (let i = 0; i < Math.round(1400 * F); i++){ const q = near(1.6, 14); if (q) put(P.sage, q.x, q.z, H(q, -0.03), 0.55, 1.1); }
+    for (let i = 0; i < Math.round(1600 * F); i++){ const q = near(0.9, 9); if (q) put(P.dryg, q.x, q.z, H(q, -0.01), 0.6, 1.3); }
+    for (let i = 0; i < Math.round(900 * F); i++){ const q = near(2.0, 26); if (q) put(P.boulder, q.x, q.z, H(q, -0.12), 0.7, 3.4); }
+    for (let i = 0; i < Math.round(160 * F); i++){ const q = near(3.0, 20); if (q) put(P.snag, q.x, q.z, H(q, -0.1), 0.25, 0.5); }
+    for (let i = 0; i < Math.round(360 * F); i++){                                // sandstone on the edge of the line
+      const s = rnd() * COURSE_LEN, Pp = pathAt(s), sgn = rnd() < 0.5 ? -1 : 1, l = (1.4 + rnd() * 1.0) * sgn;
+      P.rockedge.push({ x: Pp.x - Math.sin(Pp.theta) * l, y: LOOP.terrainAt(s) + LOOP.crossAt(s, l) - 0.06, z: Pp.z + Math.cos(Pp.theta) * l, ry: rnd() * 6.28, s: 0.6 + rnd() * 0.9 });
+    }
+  } else {
   for (let i = 0; i < Math.round(1500 * F); i++){                                 // the canopy along the corridor
     const q = near(6.5, 34); if (!q) continue;
     const r = rnd();
@@ -544,13 +579,16 @@ buildStep('forest', () => {
     P.rockedge.push({ x: Pp.x - Math.sin(Pp.theta) * l, y: LOOP.terrainAt(s) + LOOP.crossAt(s, l) - 0.06,
                       z: Pp.z + Math.cos(Pp.theta) * l, ry: rnd() * 6.28, s: 0.5 + rnd() * 0.7 });
   }
+  }
   window.PNW_PLACEMENTS = P;
   const WIND = { cedar: 1.0, cedar2: 1.0, cedar3: 1.0, fir: 0.8, hemlock: 0.9, maple: 1.6, snag: 0,
                  fern: 3.2, salal: 2.0, foxglove: 3.6, boulder: 0, stump: 0, nurselog: 0, sticks: 0, rockedge: 0,
                  tuft: 3.0, litter: 0, moss: 0, sapling: 2.4 };
-  const MESH = { sapling: 'hemlock' };                                          // placements that reuse another asset's geometry
-  for (const k of Object.keys(P)) if (P[k].length) PNW.instanced(scene, MESH[k] || k, P[k], WIND[k]);
-  PNW.sky(scene, WCX, WCZ, WSIZE * 1.05);
+  const MESH = { sapling: 'hemlock', juniper: 'hemlock', pinyon: 'fir', sage: 'salal', dryg: 'tuft' };   // placements that reuse another asset's geometry
+  const TINT = DESERT ? { juniper: 0x7C8A5C, pinyon: 0x6B7A52, sage: 0x9AA48C, dryg: 0xD0B46C, boulder: 0xB0704A, rockedge: 0xB0704A, snag: 0xC7B8A0 } : {};
+  Object.assign(WIND, { juniper: 0.5, pinyon: 0.4, sage: 1.4, dryg: 3.0 });
+  for (const k of Object.keys(P)) if (P[k].length) PNW.instanced(scene, MESH[k] || k, P[k], WIND[k], TINT[k]);
+  if (DESERT) PNW.sky(scene, WCX, WCZ, WSIZE * 1.05, 0xE6CFAE, 0x7FA6D8); else PNW.sky(scene, WCX, WCZ, WSIZE * 1.05);
   if (QNAME !== 'low') window.PNW_RAVENS = PNW.ravens(scene, WCX, 34, WCZ, WSIZE * 0.26);
   /* mist in the three lowest points of the loop */
   const low = [];
@@ -558,7 +596,7 @@ buildStep('forest', () => {
   low.sort((a, b) => a.y - b.y);
   const picked = [];
   for (const q of low){ if (picked.every(p => Math.abs(p - q.s) > 180)) picked.push(q.s); if (picked.length === 3) break; }
-  if (QNAME !== 'low') for (const s of picked){ const q = pathAt(s); PNW.mist(scene, q.x + 8, LOOP.terrainAt(s) + 1.4, q.z - 6, 34, 18, 0.22); }
+  if (QNAME !== 'low' && !DESERT) for (const s of picked){ const q = pathAt(s); PNW.mist(scene, q.x + 8, LOOP.terrainAt(s) + 1.4, q.z - 6, 34, 18, 0.22); }
 });
 
 /* -- leaves in the air: one instanced draw call, integrated entirely in the vertex shader -- */

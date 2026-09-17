@@ -112,13 +112,31 @@ const SEG = {
 
   /* Rock drop: a short takeoff ledge ABOVE the landing, which falls away at landDeg. No deck — you are in the
      air the moment the ledge ends — so it needs far less run than a step-down of the same height. */
-  drop: (H, lipLen, ledge, landDeg, runout, grade) => {
-    const lipL = lipLen + ledge, landL = H / Math.tan(landDeg * D2R) + 1.4;
-    return { len: lipL + landL + runout, grade, type: 'rock', noPedal: [0, 99], lipAt: lipL, hEnd: -H,
-      jump: { H, deck: 0, lipDeg: 0, landDeg, kind: 'drop' },
-      h: t => {                                                    // trail level along the ledge, then H lower
+  drop: (H, lipLen, ledge, landDeg, runout, grade, opt) => {
+    opt = opt || {};
+    const lipL = lipLen + ledge, th = landDeg * D2R, tn = Math.tan(th);
+    if (H < 3){                                                    // a trail drop: a smooth landing hump
+      const landL = H / tn + 1.4;
+      return { len: lipL + landL + runout, grade, type: 'rock', noPedal: [0, 99], lipAt: lipL, hEnd: -H, vMax: opt.vMax,
+        jump: { H, deck: 0, lipDeg: 0, landDeg, kind: 'drop' },
+        h: t => {                                                  // trail level along the ledge, then H lower
+          if (t < lipL) return 0;
+          if (t < lipL + landL){ const u = (t - lipL) / landL; return -H * (u * u * (3 - 2 * u)); }
+          return -H; } };
+    }
+    /* A freeride drop: a short knuckle, a straight face at landDeg carrying most of the height, and a round-out at
+       the bottom. Overshoot the knuckle and you still land on the face at the face's angle, which is the point of
+       building them long; what kills is the flat, and the flat is a long way down. */
+    const knuckle = 1.2, roundL = Math.max(2.5, 0.15 * H / tn + 1.5), faceL = Math.max(0.5, H / tn - knuckle / 2 - roundL / 2);
+    const hK = -tn * knuckle / 2, hF = hK - tn * faceL, landL = knuckle + faceL + roundL;
+    return { len: lipL + landL + runout, grade, type: 'rock', noPedal: [0, 99], lipAt: lipL, hEnd: -H, vMax: opt.vMax,
+      jump: { H, deck: 0, lipDeg: 0, landDeg, kind: 'drop', faceL },
+      h: t => {
         if (t < lipL) return 0;
-        if (t < lipL + landL){ const u = (t - lipL) / landL; return -H * (u * u * (3 - 2 * u)); }
+        const u = t - lipL;
+        if (u < knuckle) return -tn * u * u / (2 * knuckle);
+        if (u < knuckle + faceL) return hK - tn * (u - knuckle);
+        if (u < landL){ const w = u - knuckle - faceL; return hF - tn * w + tn * w * w / (2 * roundL); }
         return -H; } };
   },
 
@@ -129,11 +147,11 @@ const SEG = {
      the far bank that starts near lip height and falls away, leaving the trail `hEnd` lower than it arrived.
      That drop is what buys the carry to clear the road. Coming up short lands on the road, which is
      survivable and slow — exactly the failure the sim should be able to reproduce. */
-  roadgap: (H, lipDeg, R, roadW, roadDrop, landDeg, grade) => {
+  roadgap: (H, lipDeg, R, roadW, roadDrop, landDeg, grade, hEndIn) => {
     const th = lipDeg * D2R, ya = R * (1 - Math.cos(th)), xa = R * Math.sin(th);
     const face = Math.max(0, H - ya) / Math.tan(th), lipL = xa + face;
     const shoulder = 1.0, roadY = -roadDrop;                       // road cut below trail level
-    const knuckle = H - 0.35, hEnd = -(H - 0.35) * 0.0 - 0.95;     // far bank top, and where the trail resumes
+    const knuckle = H - 0.35, hEnd = hEndIn !== undefined ? hEndIn : -0.95;   // far bank top, and where the trail resumes (a canyon gap steps down further)
     const landL = (knuckle - hEnd) / Math.tan(landDeg * D2R) + 3.8, run = 2.0;
     const gapL = roadW + 2 * shoulder;
     return { len: lipL + gapL + landL + run, grade, type: 'built', noPedal: [0, 99], lipAt: lipL, hEnd,
@@ -325,6 +343,55 @@ const LAYOUT_FIT = {
     "MILL GRADE 4": 9
   };
 
+/* =============== RAMPAGE: a freeride line in the Utah desert =============== */
+/* Built at the scale of the real thing but on features the physics can gate: a 40% roll-in off the ridge, an exposed
+   spine, a 20 ft drop, a 40 ft canyon gap that steps down onto the far wall (come up short and you land nine metres
+   down in the canyon), a 30 ft cliff drop onto a long 34 deg face, a 40 ft step-down, and a 25 ft flat-ish drop that is
+   the landing-survival test. Landings are long faces at 30-40 deg, which is how the real ones are dug: the rider matches
+   the bike to the face and the speed into the ground stays survivable. Shuttle road back up, as ridden. */
+COURSES.rampage = [
+  Z('START GATE', SEG.flat(8, 0.0), { turn: 0, zone: 'THE RIDGE' }),
+  Z('RIDGE ROLL-IN', SEG.chute(20, -0.40), { turn: 12, zone: 'THE RIDGE' }),
+  Z('THE SPINE', SEG.flat(30, -0.22), { turn: -16, zone: 'THE RIDGE' }),
+  Z('SPINE DROP 20 FT', SEG.drop(6.0, 2.2, 1.0, 40, 9.0, -0.16, { vMax: 5.5 }), { zone: 'THE RIDGE' }),
+  Z('RIDGE HIP L', SEG.berm(-64, 9.5, 26, -0.17), { zone: 'THE RIDGE' }),
+  Z('CANYON RUN-IN', SEG.flat(40, -0.28), { turn: 8, zone: 'THE CANYON' }),
+  Z('CANYON GAP 36 FT', SEG.roadgap(1.4, 26, 6.0, 11.0, 9.0, 32, -0.05, -5.5), { zone: 'THE CANYON', vMax: 13.6 }),
+  Z('CANYON EXIT BERM', SEG.berm(-46, 14, 24, -0.18), { zone: 'THE CANYON' }),
+  Z('CLIFF RUN-IN', SEG.chute(14, -0.28), { turn: 6, zone: 'THE CLIFF' }),
+  Z('THE CLIFF 30 FT', SEG.drop(9.0, 2.6, 1.2, 38, 12.0, -0.20, { vMax: 6.0 }), { zone: 'THE CLIFF' }),
+  Z('CLIFF BERM R', SEG.berm(58, 10, 28, -0.16), { zone: 'THE CLIFF' }),
+  Z('STEP-DOWN 40 FT', SEG.table(1.0, 26, 6.0, 3.5, 34, -0.08, -6.5), { zone: 'THE CLIFF', vMax: 10.0 }),
+  Z('LOWER TRAVERSE', SEG.flat(26, -0.18), { turn: 22, zone: 'THE FLAT DROP' }),
+  Z('FLAT DROP 25 FT', SEG.drop(7.5, 2.2, 1.0, 32, 16.0, -0.05, { vMax: 6.5 }), { zone: 'THE FLAT DROP' }),
+  Z('FINISH BERM L', SEG.berm(-52, 10, 26, -0.10), { zone: 'THE FLAT DROP' }),
+  Z('FINISH SPRINT', SEG.flat(30, -0.05), { turn: 28, zone: 'THE FLAT DROP' }),
+  Z('SHUTTLE ROAD 1', Object.assign(SEG.flat(165, 0.12), { type: 'built' }), { turn: 16, zone: 'SHUTTLE ROAD', noPedal: null }),
+  Z('SHUTTLE SWITCHBACK 1', SEG.switchback(-128, 12, 0.08), { zone: 'SHUTTLE ROAD' }),
+  Z('SHUTTLE ROAD 2', Object.assign(SEG.flat(160, 0.12), { type: 'built' }), { turn: 10, zone: 'SHUTTLE ROAD' }),
+  Z('SHUTTLE SWITCHBACK 2', SEG.switchback(112, 12, 0.08), { zone: 'SHUTTLE ROAD' }),
+  Z('SHUTTLE ROAD 3', Object.assign(SEG.flat(150, 0.12), { type: 'built' }), { turn: 6, zone: 'SHUTTLE ROAD' }),
+  Z('SHUTTLE SWITCHBACK 3', SEG.switchback(-118, 12, 0.08), { zone: 'SHUTTLE ROAD' }),
+  Z('SHUTTLE ROAD 4', Object.assign(SEG.flat(140, 0.12), { type: 'built' }), { turn: 8, zone: 'SHUTTLE ROAD' }),
+  Z('SHUTTLE SWITCHBACK 4', SEG.switchback(48, 12, 0.08), { zone: 'SHUTTLE ROAD' })
+];
+COURSES.rampage.biome = 'desert';
+/* Rampage layout, fitted by `node fit_layout.js --course rampage` and applied by `node apply_fit.js --course rampage` */
+const RAMPAGE_RETURN_FIT = { retIn: -141.6, retM: 2 };
+const RAMPAGE_LAYOUT_FIT = {
+    "RIDGE ROLL-IN": -3,
+    "THE SPINE": -35,
+    "CANYON RUN-IN": -52,
+    "CLIFF RUN-IN": -26,
+    "LOWER TRAVERSE": 1,
+    "FINISH SPRINT": -36,
+    "SHUTTLE ROAD 1": 13,
+    "SHUTTLE ROAD 2": -6,
+    "SHUTTLE ROAD 3": -3,
+    "SHUTTLE ROAD 4": -23
+  };
+const FITS = { loop: { layout: LAYOUT_FIT, ret: RETURN_FIT }, rampage: { layout: RAMPAGE_LAYOUT_FIT, ret: RAMPAGE_RETURN_FIT } };
+
 /* =============== path + elevation =============== */
 /* Integrates each segment's curvature (constant, or a segment's own kappaShape normalised so the total turn is
    exactly `turn`), then closes the loop with a cubic Hermite resampled to exact arc-length spacing, which becomes
@@ -391,7 +458,7 @@ function buildCourse(COURSE, opt){
   /* The closing climb is graded fire road, not singletrack. It matters: a rooty surface bounces the rider
      airborne, `poseState` latches to 'land', and the physics stops pedalling for 0.45 s each time — which on
      a 10% grade compounds into a stall. Gravel. */
-  const ret = Z('RETURN CLIMB', Object.assign(SEG.flat(retLen, 0), { type: 'built' }), { zone: 'MILL GRADE' });
+  const ret = Z('RETURN CLIMB', Object.assign(SEG.flat(retLen, 0), { type: 'built' }), { zone: COURSE[COURSE.length - 1].zone || 'MILL GRADE' });
   COURSE.push(ret);
   let COURSE_LEN = 0; for (const g of COURSE){ g.start = COURSE_LEN; COURSE_LEN += g.len; }
   let b = 0; for (const g of COURSE){ if (g === ret) g.grade = -b / g.len; g.base = b; b += g.grade * g.len + (g.hEnd || 0); }
@@ -400,9 +467,9 @@ function buildCourse(COURSE, opt){
 
 /* =============== the API the physics and the world builder consume =============== */
 function makeCourse(courseId, opt){
-  const COURSE = (COURSES[courseId] || COURSES.loop).map(g =>
-    (courseId === 'loop' && LAYOUT_FIT[g.name] !== undefined) ? Object.assign({}, g, { turn: LAYOUT_FIT[g.name] }) : g);
-  const { PATH, COURSE_LEN, ret, closeErr } = buildCourse(COURSE, opt || RETURN_FIT);
+  const SRC = COURSES[courseId] || COURSES.loop, fit = FITS[courseId] || FITS.loop;
+  const COURSE = SRC.map(g => fit.layout[g.name] !== undefined ? Object.assign({}, g, { turn: fit.layout[g.name] }) : g);
+  const { PATH, COURSE_LEN, ret, closeErr } = buildCourse(COURSE, opt || fit.ret);
 
   function pathAt(sIn){
     let sp = sIn % COURSE_LEN; if (sp < 0) sp += COURSE_LEN;
@@ -467,10 +534,10 @@ function makeCourse(courseId, opt){
   }
   function invalidateObst(){ OB_BUCKETS = null; }
 
-  return { COURSE, COURSE_LEN, PATH, closeErr, retLen: ret.len, retGrade: ret.grade,
+  return { COURSE, COURSE_LEN, PATH, closeErr, retLen: ret.len, retGrade: ret.grade, courseId, biome: SRC.biome || 'pnw',
            pathAt, segAt, terrainAt, crossAt, bankAt, bankSide, groundAt, groundEnv, groundType, baseGrade,
            OBST, addObst, obstH, lineLimit, invalidateObst, plainProfile, bermProfile };
 }
 
-return { SEG, COURSES, makeCourse, buildCourse, RETURN_FIT, LAYOUT_FIT, plainProfile, bermProfile, bermHeight, D2R, clamp, lerp, smooth, hash };
+return { SEG, COURSES, makeCourse, RAMPAGE_LAYOUT_FIT, RAMPAGE_RETURN_FIT, buildCourse, RETURN_FIT, LAYOUT_FIT, plainProfile, bermProfile, bermHeight, D2R, clamp, lerp, smooth, hash };
 });

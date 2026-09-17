@@ -12,8 +12,9 @@ const CL = require('./clearance.js');
 /* Held fixed: the berms and switchbacks (they are the design), the start, and everything you must not ride
    round a corner on — a tabletop, a road gap, a drop, a bridge or a creek crossing is straight by construction.
    The deliberate hip keeps its authored turn. */
-const SEED_FIXED = new Set(['TRAILHEAD', 'HIP 30 FT']);
-const src = C.COURSES.loop;
+const COURSE_ID = process.argv.indexOf('--course') >= 0 ? process.argv[process.argv.indexOf('--course') + 1] : 'loop';
+const SEED_FIXED = new Set(['TRAILHEAD', 'HIP 30 FT', 'START GATE']);
+const src = C.COURSES[COURSE_ID];
 const isStraightOnly = g => !!g.jump || g.pool || g.deck || g.road;
 const free = [];
 src.forEach((g, i) => { if (!g.corner && !SEED_FIXED.has(g.name) && !isStraightOnly(g)) free.push({ i, name: g.name, turn: g.turn || 0 }); });
@@ -102,5 +103,5 @@ console.log('        loop ' + bestE.COURSE_LEN.toFixed(0) + ' m   turnSum ' + be
             '   return ' + bestE.retLen.toFixed(0) + ' m @ ' + (100 * bestE.retGrade).toFixed(1) + '%   span ' + bestE.span.toFixed(0) + ' m');
 console.log('\nturn values to apply:');
 free.forEach((f, k) => { if (Math.abs(best[k] - f.turn) > 0.5) console.log("  " + f.name.padEnd(22) + String(Math.round(f.turn)).padStart(5) + '  ->  ' + String(Math.round(best[k])).padStart(5)); });
-require('fs').writeFileSync(__dirname + '/layout_fit.json', JSON.stringify({ retIn: +bestIn.toFixed(1), retM: +bestM.toFixed(3), turns: free.map((f, k) => ({ name: f.name, turn: Math.round(best[k]) })) }, null, 1));
+require('fs').writeFileSync(__dirname + (COURSE_ID === 'loop' ? '/layout_fit.json' : '/layout_fit_' + COURSE_ID + '.json'), JSON.stringify({ retIn: +bestIn.toFixed(1), retM: +bestM.toFixed(3), turns: free.map((f, k) => ({ name: f.name, turn: Math.round(best[k]) })) }, null, 1));
 console.log('\nwritten to layout_fit.json');

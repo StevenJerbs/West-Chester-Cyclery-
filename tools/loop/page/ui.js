@@ -3,13 +3,16 @@
 const $ = id => document.getElementById(id);
 /* The bike: the Starling Murmur, the full-suspension bike the mtbkin keypoint model tracks most tightly. The lab's
    physics reads BIKE before it builds its geometry and linkage table; RIG_STYLE swaps the full-face for a half shell. */
-const BIKE = 'murmur', RIG_STYLE = 'enduro';
+const BIKE = COURSE_ID === 'rampage' ? 'v10' : 'murmur', RIG_STYLE = COURSE_ID === 'rampage' ? 'dh' : 'enduro';   // Rampage: the V10 and a full-face
+/* tricks: the page writes these every frame, the physics reads them (suspension-lab.html: tricks) */
+const TRICK = { flip: 0, tuck: 0, hands: 1, grab: 0, onEvent: null };
 /* Set up firm for a 140 mm bike on a DH-scale course, found by sweeping the rideability gate: 450 lb/in on the TTX
    coil with the rebound slowed (10 / 6 clicks) so the rear does not kick the bike nose-up off the big rollers, and
    92 psi with three tokens in the 150 mm fork for the jump line. Softer bottoms out in the Gallery; stiffer (500)
    kicks the pro rider into a loop-out on Cedar Speedway; slower rebound packs down. */
-const SETUP = { rlb: 150, effort: 300, vcap: 30, rSpring: 450, rLsc: 7, rHsc: 5, rLsr: 10, rHsr: 6,
-                fSpring: 92, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
+const SETUP = COURSE_ID === 'rampage'
+  ? { rlb: 150, effort: 300, vcap: 34, rSpring: 475, rLsc: 8, rHsc: 4, rLsr: 8, rHsr: 4, fSpring: 72, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 }   // the V10 on its lab setup, freeride speed cap
+  : { rlb: 150, effort: 300, vcap: 30, rSpring: 450, rLsc: 7, rHsc: 5, rLsr: 10, rHsr: 6, fSpring: 92, fVol: 3, fLsc: 5, fHsc: 3, fLsr: 6, fHsr: 4 };
 const ui = new Proxy({}, { get: (t, k) => t[k] || (t[k] = { value: SETUP[k] !== undefined ? SETUP[k] : 0, textContent: '', style: {} }) });
 
 /* quality tiers. The physics step is 1/600 s on every tier: at 1/300 the Murmur's lighter wheels on the firm setup
@@ -24,6 +27,7 @@ const QUALITY = {
   high: { dpr: 2.0, scale: 1.0,  aa: true,  shadow: 2048, ssao: true,  bloom: 0.11, smaa: true,  fog: 0.0037, draw: 270, flora: 1.0,  leaves: 450, reflect: true,  pdt: 1 / 600, sun: 1.05, hemi: 0.62, exp: 1.06, chunks: 12, ambient: false }
 };
 const qParam = new URLSearchParams(location.search).get('q');
+if (COURSE_ID === 'rampage'){ QUALITY.low.leaves = 0; QUALITY.med.leaves = 0; QUALITY.high.leaves = 0; }   // no leaves blow through a desert
 let QNAME = qParam && QUALITY[qParam] ? qParam : (IS_TOUCH ? 'low' : 'high');
 let Q = QUALITY[QNAME];
 const DEBUG = new URLSearchParams(location.search).has('debug');

@@ -42,6 +42,8 @@ const rig = between(susp, '/* limbs */', '/* =============== main loop =========
 const worldJs = fs.readFileSync(path.join(__dirname, 'page/world.js'), 'utf8');
 const uiJs = fs.readFileSync(path.join(__dirname, 'page/ui.js'), 'utf8');
 const rigMergeJs = fs.readFileSync(path.join(__dirname, 'page/rig_merge.js'), 'utf8');
+const speedJs = fs.readFileSync(path.join(__dirname, 'page/speed.js'), 'utf8');
+const sfxData = between(pump, 'const SFX_DATA = ', '\n', 'SFX_DATA');   // the eleven trackside clips, shared with the Pump Lab
 const loopJs = fs.readFileSync(path.join(__dirname, 'page/loop.js'), 'utf8');
 const headHtml = fs.readFileSync(path.join(__dirname, 'page/head.html'), 'utf8');
 
@@ -64,7 +66,9 @@ const out = headHtml
   + '<script>\n\'use strict\';\n'
   + '/* ============ the course: tools/loop/course.js, inlined ============ */\n' + courseInline + '\n'
   + 'const { SEG, COURSES, makeCourse } = COURSE_API;\n'
-  + 'const LOOP = makeCourse(\'loop\');\n'
+  + '/* which course: ?course=rampage is the freeride line; the loop is the default */\n'
+  + 'const COURSE_ID = new URLSearchParams(location.search).get(\'course\') === \'rampage\' ? \'rampage\' : \'loop\';\n'
+  + 'const LOOP = makeCourse(COURSE_ID);\n'
   + 'const COURSE = LOOP.COURSE, COURSE_LEN = LOOP.COURSE_LEN, PATH = LOOP.PATH, OBST = LOOP.OBST;\n'
   + 'const pathAt = LOOP.pathAt, segAt = LOOP.segAt, terrainAt = LOOP.terrainAt;\n'
   /* The solver is one-dimensional along `scroll`; it samples the ground through groundAt/groundEnv and nothing
@@ -83,6 +87,7 @@ const out = headHtml
   + '/* ============ the bike, from suspension-lab.html ============ */\n' + rig + '\n'
   + rigMergeJs + '\n'
   + '/* ============ modes, camera and the frame loop ============ */\n' + loopJs + '\n'
+  + '/* ============ speed: lens, streaks, sound ============ */\n' + sfxData + '\n' + speedJs + '\n'
   + '</script>\n';
 
 fs.writeFileSync(path.join(REPO, 'trail-loop.html'), out);

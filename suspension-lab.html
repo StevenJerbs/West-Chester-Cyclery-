@@ -637,6 +637,18 @@ const rider = { y: 0, vy: 0, u: 0, k: 9000, c: 900, hx: -0.40, hy: 0.62, xTarget
 let v = 3.0, scroll = 0, riding = true, lap = 1;
 const MU_DIRT = 0.75;
 const corner = { active: false, lean: 0, g: 1, R: 0, bank: 0, ahead: 99, vLimit: 99, braking: false, usage: 0, sliding: false, aLat: 0 };
+/* =============== tricks, and the landing verdict ===============
+   TRICK is a global a page may define before this script: { flip, tuck, hands, grab, onEvent }. `flip` held as the
+   wheels leave throws a backflip; `tuck` speeds the rotation and opening up slows it; `hands` 0 is a no-hander;
+   `grab` is a seat grab. The labs leave it undefined and ride straight. The landing verdict applies to everyone:
+   the bike's attitude against the landing slope, and the speed into the ground along the slope's normal. Inside
+   the tolerance the suspension and the rider's legs take it; further out it is sketchy (speed scrubbed, a wobble);
+   beyond that it is a crash (nose-first over the bars, too far off the face, too much speed into the ground, or hands
+   off the bars at touchdown). A crash stops the bike; the page decides what happens next. */
+const TRK = typeof TRICK !== 'undefined' ? TRICK : { flip: 0, tuck: 0, hands: 1, grab: 0, onEvent: null };
+let flipping = false, flipTotal = 0, crashed = 0, wasAirP = false, airTime = 0;
+const LAND = { mis: 0, vImpact: 0, verdict: '', sketchy: false };
+const FLIP_W0 = 5.4;                                                             // rad/s thrown at the lip: a 360 in about 1.15 s
 function updateCorner(){
   const [seg, t] = segAt(scroll);
   const P = pathAt(scroll + 1.2);                                              // the rider sets the lean up slightly ahead of the wheels
@@ -655,6 +667,15 @@ function updateCorner(){
     const sq = segAt(scroll + d)[0], b2 = sq.corner ? sq.corner.bank : 0;
     const vl = Math.sqrt(G9 * Math.tan(Math.min(1.45, b2 + Math.atan(MU_DIRT))) / k2) * 0.97;
     if (v > vl && d < (v * v - vl * vl) / (2 * 4.5) + 2){ corner.braking = true; if (vl < corner.vLimit){ corner.vLimit = vl; corner.ahead = d; } }
+  }
+  /* a drop with a run-in speed (seg.vMax): the rider sets it up, braking to that speed before the lip */
+  for (let d = 0; d <= 60; d += 1.5){
+    const sq = segAt(scroll + d)[0]; if (!sq.vMax || sq.lipAt === undefined) continue;
+    const dl = sq.start + sq.lipAt - scroll; if (dl < 0) continue;
+    const vl = sq.vMax;
+    /* on a steep run-in gravity fights the brakes: budget 2.2 m/s^2 net, and start early */
+    if (v > vl && dl < (v * v - vl * vl) / (2 * 1.8) + 3){ corner.braking = true; if (vl < corner.vLimit){ corner.vLimit = vl; corner.ahead = dl; } }
+    break;
   }
 }
 const tune = {};
@@ -780,6 +801,7 @@ function reset(){
   scroll = 0; v = 2.5; lap = 1;
   const g0 = groundAt(0);
   chassis.phi = 0; chassis.w = 0; chassis.vy = 0;
+  flipping = false; flipTotal = 0; crashed = 0; wasAirP = false; airTime = 0; LAND.verdict = '';
   wheelF.s = wheelF.sag; wheelR.t = wheelR.sag;
   const af = axleFLocal(wheelF.s), ar = vtLookup(wheelR.t);
   chassis.y = g0 + Math.max(wheelF.r - af.y, wheelR.r - ar.ay) + 0.0;
@@ -793,6 +815,7 @@ function reset(){
   snapCam = true;
 }
 function step(dt){
+  if (crashed > 0){ crashed -= dt; v = Math.max(0.3, v * (1 - 2.6 * dt)); }        // down: the bike tumbles to a stop
   /* --- kinematic positions of the wheels on the chassis --- */
   const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi);
   const crownW = toWorld(CROWN);
@@ -883,10 +906,58 @@ function step(dt){
   let Fy = Ff + Fr - Frider - M_SPRUNG * GL;
   let Tz = (armF.x - comW.x) * Ff + (armR.x - comW.x) * Fr - (armH.x - comW.x) * Frider;
   const inAir = tF <= 0 && tR <= 0;
-  const phiRef = inAir ? -0.10 : clamp(Math.atan(gradeS), -0.35, 0.35);
+  /* the throw: flip held as the wheels leave the lip */
+  if (inAir && !wasAirP){
+    airTime = 0;
+    if (TRK.flip > 0.5 && crashed <= 0){ flipping = true; flipTotal = 0; chassis.w = Math.max(chassis.w, FLIP_W0 * (riderMode === 'pro' ? 1.0 : 0.9)); }
+    if (TRK.onEvent) TRK.onEvent({ type: 'takeoff', v });
+  }
+  if (inAir) airTime += dt;
+  /* the landing verdict, on the first contact after air */
+  if (!inAir && wasAirP && crashed <= 0){
+    let ph = chassis.phi; while (ph > Math.PI) ph -= 2 * Math.PI; while (ph < -Math.PI) ph += 2 * Math.PI; chassis.phi = ph;
+    const th = Math.atan(tF > 0 ? slFx : slRx), vn = -v * Math.sin(th) + chassis.vy * Math.cos(th);   // the face under the wheel that touched, not the segment's grade
+    const pro = riderMode === 'pro';
+    LAND.mis = ph - th; LAND.vImpact = -vn; LAND.air = airTime; LAND.flip = flipTotal;
+    let why = null;
+    if (Math.abs(LAND.mis) > 0.75) why = 'landed ' + Math.round(Math.abs(LAND.mis) / D2R) + ' deg off the face';
+    else if (LAND.mis < -0.50 && airTime > 0.25) why = 'nose first: over the bars';
+    else if (LAND.vImpact > (pro ? 9.5 : 7.2)) why = 'cased it: ' + LAND.vImpact.toFixed(1) + ' m/s into the ground';
+    else if (TRK.hands < 0.5 || TRK.grab > 0.5) why = 'hands off the bars at touchdown';
+    LAND.sketchy = !why && airTime > 0.25 && (Math.abs(LAND.mis) > 0.40 || LAND.vImpact > (pro ? 8.0 : 5.8));   // a hop is not a landing
+    if (LAND.sketchy){ v *= 0.82; chassis.w *= 0.5; }
+    LAND.verdict = why || (LAND.sketchy ? 'sketchy' : 'clean');
+    if (why && crashed <= 0){ crashed = 1.8; v *= 0.35; chassis.w = 0; }
+    flipping = false;
+    if (TRK.onEvent) TRK.onEvent({ type: why ? 'crash' : 'land', why, mis: LAND.mis, vImpact: LAND.vImpact, air: airTime, flip: flipTotal, sketchy: LAND.sketchy });
+    flipTotal = 0;
+  }
+  /* coming down on the bike rather than the wheels: inverted or near it within a frame's height of the ground */
+  if (crashed <= 0 && inAir && Math.abs(chassis.phi) > 1.2 && chassis.y - gF < 0.35){
+    crashed = 1.8; flipping = false; v *= 0.35; chassis.w = 0;
+    if (TRK.onEvent) TRK.onEvent({ type: 'crash', why: 'came down on the bike', mis: chassis.phi, vImpact: -chassis.vy, air: airTime, flip: flipTotal, sketchy: false });
+    flipTotal = 0; chassis.phi = clamp(chassis.phi, -0.9, 0.9);
+  }
+  wasAirP = inAir;
+  /* in the air the rider steers the bike's attitude to the face it is about to land on: march the ballistic path
+     forward until it meets the ground and take the slope there (a flat landing reads -6 deg nose-up, a 35 deg
+     face reads -35). This is the difference between landing on the wheels and landing on the front wheel. */
+  let phiRef;
+  if (inAir){
+    /* only a descending path meeting the ground counts: grazing a deck near the apex is not the landing, and a hop
+       over a root never descends fast enough to register, so the bike stays level through the rough */
+    let tt = 0, yy = chassis.y, vv = chassis.vy, xx = scroll, hit = -0.10;
+    for (let i = 0; i < 40; i++){ tt += 0.06; xx += v * 0.06; vv -= G9 * 0.06; yy += vv * 0.06;
+      if (vv < -1.5 && yy - 0.36 <= groundAt(xx)){ hit = Math.atan((groundAt(xx + 0.6) - groundAt(xx - 0.6)) / 1.2); break; } }
+    phiRef = clamp(hit, -0.85, 0.15) - 0.06;
+  } else phiRef = clamp(Math.atan(gradeS), -0.35, 0.35);
   const mScale = M_RIDER / 78;                                                        // a heavier rider has more authority over the bars, and more mass to move
   const kp = (inAir ? 900 : 350) * mScale, cp = (inAir ? 220 : 150) * mScale;
-  Tz += -kp * (chassis.phi - phiRef) - cp * chassis.w;
+  if (flipping && inAir){
+    /* committed: the rider tucks to spin faster and opens up to slow it; no bar authority against the rotation */
+    const wT = FLIP_W0 * (TRK.tuck > 0.5 ? 1.30 : 0.80);
+    chassis.w += (wT - chassis.w) * Math.min(1, dt * 2.2); flipTotal += chassis.w * dt;
+  } else Tz += -kp * (chassis.phi - phiRef) - cp * chassis.w;
   /* front wheel off a ledge: the rider pushes the bars forward and shifts back so the bike leaves level. Only while
      the nose is still low and not already rotating up: past that the same push is what loops a bike out, and the
      rider does the opposite -- straight arms driving the bars down (~M g x 0.4 m of reach), which no roller kick beats. */
@@ -899,8 +970,8 @@ function step(dt){
   Tz += (wheelF.fx + wheelR.fx + bumpX) * hCg;
   chassis.vy += (Fy / M_SPRUNG) * dt; chassis.y += chassis.vy * dt;
   const I_EFF = I_SPRUNG + 0.55 * M_RIDER * 0.36 * 0.36;                            // the rider's body pitches with the bike through stiff arms and legs
-  chassis.w += (Tz / I_EFF) * dt; chassis.w = clamp(chassis.w, -6.3, 6.3); chassis.phi += chassis.w * dt;   // 6.3 rad/s = 360 deg/s: a stiff-armed rider caps the frame's pitch rate through a hard hit; measured pro DH pitch rate (FPV chase footage, kinematic-model/data/videos.yaml) peaks at 279-284 deg/s
-  chassis.phi = clamp(chassis.phi, -0.9, 0.9);
+  chassis.w += (Tz / I_EFF) * dt; chassis.w = clamp(chassis.w, flipping ? -8.5 : -6.3, flipping ? 8.5 : 6.3); chassis.phi += chassis.w * dt;   // 6.3 rad/s = 360 deg/s: a stiff-armed rider caps the frame's pitch rate through a hard hit; measured pro DH pitch rate (FPV chase footage, kinematic-model/data/videos.yaml) peaks at 279-284 deg/s
+  if (!flipping) chassis.phi = clamp(chassis.phi, -0.9, 0.9);
   /* --- wheels --- */
   wheelF.vy += ((tF - Ff + Fdive) / M_UF - GL) * dt; wheelF.y += wheelF.vy * dt;
   wheelR.vy += ((tR - Fr) / M_UR - GL) * dt; wheelR.y += wheelR.vy * dt;
@@ -1261,7 +1332,7 @@ let leanVis = 0, leanVel = 0, leanAcc = 0, yawVis = 0, steerVis = 0, headTurnVis
 function pose(dt){
   const gy = groundAt(scroll), PW = pathAt(scroll);                    // the rig sits on the trail, yawed to the tangent, rolled to the lean
   rig.position.set(PW.x, gy, PW.z);
-  rig.rotation.x = -leanVis; rig.rotation.y = -PW.theta;
+  rig.rotation.x = -leanVis + (crashed > 0 ? Math.min(1.25, (1.8 - crashed) * 2.0) : 0); rig.rotation.y = -PW.theta;   // a crash: the bike goes over on its side
   frame.position.set(0, chassis.y - gy, 0); frame.rotation.z = chassis.phi; frame.updateMatrixWorld(true);
   const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi);
   /* rear linkage from the table */
@@ -1311,9 +1382,12 @@ function pose(dt){
   numberPlate.position.set(BAR.x + 0.04, BAR.y + 0.02, 0);
   const elbowMax = cur.elbowMax;
   let elbowAng = 0, kneeAng = 0;
+  const handsOff = poseState === 'air' && crashed <= 0 && TRK.hands < 0.5, grabbing = poseState === 'air' && crashed <= 0 && TRK.grab > 0.5;
   for (const [ua, la, grip, zz] of [[uArmL, lArmL, GRIP_L, 0.13], [uArmR, lArmR, GRIP_R, -0.13]]){
     _a.set(shoulders.x, shoulders.y - 0.02, zz);
-    const r = ik(_a, grip, 0.31, 0.29, 'down', elbowMax);
+    const tgt = handsOff ? P3(shoulders.x + 0.12, shoulders.y + 0.30, zz * 3.4)                 // no-hander: arms thrown out and up
+              : (grabbing && zz < 0) ? P3(sad.x - 0.02, sad.y + 0.06, -0.07) : grip;             // seat grab: the right hand back to the saddle
+    const r = ik(_a, tgt, 0.31, 0.29, 'down', elbowMax);
     r.joint.z = (zz > 0 ? 1 : -1) * (riderMode === 'pro' ? 0.46 : 0.30);       // elbows out wide, DH style
     aimLimb(ua, _a, r.joint); aimLimb(la, r.joint, r.end);
     if (zz > 0) elbowAng = angleAt(_a, r.joint, r.end);
