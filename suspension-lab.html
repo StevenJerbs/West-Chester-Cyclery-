@@ -1,0 +1,1375 @@
+<meta charset="utf-8">
+<title>Suspension Lab</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root{
+    --bg:#23261E; --panel:#2F3328; --panel2:#262A20; --line:#484D3C;
+    --ink:#EFE8D6; --dim:#A39F88;
+    --accent:#D9A441; --front:#7FA6C9; --rear:#D4784E; --danger:#D9534F; --good:#8DBF6A;
+    --disp:'Silkscreen',monospace; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--mono); font-size:14px; line-height:1.5}
+  .wrap{max-width:1100px; margin:0 auto; padding:18px 16px 40px; display:flex; flex-direction:column; gap:14px}
+
+  header{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  h1{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:1px; margin:0; color:var(--accent); text-shadow:3px 3px 0 #15170f}
+  .sub{color:var(--dim); font-size:12px; margin-top:2px; max-width:70ch}
+  .sub a{color:var(--front)} .sub b{color:var(--ink); font-weight:600}
+  .ctl{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+  .seg{display:flex; border:2px solid var(--line)}
+  .seg button{font-family:var(--disp); font-size:10px; letter-spacing:1px; padding:8px 10px; background:var(--panel2); color:var(--dim); border:0; border-right:2px solid var(--line); cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--accent); color:#1d1a10}
+  .seg.mini button{font-size:8px; padding:4px 7px}
+  .card.rear .seg.mini button.on{background:var(--rear)}
+  .seg button:focus-visible,.btn:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  .lbl{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--dim)}
+  .hs{display:flex; align-items:center; gap:8px}
+  .hs output{font-weight:600; min-width:60px; font-variant-numeric:tabular-nums}
+  .btn{font-family:var(--disp); font-size:11px; letter-spacing:1px; padding:8px 14px; cursor:pointer; background:var(--front); color:#132030; border:2px solid var(--line)}
+  .btn.alt{background:var(--panel2); color:var(--ink)}
+  .btn[data-riding="1"]{background:var(--panel2); color:var(--ink)}
+
+  .scene{border:3px solid var(--line); background:#A9B8AE; position:relative; overflow:hidden}
+  .scene canvas{display:block; width:100%; height:auto; touch-action:none; cursor:grab}
+  .hud{position:absolute; left:8px; top:8px; font-size:11px; color:#EFE8D6; background:rgba(20,24,16,.6); padding:6px 8px; pointer-events:none; line-height:1.45; min-width:150px}
+  .hud b{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--accent); display:block; margin-bottom:2px}
+  .hud .st{font-family:var(--disp); font-size:9px; color:#fff}
+  .joints{position:absolute; right:8px; top:8px; background:rgba(20,24,16,.6); padding:6px 8px; pointer-events:none; width:190px}
+  .joints b{font-family:var(--disp); font-size:9px; letter-spacing:1px; color:var(--accent); display:block; margin-bottom:4px}
+  .jr{display:grid; grid-template-columns:44px 1fr 34px; gap:6px; align-items:center; font-size:11px; margin:2px 0}
+  .jr .n{font-family:var(--disp); font-size:8px; color:var(--dim)}
+  .jr .band{position:relative; height:8px; background:rgba(255,255,255,.12)}
+  .jr .band .ok{position:absolute; top:0; bottom:0; background:rgba(141,191,106,.45)}
+  .jr .band .pt{position:absolute; top:-2px; width:4px; height:12px; background:var(--ink); margin-left:-2px}
+  .jr .band .pt.out{background:var(--danger)}
+  .jr .v{font-variant-numeric:tabular-nums; text-align:right; font-weight:600}
+  .scene canvas.mm{position:absolute; left:8px; bottom:8px; width:112px; height:112px; image-rendering:pixelated; pointer-events:none; border:2px solid var(--line); cursor:default}
+  .hint{position:absolute; right:8px; bottom:6px; font-size:10px; color:#EFE8D6; opacity:.8; background:rgba(20,24,16,.55); padding:2px 6px; pointer-events:none}
+
+  .bench{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .card{background:var(--panel); border:3px solid var(--line); padding:14px 12px 16px}
+  .card h2{font-family:var(--disp); font-size:14px; letter-spacing:1px; margin:0; display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap}
+  .card h2 .spec{font-family:var(--mono); font-weight:400; font-size:11px; color:var(--dim); letter-spacing:0}
+  .card.rear h2 .name{color:var(--rear)}
+  .card.front h2 .name{color:var(--front)}
+  .desk{display:flex; justify-content:space-between; gap:4px; margin-top:14px; flex-wrap:wrap}
+  .ch{display:flex; flex-direction:column; align-items:center; gap:8px; width:62px}
+  .ch .val{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--accent); line-height:1; height:16px}
+  .card.front .ch .val{color:var(--front)}
+  .card.rear .ch .val{color:var(--rear)}
+  .ch .lbl2{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); text-align:center; line-height:1.5}
+  .ch .lbl2 u{text-decoration:none; color:var(--ink)}
+  .bar{position:relative; width:28px; height:160px; background:var(--panel2); border:2px solid var(--line)}
+  .bar .fill{position:absolute; left:0; right:0; top:0; height:0%}
+  .card.front .bar .fill{background:var(--front)}
+  .card.rear .bar .fill{background:var(--rear)}
+  .bar .bo-zone{position:absolute; left:0; right:0; bottom:0; height:8%; background:rgba(217,83,79,.35)}
+  .bar .sag{position:absolute; left:-6px; right:-6px; height:0; border-top:2px dashed var(--ink)}
+  .bar .pack{position:absolute; left:-11px; width:0; height:0; border-top:5px solid transparent; border-bottom:5px solid transparent; border-left:8px solid var(--accent); margin-top:-5px}
+  .bar.bo .fill{background:var(--danger)}
+  .fader{position:relative; width:44px; height:160px}
+  .fader::before{content:""; position:absolute; left:50%; top:0; bottom:0; width:8px; margin-left:-4px; background:var(--panel2); border:2px solid var(--line)}
+  .fader input{position:absolute; left:50%; top:50%; width:160px; height:24px; margin:0; transform:translate(-50%,-50%) rotate(-90deg)}
+  input[type=range]{-webkit-appearance:none; appearance:none; background:transparent; cursor:pointer}
+  .hs input{width:100px; height:22px}
+  input[type=range]::-webkit-slider-runnable-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  input[type=range]::-moz-range-track{height:8px; background:var(--panel2); border:2px solid var(--line)}
+  .fader input::-webkit-slider-runnable-track{background:transparent; border-color:transparent}
+  .fader input::-moz-range-track{background:transparent; border-color:transparent}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:20px; height:20px; margin-top:-8px; background:var(--accent); border:2px solid #15170f}
+  input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:0; background:var(--accent); border:2px solid #15170f}
+  .card.front input[type=range]::-webkit-slider-thumb{background:var(--front)}
+  .card.front input[type=range]::-moz-range-thumb{background:var(--front)}
+  .card.rear input[type=range]::-webkit-slider-thumb{background:var(--rear)}
+  .card.rear input[type=range]::-moz-range-thumb{background:var(--rear)}
+  input[type=range]:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+  .reads{display:flex; margin-top:14px; border:2px solid var(--line); background:var(--panel2)}
+  .read{flex:1; padding:7px 8px; border-right:2px solid var(--line); min-width:0}
+  .read:last-child{border-right:0}
+  .read .k{font-family:var(--disp); font-size:8px; letter-spacing:1px; color:var(--dim); white-space:nowrap}
+  .read .v{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
+  .read .v.warn{color:var(--danger)}
+  .note{color:var(--dim); font-size:12px; max-width:78ch}
+  .note b{color:var(--ink); font-weight:600}
+  .note code{font-size:11px; color:var(--ink)}
+  @media (max-width:860px){ .bench{grid-template-columns:1fr} h1{font-size:20px} .joints{display:none} }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>SUSPENSION LAB</h1>
+      <div class="sub">West Chester Cyclery &mdash; Jackson Goldstone's Santa Cruz V10 CC MX (size M, low), 208 mm lower-link VPP + 200 mm Fox 40 &middot; rider posture from his Val di Sole 2023 chase footage &middot; chassis pitch-rate capped at 360&deg;/s (measured pro DH peak 279&ndash;284&deg;/s, FPV chase footage) &middot; clicks from fully open<br><b>Courses:</b> Ladies Only (Mt Fromme, North Vancouver: roots, ladders, rock rolls) or Tortuga (Ride Kanuga, NC: the intermediate jump line, seven radiused-lip tabletops from 10 to 25 ft, a step-up, a step-down, a berm and a right-left berm S; 0.2 mi, 85 ft of drop). <b>Do this, not that:</b> <a href="https://claude.ai/code/artifact/65f4b230-6e5e-4f0c-96c9-2e6c1fb5f3ad">Corner Lab</a> (braking vs cornering, slow in / fast out) &middot; <a href="https://claude.ai/code/artifact/ed8b8f4a-7efb-4e50-9a43-1164ef014918">Pump Lab</a> (where pump speed comes from)</div>
+    </div>
+    <div class="ctl">
+      <div><div class="lbl">COURSE</div><div class="seg" id="courseSeg"><button type="button" data-v="ladies">LADIES ONLY · FROMME</button><button type="button" data-v="tortuga">TORTUGA · KANUGA</button></div></div>
+      <div><div class="lbl">RIDER</div><div class="seg" id="riderSeg"><button type="button" data-v="pro" class="on">GOLDSTONE</button><button type="button" data-v="avg">AVERAGE</button></div></div>
+      <div class="hs"><label class="lbl" for="rlb">RIDER LB</label><input id="rlb" type="range" min="120" max="260" step="5" value="150"><output id="rlbOut">150 lb</output></div>
+      <div class="hs"><label class="lbl" for="effort">RIDER W</label><input id="effort" type="range" min="100" max="400" step="10" value="300"><output id="effortOut">300 W</output></div>
+      <div class="hs"><label class="lbl" for="vcap">MAX MPH</label><input id="vcap" type="range" min="12" max="34" step="1" value="26"><output id="vcapOut">26 mph</output></div>
+      <button type="button" class="btn" id="rideBtn">PAUSE</button>
+      <button type="button" class="btn alt" id="restartBtn">RESTART</button>
+    </div>
+  </header>
+
+  <div class="scene">
+    <canvas id="cv" width="448" height="252"></canvas>
+    <div class="hud"><b id="hudSec">START</b><span id="hudSpd">0 mph</span> &middot; <span id="hudGrade">0%</span> grade<br><span class="st" id="hudState">SEATED</span><br><span id="hudPower"></span></div>
+    <div class="joints"><b>JOINTS vs DH BAND</b>
+      <div class="jr"><span class="n">KNEE</span><span class="band" id="bKnee"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vKnee">0</span></div>
+      <div class="jr"><span class="n">HIP</span><span class="band" id="bHip"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vHip">0</span></div>
+      <div class="jr"><span class="n">ELBOW</span><span class="band" id="bElbow"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vElbow">0</span></div>
+      <div class="jr"><span class="n">TORSO</span><span class="band" id="bTorso"><span class="ok"></span><span class="pt"></span></span><span class="v" id="vTorso">0</span></div>
+    </div>
+    <canvas id="mm" class="mm" width="150" height="150"></canvas>
+    <div class="hint">drag to orbit</div>
+  </div>
+
+  <div class="bench">
+    <section class="card rear">
+      <h2><span class="name">REAR SHOCK</span><span class="seg mini" id="shockSeg"><button type="button" data-v="coil" class="on">COIL</button><button type="button" data-v="air">AIR</button></span><span class="spec">VPP 208 mm &middot; 250&times;75 &middot; LR 2.86&rarr;2.59</span></h2>
+      <div class="desk">
+        <div class="ch"><div class="val" id="rUsed">0</div><div class="bar" id="barR"><div class="bo-zone"></div><div class="fill" id="fillR"></div><div class="sag" id="sagR"></div><div class="pack" id="packR"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
+        <div class="ch"><output class="val" id="rSpringOut">475</output><div class="fader"><input id="rSpring" type="range" min="300" max="700" step="25" value="475" aria-label="Rear coil spring lb/in"></div><label class="lbl2" for="rSpring" id="rSpringLbl"><u>COIL</u><br>lb/in</label></div>
+        <div class="ch"><output class="val" id="rLscOut">8</output><div class="fader"><input id="rLsc" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed compression clicks"></div><label class="lbl2" for="rLsc"><u>LSC</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="rHscOut">4</output><div class="fader"><input id="rHsc" type="range" min="0" max="8" step="1" value="4" aria-label="Rear high-speed compression clicks"></div><label class="lbl2" for="rHsc"><u>HSC</u><br>/8</label></div>
+        <div class="ch"><output class="val" id="rLsrOut">8</output><div class="fader"><input id="rLsr" type="range" min="0" max="16" step="1" value="8" aria-label="Rear low-speed rebound clicks"></div><label class="lbl2" for="rLsr"><u>LSR</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="rHsrOut">4</output><div class="fader"><input id="rHsr" type="range" min="0" max="8" step="1" value="4" aria-label="Rear high-speed rebound clicks"></div><label class="lbl2" for="rHsr"><u>HSR</u><br>/8</label></div>
+      </div>
+      <div class="reads">
+        <div class="read"><div class="k">SAG</div><div class="v" id="rSag">–</div></div>
+        <div class="read"><div class="k">RIDE HT</div><div class="v" id="rPack">–</div></div>
+        <div class="read"><div class="k">LEVERAGE</div><div class="v" id="rLR">–</div></div>
+        <div class="read"><div class="k">B.O.</div><div class="v" id="rBo">0</div></div>
+      </div>
+    </section>
+    <section class="card front">
+      <h2><span class="name">FRONT FORK</span><span class="spec">200 mm &middot; 63.5&deg; HTA &middot; 52 mm offset &middot; Fox 40, air + 4-way</span></h2>
+      <div class="desk">
+        <div class="ch"><div class="val" id="fUsed">0</div><div class="bar" id="barF"><div class="bo-zone"></div><div class="fill" id="fillF"></div><div class="sag" id="sagF"></div><div class="pack" id="packF"></div></div><div class="lbl2"><u>TRAVEL</u><br>mm</div></div>
+        <div class="ch"><output class="val" id="fSpringOut">72</output><div class="fader"><input id="fSpring" type="range" min="50" max="130" step="2" value="72" aria-label="Fork air pressure psi"></div><label class="lbl2" for="fSpring"><u>AIR</u><br>psi</label></div>
+        <div class="ch"><output class="val" id="fVolOut">3</output><div class="fader"><input id="fVol" type="range" min="0" max="5" step="1" value="3" aria-label="Fork volume spacers"></div><label class="lbl2" for="fVol"><u>TOKENS</u><br>vol.</label></div>
+        <div class="ch"><output class="val" id="fLscOut">5</output><div class="fader"><input id="fLsc" type="range" min="0" max="16" step="1" value="5" aria-label="Fork low-speed compression clicks"></div><label class="lbl2" for="fLsc"><u>LSC</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="fHscOut">3</output><div class="fader"><input id="fHsc" type="range" min="0" max="8" step="1" value="3" aria-label="Fork high-speed compression clicks"></div><label class="lbl2" for="fHsc"><u>HSC</u><br>/8</label></div>
+        <div class="ch"><output class="val" id="fLsrOut">6</output><div class="fader"><input id="fLsr" type="range" min="0" max="16" step="1" value="6" aria-label="Fork low-speed rebound clicks"></div><label class="lbl2" for="fLsr"><u>LSR</u><br>/16</label></div>
+        <div class="ch"><output class="val" id="fHsrOut">4</output><div class="fader"><input id="fHsr" type="range" min="0" max="8" step="1" value="4" aria-label="Fork high-speed rebound clicks"></div><label class="lbl2" for="fHsr"><u>HSR</u><br>/8</label></div>
+      </div>
+      <div class="reads">
+        <div class="read"><div class="k">SAG</div><div class="v" id="fSag">–</div></div>
+        <div class="read"><div class="k">RIDE HT</div><div class="v" id="fPack">–</div></div>
+        <div class="read"><div class="k">AXLE X</div><div class="v" id="fAx">–</div></div>
+        <div class="read"><div class="k">B.O.</div><div class="v" id="fBo">0</div></div>
+      </div>
+    </section>
+  </div>
+
+  <p class="note"><b>What is simulated.</b> A 37 lb V10 built from its parts (frame and links, Fox 40, cockpit, DHX2 coil, post, drivetrain, brakes) so the sprung centre of mass and pitch inertia follow from them; two unsprung wheels on tyre springs (29&Prime; front / 27.5&Prime; rear, wheel-radius terrain enveloping) with rotational inertia and their own spin state; a 150 lb rider whose centre of mass is built from body segments (torso 50%, legs 32%, arms 10%, head 8%) at wherever the current pose puts them, on a leg spring&ndash;damper, and speed from rider power alone (no motor) against grade, rolling and aero drag, with the ground pushing along its tilted contact normal (so bump faces and lips cost speed and descents pay it back). Braking and drive go through the wheels: brake torque (65/35 front/rear) and pedal/motor torque spin the wheels against a longitudinal slip curve that peaks near 15% slip and slides at ~72% of peak, so an over-braked wheel locks (the PRO rider modulates, the AVERAGE rider does not); the tyre forces at the ground pitch the mass above them, the front tyre force also pushes the wheel up the 63.5&deg; fork axis (brake dive), spinning wheels add to the mass to accelerate and resist being rolled (gyroscopic damping), and in the air brake and pedal torques react on the frame, which the PRO rider uses to level the bike. The rear wheel rides a solved four-bar VPP: lower-link-driven 250&times;75 shock, 208 mm at the axle, leverage ratio 2.86&rarr;2.59 (9% progressive), ~2 mm rearward then forward axle path. The fork is an EVOL-style air spring with volume tokens and a 4-way damper (LSC/HSC/LSR/HSR, knee at 0.5 m/s wheel speed); the shock is a coil with a bottom-out bumper and the same 4-way damper at the shaft.
+  <br><b>Sources.</b> Bike: <code>kinematic-model/data/bike_specs.yaml</code> (Goldstone's Santa Cruz V10 CC MX from the owner-supplied Pinkbike bike check: Fox 40 RAD 200 mm, Fox DHX2 with a 475 lb spring, 208 mm rear, 29/27.5 with 746/708 mm tyre ODs, reach 447, chainstay 455) plus the published V10 chart for stack, 63.5&deg; HTA and BB; 37 lb from the parts list. The linkage is the lower-link VPP four-bar refitted with <code>tools/vpp_fit.py</code> to 208 mm over 250&times;75 (LR 2.86&rarr;2.59); the VPP family's shape (near-linear falling leverage, slight rearward-then-forward axle path) comes from Pinkbike's Megatower "Behind the Numbers" scan. Rider: 150 lb. Kinematics: <code>kinematic-model/output/goldstone/vds_2023</code>, the Val di Sole 2023 FPV chase run tracked with the DH bike-keypoint model (pose on 84% of frames, 239 side-view frames used for posture; pitch/roll/yaw rate maxima 279/245/258 deg/s set the chassis caps; ground-speed estimate p95 64 km/h).
+  <br><b>Tortuga.</b> A tabletop here is built the way a park builds one: a circular-arc transition of radius R rolls the trail into a straight takeoff face at the lip angle (22&ndash;30&deg;, steeper as they get bigger), a flat deck (10&ndash;25 ft), then a landing that rolls over a knuckle onto a down-ramp and rounds out at the bottom; the step-up leaves the trail 60 cm higher than it arrived and the step-down 90 cm lower. Because the lip is a radius and not a kink, the fork loads progressively through the transition and the bike leaves with the pitch the face gave it; the rider crouches into the transition (PRELOAD) and extends through the lip (POP), so the lift comes from the legs against a loaded transition rather than a jerk at the top. The berm S is two opposite banked corners with nothing between them: the rider has to be upright across the crossover with the bike rolling from one bank to the other. Feature order and sizes come from Trailforks, MTB Project and POV footage of the line; nothing is surveyed.
+  <br><b>Course (Ladies Only).</b> GOLDSTONE targets are percentiles of the 2D joint angles on the side-view frames of the Val di Sole run: knee p10/p25/p50 127/158/170&deg;, elbow 117/141/156&deg;. A chase drone films from above and behind, which reads joint angles tall, so the cruising attack stance uses p25 (knee 150, elbow 138), the deep absorb p10 (127/117) and the pop p75&ndash;p90 (168/152); his measured knee angular speed (p90 330&deg;/s) sets the absorb time constant, and knees and elbows move independently in the data (r = 0.03) while torso tracks the knees (r = 0.82), which is what the solver does. AVERAGE mirrors Charlie at 160.5 s and 194.5 s of the Asa comparison (upright torso, knee ~165&deg;, stiff legs). Knees always bend forward and elbows down; caps (knee &le;178&deg;, elbow &le;175&deg; for GOLDSTONE, his side-view p90) stop lock-out; the HUD bands are the downhill envelope from <code>kinematic-model/src/disciplines.py</code>.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ==== PNW v2: Blender-authored flora with baked per-vertex ambient occlusion ====
+   Built live in Blender 5.2 over the MCP socket (tools/pnw_assets.py + live AO bake:
+   20-ray BVH hemisphere occlusion x cavity/ground gradient, multiplied into the palette
+   per vertex). Conifers carry no foliage below ~4.5 m; understorey stays under ~0.8 m,
+   so chase-camera sightlines cross bare trunks at worst. */
+const PNW_DATA = {"cedar":{"v":[1.056,0.0,-0.0,0.472,0.0,-0.591,-0.172,0.0,-0.755,-0.939,0.0,-0.452,-0.488,0.0,0.235,-0.262,0.0,1.146,0.333,0.0,0.417,0.324,2.6,-0.0,0.174,2.6,-0.219,-0.063,2.6,-0.275,-0.29,2.6,-0.14,-0.223,2.6,0.107,-0.076,2.6,0.333,0.154,2.6,0.193,0.244,5.2,-0.0,0.152,5.2,-0.191,-0.054,5.2,-0.238,-0.22,5.2,-0.106,-0.22,5.2,0.106,-0.054,5.2,0.238,0.152,5.2,0.191,0.196,7.8,-0.0,0.122,7.8,-0.153,-0.044,7.8,-0.191,-0.177,7.8,-0.085,-0.177,7.8,0.085,-0.044,7.8,0.191,0.122,7.8,0.153,0.148,10.4,-0.0,0.092,10.4,-0.116,-0.033,10.4,-0.144,-0.133,10.4,-0.064,-0.133,10.4,0.064,-0.033,10.4,0.144,0.092,10.4,0.116,0.1,13.0,-0.0,0.062,13.0,-0.078,-0.022,13.0,-0.097,-0.09,13.0,-0.043,-0.09,13.0,0.043,-0.022,13.0,0.097,0.062,13.0,0.078,0.0,13.0,-0.0,2.557,3.75,-0.0,1.877,3.75,-1.877,0.0,3.75,-2.986,-1.816,3.75,-1.816,-2.607,3.75,-0.0,-1.895,3.75,1.895,-0.0,3.75,2.313,1.846,3.75,1.846,0.0,6.03,-0.0,0.0,4.302,-0.0,2.509,5.35,-0.0,1.871,5.35,-1.871,0.0,5.35,-2.059,-1.58,5.35,-1.58,-2.056,5.35,-0.0,-1.881,5.35,1.881,-0.0,5.35,2.562,1.425,5.35,1.425,0.0,7.52,-0.0,0.0,5.903,-0.0,2.454,6.95,-0.0,1.726,6.95,-1.726,0.0,6.95,-2.213,-1.545,6.95,-1.545,-1.848,6.95,-0.0,-1.233,6.95,1.233,-0.0,6.95,2.121,1.256,6.95,1.256,0.0,8.955,-0.0,0.0,7.503,-0.0,1.516,8.45,-0.0,1.094,8.45,-1.094,0.0,8.45,-1.42,-1.187,8.45,-1.187,-1.665,8.45,-0.0,-1.346,8.45,1.346,-0.0,8.45,1.711,1.261,8.45,1.261,0.0,10.235,-0.0,0.0,9.002,-0.0,1.25,9.85,-0.0,0.934,9.85,-0.934,0.0,9.85,-1.231,-0.815,9.85,-0.815,-1.468,9.85,-0.0,-1.037,9.85,1.037,-0.0,9.85,1.399,0.948,9.85,0.948,0.0,11.387,-0.0,0.0,10.403,-0.0,0.748,11.05,-0.0,0.512,11.05,-0.512,0.0,11.05,-0.741,-0.481,11.05,-0.481,-0.875,11.05,-0.0,-0.546,11.05,0.546,-0.0,11.05,0.897,0.543,11.05,0.543,0.0,12.34,-0.0,0.0,11.602,-0.0,0.522,12.4,-0.0,0.252,12.4,-0.437,-0.186,12.4,-0.322,-0.404,12.4,-0.0,-0.257,12.4,0.446,0.223,12.4,0.386,0.0,13.6,-0.0,0.0,12.595,-0.0],"t":[1,7,0,1,9,8,2,10,9,4,10,3,4,12,11,6,12,5,6,7,13,8,14,7,8,16,15,9,17,16,11,17,10,11,19,18,13,19,12,13,14,20,15,21,14,16,22,15,17,23,16,18,24,17,19,25,18,20,26,19,14,27,20,22,28,21,23,29,22,24,30,23,25,31,24,26,32,25,27,33,26,21,34,27,29,35,28,29,37,36,31,37,30,32,38,31,33,39,32,34,40,33,28,41,34,35,36,42,36,37,42,37,38,42,38,39,42,39,40,42,40,41,42,41,35,42,43,44,51,44,45,51,45,46,51,46,47,51,47,48,51,48,49,51,49,50,51,50,43,51,44,43,52,45,44,52,46,45,52,47,46,52,48,47,52,49,48,52,50,49,52,43,50,52,53,54,61,54,55,61,55,56,61,56,57,61,57,58,61,58,59,61,59,60,61,60,53,61,54,53,62,55,54,62,56,55,62,57,56,62,58,57,62,59,58,62,60,59,62,53,60,62,63,64,71,64,65,71,65,66,71,66,67,71,67,68,71,68,69,71,69,70,71,70,63,71,64,63,72,65,64,72,66,65,72,67,66,72,68,67,72,69,68,72,70,69,72,63,70,72,73,74,81,74,75,81,75,76,81,76,77,81,77,78,81,78,79,81,79,80,81,80,73,81,74,73,82,75,74,82,76,75,82,77,76,82,78,77,82,79,78,82,80,79,82,73,80,82,83,84,91,84,85,91,85,86,91,86,87,91,87,88,91,88,89,91,89,90,91,90,83,91,84,83,92,85,84,92,86,85,92,87,86,92,88,87,92,89,88,92,90,89,92,83,90,92,93,94,101,94,95,101,95,96,101,96,97,101,97,98,101,98,99,101,99,100,101,100,93,101,94,93,102,95,94,102,96,95,102,97,96,102,98,97,102,99,98,102,100,99,102,93,100,102,103,104,109,104,105,109,105,106,109,106,107,109,107,108,109,108,103,109,104,103,110,105,104,110,106,105,110,107,106,110,108,107,110,103,108,110,1,8,7,1,2,9,2,3,10,4,11,10,4,5,12,6,13,12,6,0,7,8,15,14,8,9,16,9,10,17,11,18,17,11,12,19,13,20,19,13,7,14,15,22,21,16,23,22,17,24,23,18,25,24,19,26,25,20,27,26,14,21,27,22,29,28,23,30,29,24,31,30,25,32,31,26,33,32,27,34,33,21,28,34,29,36,35,29,30,37,31,38,37,32,39,38,33,40,39,34,41,40,28,35,41],"c":["52392b","52392b","553b2c","52392b","52392b","553b2c","50372a","50372a","50372a","52392b","50372a","52392b","52392b","52392b","33231a","33231a","33231a","33231a","33231a","33231a","33231a","2e1f18","2e1f18","2e1f18","2e1f18","2e1f18","2e1f18","2e1f18","35251c","35251c","35251c","35251c","35251c","35251c","35251c","2f2119","2f2119","2f2119","2f2119","2f2119","2f2119","2f2119","2f2119","2a432b","2a432b","2a432b","2a432b","2a432b","2a432b","2a432b","2a432b","131f14","182618","365536","345334","304c30","314e31","304c30","365536","365536","304c30","182718","101b12","2b462d","2a442c","2a442c","2a442c","284029","263e28","29422b","263e28","132014","182718","304c30","314e31","314e31","335133","345334","365636","345334","335133","192819","101b12","29422a","29422a","29422a","29422a","2a442c","2a442c","29422a","29422a","142015","192819","325032","325032","345234","325032","345234","325032","345234","325032","192919","111c13","243b28","243b28","233a27","243b28","243b28","243b28","27402b","111c13"]},"fir":{"v":[0.41,0.0,-0.0,0.205,0.0,-0.355,-0.205,0.0,-0.355,-0.41,0.0,-0.0,-0.205,0.0,0.355,0.205,0.0,0.355,0.213,4.0,-0.0,0.106,4.0,-0.184,-0.106,4.0,-0.184,-0.213,4.0,-0.0,-0.106,4.0,0.184,0.106,4.0,0.184,0.165,8.0,-0.0,0.083,8.0,-0.143,-0.083,8.0,-0.143,-0.165,8.0,-0.0,-0.083,8.0,0.143,0.083,8.0,0.143,0.117,12.0,-0.0,0.059,12.0,-0.102,-0.059,12.0,-0.102,-0.117,12.0,-0.0,-0.059,12.0,0.102,0.059,12.0,0.102,0.07,16.0,-0.0,0.035,16.0,-0.061,-0.035,16.0,-0.061,-0.07,16.0,-0.0,-0.035,16.0,0.061,0.035,16.0,0.061,0.0,16.0,-0.0,1.986,4.95,-0.0,1.022,4.95,-1.281,-0.322,4.95,-1.41,-1.601,4.95,-0.771,-1.681,4.95,0.81,-0.348,4.95,1.524,0.907,4.95,1.137,0.0,6.335,-0.0,0.0,5.242,-0.0,1.553,6.75,-0.0,1.196,6.75,-1.5,-0.4,6.75,-1.754,-1.288,6.75,-0.62,-1.355,6.75,0.652,-0.316,6.75,1.384,0.87,6.75,1.091,0.0,8.108,-0.0,0.0,7.043,-0.0,1.656,8.55,-0.0,0.83,8.55,-1.04,-0.341,8.55,-1.493,-1.327,8.55,-0.639,-1.205,8.55,0.58,-0.361,8.55,1.581,0.814,8.55,1.021,0.0,9.825,-0.0,0.0,8.842,-0.0,1.365,10.25,-0.0,0.702,10.25,-0.88,-0.281,10.25,-1.232,-1.054,10.25,-0.507,-1.077,10.25,0.519,-0.337,10.25,1.476,0.897,10.25,1.124,0.0,11.415,-0.0,0.0,10.542,-0.0,0.978,11.85,-0.0,0.743,11.85,-0.932,-0.21,11.85,-0.92,-0.911,11.85,-0.439,-1.063,11.85,0.512,-0.245,11.85,1.074,0.563,11.85,0.706,0.0,12.877,-0.0,0.0,12.142,-0.0,0.878,13.25,-0.0,0.421,13.25,-0.528,-0.153,13.25,-0.669,-0.74,13.25,-0.356,-0.635,13.25,0.306,-0.155,13.25,0.679,0.398,13.25,0.499,0.0,14.113,-0.0,0.0,13.542,-0.0,0.385,14.55,-0.0,0.289,14.55,-0.362,-0.091,14.55,-0.399,-0.42,14.55,-0.202,-0.387,14.55,0.186,-0.098,14.55,0.432,0.326,14.55,0.408,0.0,15.248,-0.0,0.0,14.842,-0.0,0.298,15.65,-0.0,0.095,15.65,-0.293,-0.274,15.65,-0.199,-0.216,15.65,0.157,0.081,15.65,0.251,0.0,16.7,-0.0,0.0,15.748,-0.0],"t":[1,6,0,2,7,1,3,8,2,4,9,3,5,10,4,0,11,5,7,12,6,7,14,13,9,14,8,10,15,9,10,17,16,6,17,11,13,18,12,14,19,13,15,20,14,16,21,15,17,22,16,12,23,17,18,25,24,20,25,19,20,27,26,21,28,27,23,28,22,23,24,29,24,25,30,25,26,30,26,27,30,27,28,30,28,29,30,29,24,30,31,32,38,32,33,38,33,34,38,34,35,38,35,36,38,36,37,38,37,31,38,32,31,39,33,32,39,34,33,39,35,34,39,36,35,39,37,36,39,31,37,39,40,41,47,41,42,47,42,43,47,43,44,47,44,45,47,45,46,47,46,40,47,41,40,48,42,41,48,43,42,48,44,43,48,45,44,48,46,45,48,40,46,48,49,50,56,50,51,56,51,52,56,52,53,56,53,54,56,54,55,56,55,49,56,50,49,57,51,50,57,52,51,57,53,52,57,54,53,57,55,54,57,49,55,57,58,59,65,59,60,65,60,61,65,61,62,65,62,63,65,63,64,65,64,58,65,59,58,66,60,59,66,61,60,66,62,61,66,63,62,66,64,63,66,58,64,66,67,68,74,68,69,74,69,70,74,70,71,74,71,72,74,72,73,74,73,67,74,68,67,75,69,68,75,70,69,75,71,70,75,72,71,75,73,72,75,67,73,75,76,77,83,77,78,83,78,79,83,79,80,83,80,81,83,81,82,83,82,76,83,77,76,84,78,77,84,79,78,84,80,79,84,81,80,84,82,81,84,76,82,84,85,86,92,86,87,92,87,88,92,88,89,92,89,90,92,90,91,92,91,85,92,86,85,93,87,86,93,88,87,93,89,88,93,90,89,93,91,90,93,85,91,93,94,95,99,95,96,99,96,97,99,97,98,99,98,94,99,95,94,100,96,95,100,97,96,100,98,97,100,94,98,100,1,7,6,2,8,7,3,9,8,4,10,9,5,11,10,0,6,11,7,13,12,7,8,14,9,15,14,10,16,15,10,11,17,6,12,17,13,19,18,14,20,19,15,21,20,16,22,21,17,23,22,12,18,23,18,19,25,20,26,25,20,21,27,21,22,28,23,29,28,23,18,24],"c":["473b31","473b31","473b31","473b31","473b31","473b31","483b32","463930","483b32","483b32","463930","483b32","48382f","45362d","48382f","48382f","48382f","48382f","3a3028","3a3028","3a3028","3a3028","3a3028","3a3028","2d231e","2d231e","2d231e","2d231e","2d231e","2d231e","28211b","27402c","27402c","27402c","27402c","27402c","27402c","27402c","121d14","16231a","314e3a","32503b","32503b","314e3a","314e3a","314e3a","314e3a","16241b","16241a","28422d","27402c","28422d","27402c","27402c","28422d","27402c","121e14","17241b","32503b","32503b","32503b","32503b","32503b","33523d","33523d","17251b","17251b","27402c","28422d","28422d","28422d","29442e","28422d","27402c","121e15","17251c","33513d","324f3b","324f3b","33513d","324f3b","324f3b","304d39","17261c","17261c","28412c","28412c","28412c","28412c","28412c","28412c","29432e","131f15","18261c","28412d","28412d","29432e","28412d","28412d","2b4630","18261c"]},"snag":{"v":[0.67,0.0,-0.0,0.245,0.0,-0.425,-0.335,0.0,-0.58,-0.49,0.0,-0.0,-0.335,0.0,0.58,0.245,0.0,0.425,0.251,2.375,-0.0,0.115,2.375,-0.199,-0.125,2.375,-0.217,-0.229,2.375,-0.0,-0.125,2.375,0.217,0.115,2.375,0.199,0.2,4.75,-0.0,0.1,4.75,-0.173,-0.1,4.75,-0.173,-0.2,4.75,-0.0,-0.1,4.75,0.173,0.1,4.75,0.173,0.16,7.125,-0.0,0.08,7.125,-0.139,-0.08,7.125,-0.139,-0.16,7.125,-0.0,-0.08,7.125,0.139,0.08,7.125,0.139,0.12,10.6,-0.0,0.06,9.5,-0.104,-0.06,9.9,-0.104,-0.12,9.5,-0.0,-0.06,9.2,0.104,0.06,9.5,0.104,0.0,9.5,-0.0,0.138,4.237,-0.101,0.152,4.215,-0.116,0.138,4.163,-0.131,0.123,4.185,-0.116,0.805,4.418,-0.678,-0.154,6.13,-0.078,-0.14,6.21,-0.093,-0.154,6.07,-0.107,-0.169,5.99,-0.093,-1.152,6.391,-0.693,-0.038,7.543,0.191,-0.023,7.672,0.176,-0.038,7.657,0.161,-0.052,7.528,0.176,-0.181,7.77,0.84],"t":[1,6,0,1,8,7,3,8,2,3,10,9,5,10,4,5,6,11,7,12,6,7,14,13,9,14,8,9,16,15,11,16,10,11,12,17,13,18,12,14,19,13,15,20,14,16,21,15,17,22,16,12,23,17,18,25,24,20,25,19,20,27,26,21,28,27,23,28,22,18,29,23,24,25,30,25,26,30,26,27,30,27,28,30,28,29,30,29,24,30,31,32,35,32,33,35,33,34,35,34,31,35,36,37,40,37,38,40,38,39,40,39,36,40,41,42,45,42,43,45,43,44,45,44,41,45,1,7,6,1,2,8,3,9,8,3,4,10,5,11,10,5,0,6,7,13,12,7,8,14,9,15,14,9,10,16,11,17,16,11,6,12,13,19,18,14,20,19,15,21,20,16,22,21,17,23,22,12,18,23,18,19,25,20,26,25,20,21,27,21,22,28,23,29,28,18,24,29],"c":["716962","716962","716962","716962","716962","716962","7c746c","7c746c","7c746c","7c746c","7c746c","7c746c","928b81","928b81","928b81","928b81","928b81","928b81","857c74","857c74","857c74","857c74","857c74","857c74","9c948a","9a9288","968f85","9a9288","9a9288","9a9288","726a63","2e2b27","504a45","4d4842","2e2b27","666058","524c46","4f4a44","5a544e","5d5750","69625b","5f5952","534e48","59534d","5f5952","6b645c"]},"fern":{"v":[-0.0,0.1,-0.05,0.0,0.1,0.05,0.09,0.297,-0.064,0.091,0.297,0.063,0.181,0.449,-0.066,0.181,0.449,0.065,0.271,0.542,-0.056,0.272,0.542,0.054,0.362,0.575,-0.042,0.362,0.575,0.038,0.452,0.55,-0.027,0.452,0.55,0.023,0.543,0.48,-0.012,0.543,0.48,0.008,-0.025,0.1,-0.043,0.025,0.1,0.043,0.042,0.297,-0.099,0.107,0.297,0.011,0.115,0.449,-0.144,0.181,0.449,-0.031,0.195,0.542,-0.179,0.25,0.542,-0.084,0.276,0.575,-0.209,0.317,0.575,-0.14,0.358,0.55,-0.24,0.383,0.55,-0.197,0.44,0.48,-0.271,0.45,0.48,-0.254,-0.046,0.1,-0.02,0.046,0.1,0.02,-0.006,0.297,-0.143,0.11,0.297,-0.092,0.044,0.449,-0.261,0.164,0.449,-0.208,0.106,0.542,-0.374,0.206,0.542,-0.33,0.171,0.575,-0.486,0.245,0.575,-0.453,0.237,0.55,-0.597,0.283,0.55,-0.577,0.303,0.48,-0.708,0.321,0.48,-0.7,-0.05,0.1,-0.003,0.05,0.1,0.003,-0.055,0.297,-0.134,0.073,0.297,-0.126,-0.047,0.449,-0.264,0.083,0.449,-0.255,-0.028,0.542,-0.394,0.082,0.542,-0.386,-0.004,0.575,-0.522,0.076,0.575,-0.517,0.02,0.55,-0.651,0.07,0.55,-0.648,0.044,0.48,-0.78,0.064,0.48,-0.779,-0.046,0.1,0.02,0.046,0.1,-0.02,-0.105,0.297,-0.082,0.012,0.297,-0.133,-0.153,0.449,-0.189,-0.034,0.449,-0.241,-0.191,0.542,-0.301,-0.09,0.542,-0.345,-0.224,0.575,-0.414,-0.15,0.575,-0.446,-0.257,0.55,-0.528,-0.211,0.55,-0.548,-0.29,0.48,-0.641,-0.271,0.48,-0.649,-0.026,0.1,0.043,0.026,0.1,-0.043,-0.115,0.297,0.005,-0.05,0.297,-0.104,-0.199,0.449,-0.043,-0.132,0.449,-0.155,-0.276,0.542,-0.102,-0.219,0.542,-0.196,-0.351,0.575,-0.164,-0.31,0.575,-0.233,-0.426,0.55,-0.227,-0.4,0.55,-0.269,-0.501,0.48,-0.289,-0.49,0.48,-0.306,-0.01,0.1,0.049,0.01,0.1,-0.049,-0.142,0.297,0.036,-0.117,0.297,-0.089,-0.272,0.449,0.011,-0.246,0.449,-0.117,-0.399,0.542,-0.025,-0.377,0.542,-0.133,-0.526,0.575,-0.066,-0.51,0.575,-0.144,-0.652,0.55,-0.107,-0.642,0.55,-0.156,-0.779,0.48,-0.148,-0.775,0.48,-0.168,0.018,0.1,0.047,-0.018,0.1,-0.047,-0.068,0.297,0.094,-0.113,0.297,-0.026,-0.157,0.449,0.129,-0.203,0.449,0.007,-0.251,0.542,0.154,-0.29,0.542,0.051,-0.346,0.575,0.174,-0.375,0.575,0.099,-0.442,0.55,0.194,-0.46,0.55,0.147,-0.537,0.48,0.214,-0.544,0.48,0.195,0.038,0.1,0.033,-0.038,0.1,-0.033,-0.047,0.297,0.15,-0.143,0.297,0.066,-0.14,0.449,0.26,-0.238,0.449,0.174,-0.242,0.542,0.361,-0.325,0.542,0.289,-0.348,0.575,0.46,-0.409,0.575,0.407,-0.454,0.55,0.558,-0.492,0.55,0.525,-0.56,0.48,0.656,-0.575,0.48,0.643,0.05,0.1,0.005,-0.05,0.1,-0.005,0.051,0.297,0.116,-0.075,0.297,0.102,0.041,0.449,0.225,-0.089,0.449,0.211,0.019,0.542,0.333,-0.091,0.542,0.321,-0.008,0.575,0.441,-0.088,0.575,0.432,-0.035,0.55,0.548,-0.085,0.55,0.543,-0.062,0.48,0.655,-0.082,0.48,0.653,0.045,0.1,-0.022,-0.045,0.1,0.022,0.117,0.297,0.095,0.003,0.297,0.151,0.179,0.449,0.216,0.061,0.449,0.274,0.229,0.542,0.344,0.13,0.542,0.392,0.276,0.575,0.473,0.204,0.575,0.508,0.322,0.55,0.602,0.277,0.55,0.624,0.369,0.48,0.731,0.351,0.48,0.74,0.04,0.1,-0.03,-0.04,0.1,0.03,0.107,0.297,0.035,0.005,0.297,0.112,0.164,0.449,0.108,0.06,0.449,0.187,0.212,0.542,0.188,0.125,0.542,0.254,0.257,0.575,0.271,0.193,0.575,0.319,0.301,0.55,0.353,0.261,0.55,0.384,0.345,0.48,0.436,0.329,0.48,0.448,0.023,0.1,-0.045,-0.023,0.1,0.045,0.145,0.297,0.002,0.087,0.297,0.116,0.261,0.449,0.06,0.202,0.449,0.176,0.372,0.542,0.128,0.322,0.542,0.226,0.481,0.575,0.201,0.444,0.575,0.272,0.59,0.55,0.273,0.567,0.55,0.318,0.698,0.48,0.346,0.689,0.48,0.364],"t":[1,2,0,3,4,2,5,6,4,7,8,6,9,10,8,11,12,10,14,17,16,17,18,16,19,20,18,21,22,20,23,24,22,25,26,24,29,30,28,31,32,30,33,34,32,35,36,34,36,39,38,38,41,40,43,44,42,45,46,44,47,48,46,49,50,48,51,52,50,52,55,54,57,58,56,59,60,58,61,62,60,63,64,62,65,66,64,67,68,66,71,72,70,73,74,72,75,76,74,76,79,78,79,80,78,81,82,80,84,87,86,87,88,86,89,90,88,91,92,90,93,94,92,95,96,94,99,100,98,101,102,100,103,104,102,104,107,106,106,109,108,109,110,108,113,114,112,115,116,114,117,118,116,118,121,120,120,123,122,123,124,122,127,128,126,129,130,128,130,133,132,133,134,132,135,136,134,136,139,138,141,142,140,143,144,142,145,146,144,147,148,146,148,151,150,151,152,150,155,156,154,157,158,156,159,160,158,160,163,162,163,164,162,164,167,166,169,170,168,171,172,170,172,175,174,175,176,174,177,178,176,179,180,178,1,3,2,3,5,4,5,7,6,7,9,8,9,11,10,11,13,12,14,15,17,17,19,18,19,21,20,21,23,22,23,25,24,25,27,26,29,31,30,31,33,32,33,35,34,35,37,36,36,37,39,38,39,41,43,45,44,45,47,46,47,49,48,49,51,50,51,53,52,52,53,55,57,59,58,59,61,60,61,63,62,63,65,64,65,67,66,67,69,68,71,73,72,73,75,74,75,77,76,76,77,79,79,81,80,81,83,82,84,85,87,87,89,88,89,91,90,91,93,92,93,95,94,95,97,96,99,101,100,101,103,102,103,105,104,104,105,107,106,107,109,109,111,110,113,115,114,115,117,116,117,119,118,118,119,121,120,121,123,123,125,124,127,129,128,129,131,130,130,131,133,133,135,134,135,137,136,136,137,139,141,143,142,143,145,144,145,147,146,147,149,148,148,149,151,151,153,152,155,157,156,157,159,158,159,161,160,160,161,163,163,165,164,164,165,167,169,171,170,171,173,172,172,173,175,175,177,176,177,179,178,179,181,180],"c":["2e4f25","2d4c24","1b2d15","26411e","2e4f25","305226","355a2a","355a2a","3c6630","3c6630","3a632e","3a632e","3c6630","3c6630","3b622e","395f2d","2d4b23","2d4b23","375b2b","3b622e","416c33","436f35","4a7a3a","4a7a3a","4a7a3a","4a7a3a","4a7a3a","4a7a3a","456933","426531","3d5d2d","334e26","4f783a","4a7136","598842","568440","5c8c44","5c8c44","5c8c44","5c8c44","5c8c44","5c8c44","375b2b","375b2b","253d1d","2b4722","395f2d","3d6530","436f35","457336","4a7a3a","4a7a3a","4a7a3a","4a7a3a","4a7a3a","4a7a3a","2d4c24","2d4c24","1b2d15","294721","305226","305226","38602d","375d2c","3c6630","3c6630","3c6630","3c6630","3c6630","3c6630","395f2d","375b2b","2d4b23","2f4e25","3b622e","3b622e","436f35","416c33","4a7a3a","4a7a3a","4a7a3a","477638","477638","477638","2d4c24","2d4c24","1b2d15","1b2d15","2b4922","233b1c","38602d","375d2c","3c6630","3c6630","3c6630","3c6630","3c6630","3c6630","2e4f25","2e4f25","243e1d","26411e","305226","2e4f25","375d2c","375d2c","3c6630","3c6630","3c6630","3c6630","3c6630","3c6630","456933","40612f","2b4220","2b4220","4a7136","456933","54803e","568440","5c8c44","5c8c44","5c8c44","5c8c44","5c8c44","5c8c44","375b2b","375b2b","21361a","2d4b23","395f2d","3b622e","436f35","477638","477638","4a7a3a","4a7a3a","4a7a3a","4a7a3a","4a7a3a","426531","426531","2b4220","293f1e","365227","4a7136","304a24","54803e","5c8c44","5c8c44","5c8c44","5c8c44","5c8c44","5c8c44","2e4f25","2d4c24","243e1d","243e1d","305226","305226","355a2a","355a2a","3c6630","3a632e","3c6630","3c6630","3a632e","38602d","2d4c24","2d4c24","233b1c","1c3016","284420","243e1d","38602d","38602d","3c6630","3c6630","3c6630","3c6630","3c6630","3c6630"]},"salal":{"v":[-0.003,-0.039,0.003,0.239,0.062,0.21,-0.111,0.072,0.318,-0.312,0.094,-0.01,-0.085,0.098,-0.32,0.253,0.076,-0.182,0.095,0.272,0.311,-0.238,0.299,0.166,-0.285,0.252,-0.165,0.095,0.272,-0.302,0.314,0.268,0.008,0.005,0.401,-0.005,-0.072,-0.018,0.194,0.167,0.01,0.097,0.073,0.045,0.313,0.287,0.047,0.019,0.175,0.018,-0.133,-0.218,-0.033,0.029,-0.24,0.074,0.172,-0.072,-0.017,-0.166,-0.227,0.087,-0.201,0.119,0.091,-0.315,0.308,0.145,0.146,0.308,0.145,-0.077,-0.039,0.141,0.399,0.187,0.155,0.316,-0.313,0.21,0.082,-0.187,0.204,0.267,-0.177,0.214,-0.326,-0.343,0.179,-0.11,0.223,0.191,-0.303,0.021,0.201,-0.381,0.244,0.29,0.184,-0.099,0.289,0.295,-0.305,0.294,-0.001,-0.088,0.3,-0.298,0.225,0.271,-0.157,0.063,0.368,0.175,0.2,0.374,-0.01,-0.136,0.381,0.094,-0.164,0.353,-0.1,0.035,0.34,-0.157,0.283,-0.043,-0.123,0.464,0.036,0.021,0.228,0.06,0.081,0.078,0.071,-0.151,0.247,0.079,-0.38,0.49,0.062,-0.279,0.339,0.167,0.114,0.095,0.183,0.014,0.122,0.21,-0.287,0.395,0.223,-0.385,0.552,0.22,-0.16,0.28,0.266,-0.12,0.266,0.005,-0.018,0.377,-0.037,-0.026,0.342,0.022,0.097,0.523,0.05,-0.142,0.38,-0.034,-0.189,0.183,0.017,-0.159,0.145,0.072,-0.034,0.267,0.007,-0.279,0.147,0.074,-0.296,0.357,0.036,-0.339,0.565,0.148,-0.077,0.583,0.165,-0.256,0.27,0.1,0.15,0.422,0.099,0.101,0.055,0.133,-0.062,0.136,0.119,0.082,0.177,0.159,-0.38,0.062,0.14,-0.23,0.473,0.151,-0.371,0.307,0.137,-0.407,0.471,0.204,-0.002,0.209,0.189,0.093,0.072,0.205,-0.133,0.247,0.228,-0.366,0.503,0.236,-0.294,0.328,0.248,0.004,0.426,0.252,-0.129,0.171,0.244,-0.041,0.17,0.243,-0.201,0.343,0.264,-0.271,-0.26,-0.012,-0.2,-0.125,0.037,-0.06,-0.319,0.063,-0.015,-0.467,0.051,-0.19,-0.336,0.046,-0.372,-0.102,0.06,-0.315,-0.212,0.166,-0.0,-0.409,0.189,-0.095,-0.442,0.157,-0.293,-0.177,0.202,-0.41,-0.064,0.179,-0.2,-0.285,0.227,-0.175,-0.29,0.013,-0.095,-0.183,-0.009,-0.115,-0.229,0.024,0.005,-0.092,0.031,-0.18,-0.172,0.002,-0.262,-0.381,0.002,-0.194,-0.394,0.068,-0.108,-0.309,-0.005,-0.297,-0.439,0.023,-0.283,-0.2,0.053,-0.38,-0.063,0.108,-0.12,-0.054,0.117,-0.265,-0.269,0.111,0.029,-0.155,0.096,0.002,-0.461,0.129,-0.141,-0.374,0.135,-0.037,-0.404,0.105,-0.363,-0.506,0.084,-0.232,-0.113,0.138,-0.396,-0.256,0.124,-0.424,-0.118,0.18,-0.08,-0.321,0.186,-0.019,-0.462,0.175,-0.185,-0.302,0.206,-0.394,-0.09,0.208,-0.328,-0.247,0.209,-0.067,-0.147,0.229,-0.197,-0.374,0.212,-0.111,-0.362,0.223,-0.259,-0.208,0.249,-0.326,0.066,-0.018,0.294,0.253,0.075,0.407,-0.02,0.042,0.517,-0.147,0.063,0.292,-0.024,0.038,0.113,0.221,0.043,0.186,0.106,0.164,0.524,-0.121,0.177,0.434,-0.124,0.174,0.184,0.101,0.159,0.121,0.254,0.164,0.321,0.05,0.254,0.31,0.014,-0.009,0.427,0.17,0.006,0.366,0.099,0.02,0.519,0.263,0.043,0.301,0.159,-0.006,0.229,-0.062,0.002,0.296,-0.094,0.055,0.409,0.012,-0.011,0.189,-0.124,0.025,0.199,0.128,0.05,0.101,0.297,0.129,0.365,0.262,0.094,0.252,0.028,0.088,0.572,0.201,0.12,0.494,-0.152,0.136,0.358,-0.084,0.117,0.497,-0.104,0.097,0.129,-0.161,0.127,0.219,0.184,0.103,0.123,0.051,0.111,0.069,0.227,0.198,0.418,-0.033,0.166,0.524,-0.147,0.193,0.303,-0.025,0.174,0.128,0.197,0.168,0.208,0.085,0.228,0.434,0.17,0.227,0.316,-0.061,0.224,0.393,-0.062,0.223,0.246,0.075,0.218,0.204,-0.135,-0.065,0.085,0.096,0.049,0.228,-0.168,0.084,0.29,-0.355,0.083,0.037,-0.169,0.083,-0.219,0.132,0.085,-0.123,-0.042,0.206,0.33,-0.283,0.265,0.173,-0.337,0.211,-0.088,-0.007,0.24,-0.215,0.146,0.208,0.072,-0.08,0.35,0.03,-0.16,-0.014,0.211,0.018,-0.012,0.152,-0.042,0.035,0.313,0.171,0.071,0.034,0.038,0.007,-0.053,-0.276,-0.021,0.068,-0.295,0.067,0.188,-0.164,-0.018,-0.085,-0.287,0.075,-0.12,-0.03,0.047,-0.184,0.159,0.123,0.169,0.17,0.135,-0.027,-0.118,0.132,0.368,0.036,0.11,0.333,-0.358,0.177,0.115,-0.233,0.193,0.25,-0.26,0.166,-0.209,-0.366,0.169,-0.062,0.084,0.157,-0.2,-0.082,0.168,-0.268,0.084,0.222,0.223,-0.177,0.247,0.29,-0.336,0.263,0.031,-0.179,0.244,-0.192,0.089,0.227,-0.082,-0.052,0.302,0.201,0.046,0.291,0.062,-0.205,0.326,0.12,-0.235,0.295,-0.035,-0.044,0.311,-0.108],"t":[0,13,12,1,13,15,0,12,17,0,17,19,0,19,16,1,15,22,2,14,24,3,18,26,4,20,28,5,21,30,1,22,25,2,24,27,3,26,29,4,28,31,5,30,23,6,32,37,7,33,39,8,34,40,9,35,41,10,36,38,38,41,11,38,36,41,36,9,41,41,40,11,41,35,40,35,8,40,40,39,11,40,34,39,34,7,39,39,37,11,39,33,37,33,6,37,37,38,11,37,32,38,32,10,38,23,36,10,23,30,36,30,9,36,31,35,9,31,28,35,28,8,35,29,34,8,29,26,34,26,7,34,27,33,7,27,24,33,24,6,33,25,32,6,25,22,32,22,10,32,30,31,9,30,21,31,21,4,31,28,29,8,28,20,29,20,3,29,26,27,7,26,18,27,18,2,27,24,25,6,24,14,25,14,1,25,22,23,10,22,15,23,15,5,23,16,21,5,16,19,21,19,4,21,19,20,4,19,17,20,17,3,20,17,18,3,17,12,18,12,2,18,15,16,5,15,13,16,13,0,16,12,14,2,12,13,14,13,1,14,42,55,54,43,55,57,42,54,59,42,59,61,42,61,58,43,57,64,44,56,66,45,60,68,46,62,70,47,63,72,43,64,67,44,66,69,45,68,71,46,70,73,47,72,65,48,74,79,49,75,81,50,76,82,51,77,83,52,78,80,80,83,53,80,78,83,78,51,83,83,82,53,83,77,82,77,50,82,82,81,53,82,76,81,76,49,81,81,79,53,81,75,79,75,48,79,79,80,53,79,74,80,74,52,80,65,78,52,65,72,78,72,51,78,73,77,51,73,70,77,70,50,77,71,76,50,71,68,76,68,49,76,69,75,49,69,66,75,66,48,75,67,74,48,67,64,74,64,52,74,72,73,51,72,63,73,63,46,73,70,71,50,70,62,71,62,45,71,68,69,49,68,60,69,60,44,69,66,67,48,66,56,67,56,43,67,64,65,52,64,57,65,57,47,65,58,63,47,58,61,63,61,46,63,61,62,46,61,59,62,59,45,62,59,60,45,59,54,60,54,44,60,57,58,47,57,55,58,55,42,58,54,56,44,54,55,56,55,43,56,84,97,96,85,97,99,84,96,101,84,101,103,84,103,100,85,99,106,86,98,108,87,102,110,88,104,112,89,105,114,85,106,109,86,108,111,87,110,113,88,112,115,89,114,107,90,116,121,91,117,123,92,118,124,93,119,125,94,120,122,122,125,95,122,120,125,120,93,125,125,124,95,125,119,124,119,92,124,124,123,95,124,118,123,118,91,123,123,121,95,123,117,121,117,90,121,121,122,95,121,116,122,116,94,122,107,120,94,107,114,120,114,93,120,115,119,93,115,112,119,112,92,119,113,118,92,113,110,118,110,91,118,111,117,91,111,108,117,108,90,117,109,116,90,109,106,116,106,94,116,114,115,93,114,105,115,105,88,115,112,113,92,112,104,113,104,87,113,110,111,91,110,102,111,102,86,111,108,109,90,108,98,109,98,85,109,106,107,94,106,99,107,99,89,107,100,105,89,100,103,105,103,88,105,103,104,88,103,101,104,101,87,104,101,102,87,101,96,102,96,86,102,99,100,89,99,97,100,97,84,100,96,98,86,96,97,98,97,85,98,126,139,138,127,139,141,126,138,143,126,143,145,126,145,142,127,141,148,128,140,150,129,144,152,130,146,154,131,147,156,127,148,151,128,150,153,129,152,155,130,154,157,131,156,149,132,158,163,133,159,165,134,160,166,135,161,167,136,162,164,164,167,137,164,162,167,162,135,167,167,166,137,167,161,166,161,134,166,166,165,137,166,160,165,160,133,165,165,163,137,165,159,163,159,132,163,163,164,137,163,158,164,158,136,164,149,162,136,149,156,162,156,135,162,157,161,135,157,154,161,154,134,161,155,160,134,155,152,160,152,133,160,153,159,133,153,150,159,150,132,159,151,158,132,151,148,158,148,136,158,156,157,135,156,147,157,147,130,157,154,155,134,154,146,155,146,129,155,152,153,133,152,144,153,144,128,153,150,151,132,150,140,151,140,127,151,148,149,136,148,141,149,141,131,149,142,147,131,142,145,147,145,130,147,145,146,130,145,143,146,143,129,146,143,144,129,143,138,144,138,128,144,141,142,131,141,139,142,139,126,142,138,140,128,138,139,140,139,127,140,168,181,180,169,181,183,168,180,185,168,185,187,168,187,184,169,183,190,170,182,192,171,186,194,172,188,196,173,189,198,169,190,193,170,192,195,171,194,197,172,196,199,173,198,191,174,200,205,175,201,207,176,202,208,177,203,209,178,204,206,206,209,179,206,204,209,204,177,209,209,208,179,209,203,208,203,176,208,208,207,179,208,202,207,202,175,207,207,205,179,207,201,205,201,174,205,205,206,179,205,200,206,200,178,206,191,204,178,191,198,204,198,177,204,199,203,177,199,196,203,196,176,203,197,202,176,197,194,202,194,175,202,195,201,175,195,192,201,192,174,201,193,200,174,193,190,200,190,178,200,198,199,177,198,189,199,189,172,199,196,197,176,196,188,197,188,171,197,194,195,175,194,186,195,186,170,195,192,193,174,192,182,193,182,169,193,190,191,178,190,183,191,183,173,191,184,189,173,184,187,189,187,172,189,187,188,172,187,185,188,185,171,188,185,186,171,185,180,186,180,170,186,183,184,173,183,181,184,181,168,184,180,182,170,180,181,182,181,169,182],"c":["355430","324f2d","172515","172515","2d4829","172515","324f2d","355430","304d2c","355430","324f2d","355430","355430","33512e","172515","172515","304d2c","355430","172515","355430","172515","324f2d","2f4a2a","1d2d1e","172515","172515","172515","355430","172515","172515","172515","355430","355430","355430","355430","355430","2f4a2a","355430","355430","355430","355430","355430","406342","426644","1d2d1e","1d2d1e","406342","426644","3a5a3c","1d2d1e","1d2d1e","426644","426644","3c5d3e","3a5a3c","426644","3e6040","426644","426644","3e6040","1d2d1e","426644","3c5d3e","426644","426644","426644","1d2d1e","406342","1d2d1e","1d2d1e","406342","1d2d1e","426644","426644","406342","1d2d1e","1d2d1e","426644","426644","3a5a3c","406342","1d2d1e","1d2d1e","406342","2b4628","131f12","2d4829","2b4628","2b4628","274024","131f12","33512e","2b4628","33512e","131f12","263e23","294426","274024","172515","131f12","294426","2b4628","294426","2b4628","2b4628","294426","131f12","131f12","172515","131f12","2b4628","284225","2b4628","2b4628","284225","2b4628","131f12","172515","2b4628","355430","131f12","131f12","131f12","33512e","2b4628","355430","426644","426644","426644","284225","1d2d1e","3a5a3c","426644","406342","1d2d1e","1d2d1e","3c5d3e","355236","426644","426644","426644","406342","426644","406342","294426","3e6040","1d2d1e","1d2d1e","426644","3a5a3c","426644","426644","294426","426644","1d2d1e","131f12","1d2d1e","1d2d1e","426644","426644","1d2d1e","1d2d1e","1d2d1e","426644","3c5d3e","406342","1d2d1e","1d2d1e","355430","172515","406342","33512e","172515","172515","172515","355430","2d4829","172515","172515","172515","355430","33512e","1d2d1e","172515","172515","355430","355430","33512e","172515","172515","172515","172515","1d2d1e","172515","355430","355430","172515","172515","172515","1d2d1e","172515","33512e","355430","172515","172515","172515","172515","355430","172515","172515"]},"boulder":{"v":[0.0,-0.098,-0.0,0.593,0.186,0.43,-0.231,0.181,0.712,-0.683,0.204,-0.0,-0.212,0.204,-0.651,0.546,0.207,-0.397,0.213,0.699,0.657,-0.491,0.669,0.357,-0.534,0.687,-0.388,0.185,0.665,-0.568,0.591,0.663,-0.0,0.0,0.969,-0.0,-0.149,-0.112,0.459,0.286,0.038,0.208,0.165,0.213,0.507,0.701,0.138,-0.0,0.297,0.022,-0.216,-0.473,-0.101,-0.0,-0.587,0.127,0.427,-0.128,-0.032,-0.394,-0.48,0.186,-0.349,0.183,0.187,-0.563,0.727,0.45,0.236,0.704,0.45,-0.229,0.0,0.45,0.752,0.474,0.45,0.653,-0.75,0.45,0.244,-0.472,0.45,0.65,-0.424,0.45,-0.584,-0.652,0.45,-0.212,0.404,0.45,-0.556,0.0,0.45,-0.792,0.475,0.711,0.345,-0.22,0.767,0.678,-0.714,0.768,-0.0,-0.198,0.735,-0.609,0.515,0.733,-0.374,0.127,0.93,0.392,0.403,0.919,-0.0,-0.35,0.955,0.255,-0.361,0.97,-0.262,0.135,0.958,-0.415],"t":[0,13,12,1,13,15,0,12,17,0,17,19,0,19,16,1,15,22,2,14,24,3,18,26,4,20,28,5,21,30,1,22,25,2,24,27,3,26,29,4,28,31,5,30,23,6,32,37,7,33,39,8,34,40,9,35,41,10,36,38,38,41,11,38,36,41,36,9,41,41,40,11,41,35,40,35,8,40,40,39,11,40,34,39,34,7,39,39,37,11,39,33,37,33,6,37,37,38,11,37,32,38,32,10,38,23,36,10,23,30,36,30,9,36,31,35,9,31,28,35,28,8,35,29,34,8,29,26,34,26,7,34,27,33,7,27,24,33,24,6,33,25,32,6,25,22,32,22,10,32,30,31,9,30,21,31,21,4,31,28,29,8,28,20,29,20,3,29,26,27,7,26,18,27,18,2,27,24,25,6,24,14,25,14,1,25,22,23,10,22,15,23,15,5,23,16,21,5,16,19,21,19,4,21,19,20,4,19,17,20,17,3,20,17,18,3,17,12,18,12,2,18,15,16,5,15,13,16,13,0,16,12,14,2,12,13,14,13,1,14],"c":["7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","5e7a4c","7c7f7a","7c7f7a","7c7f7a","5e7a4c","8b8e88","7c7f7a","7c7f7a","787b76","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","7c7f7a","5e7a4c","7c7f7a","7c7f7a","7c7f7a","5e7a4c","5e7a4c","5e7a4c","7c7f7a","7c7f7a","7c7f7a"]},"stump":{"v":[1.204,0.0,-0.0,0.505,0.0,-0.633,-0.185,0.0,-0.812,-1.069,0.0,-0.515,-0.475,0.0,0.229,-0.303,0.0,1.327,0.322,0.0,0.404,0.38,0.55,-0.0,0.237,0.55,-0.297,-0.085,0.55,-0.37,-0.342,0.55,-0.165,-0.342,0.55,0.165,-0.085,0.55,0.37,0.237,0.55,0.297,0.34,1.318,-0.0,0.212,1.286,-0.266,-0.076,1.087,-0.331,-0.306,1.066,-0.148,-0.306,1.259,0.148,-0.076,1.329,0.331,0.212,1.069,0.266,0.0,1.1,-0.0],"t":[1,7,0,1,9,8,2,10,9,4,10,3,4,12,11,6,12,5,6,7,13,7,15,14,8,16,15,9,17,16,11,17,10,12,18,11,12,20,19,7,20,13,14,15,21,15,16,21,16,17,21,17,18,21,18,19,21,19,20,21,20,14,21,1,8,7,1,2,9,2,3,10,4,11,10,4,5,12,6,13,12,6,0,7,7,8,15,8,9,16,9,10,17,11,18,17,12,19,18,12,13,20,7,14,20],"c":["5b4332","5b4332","5b4332","5b4332","584131","5b4332","584131","584131","5b4332","584131","5b4332","584131","584131","584131","6e5240","6e5240","5e7a4c","6e5240","5e7a4c","6e5240","6e5240","516941"]},"raven":{"v":[-0.28,0.02,-0.0,0.05,0.06,-0.05,0.05,0.06,0.05,0.34,0.0,-0.0,0.02,0.05,-0.04,-0.08,0.16,-0.55,-0.22,0.1,-0.95,-0.16,0.04,-0.5,0.02,0.05,0.04,-0.08,0.16,0.55,-0.22,0.1,0.95,-0.16,0.04,0.5],"t":[0,1,2,1,3,2,4,5,7,5,6,7,8,11,9,9,11,10],"c":["1e1e22","1e1e22","1e1e22","1e1e22","28282e","2e2e34","2e2e34","2e2e34","28282e","2e2e34","2e2e34","2c2c32"]},"cedar3":{"v":[1.466,0.0,-0.0,0.615,0.0,-0.771,-0.226,0.0,-0.989,-1.301,0.0,-0.626,-0.578,0.0,0.279,-0.369,0.0,1.616,0.393,0.0,0.492,0.386,1.833,-0.0,0.236,1.833,-0.295,-0.084,1.833,-0.369,-0.347,1.833,-0.167,-0.335,1.833,0.162,-0.086,1.833,0.379,0.232,1.833,0.291,0.34,3.667,-0.0,0.212,3.667,-0.266,-0.076,3.667,-0.331,-0.306,3.667,-0.148,-0.306,3.667,0.148,-0.076,3.667,0.331,0.212,3.667,0.266,0.3,5.5,-0.0,0.187,5.5,-0.235,-0.067,5.5,-0.292,-0.27,5.5,-0.13,-0.27,5.5,0.13,-0.067,5.5,0.292,0.187,5.5,0.235,0.0,5.5,-0.0,0.2,5.2,-0.0,0.1,5.2,-0.173,-0.1,5.2,-0.173,-0.2,5.2,-0.0,-0.1,5.2,0.173,0.1,5.2,0.173,0.175,7.275,-0.0,0.087,7.275,-0.152,-0.087,7.275,-0.152,-0.175,7.275,-0.0,-0.087,7.275,0.152,0.087,7.275,0.152,0.15,9.35,-0.0,0.075,9.35,-0.13,-0.075,9.35,-0.13,-0.15,9.35,-0.0,-0.075,9.35,0.13,0.075,9.35,0.13,0.125,11.425,-0.0,0.062,11.425,-0.108,-0.062,11.425,-0.108,-0.125,11.425,-0.0,-0.062,11.425,0.108,0.062,11.425,0.108,0.1,13.5,-0.0,0.05,13.5,-0.087,-0.05,13.5,-0.087,-0.1,13.5,-0.0,-0.05,13.5,0.087,0.05,13.5,0.087,2.001,5.3,-0.0,1.255,5.3,-1.574,-0.441,5.3,-1.934,-1.399,5.3,-0.674,-1.643,5.3,0.791,-0.386,5.3,1.691,1.116,5.3,1.4,0.0,6.887,-0.0,0.0,5.05,-0.0,1.355,6.9,-0.0,0.862,6.9,-1.081,-0.334,6.9,-1.461,-1.258,6.9,-0.606,-1.355,6.9,0.652,-0.291,6.9,1.274,0.832,6.9,1.044,0.0,8.362,-0.0,0.0,6.65,-0.0,1.387,8.3,-0.0,0.794,8.3,-0.996,-0.291,8.3,-1.277,-1.258,8.3,-0.606,-1.126,8.3,0.542,-0.252,8.3,1.103,0.883,8.3,1.107,0.0,9.652,-0.0,0.0,8.05,-0.0,1.131,9.6,-0.0,0.719,9.6,-0.902,-0.254,9.6,-1.113,-1.132,9.6,-0.545,-0.951,9.6,0.458,-0.264,9.6,1.157,0.66,9.6,0.827,0.0,10.851,-0.0,0.0,9.35,-0.0,0.933,10.8,-0.0,0.597,10.8,-0.748,-0.192,10.8,-0.841,-0.721,10.8,-0.347,-0.816,10.8,0.393,-0.217,10.8,0.949,0.585,10.8,0.733,0.0,11.957,-0.0,0.0,10.55,-0.0,0.729,11.9,-0.0,0.482,11.9,-0.604,-0.149,11.9,-0.653,-0.603,11.9,-0.29,-0.632,11.9,0.304,-0.181,11.9,0.791,0.42,11.9,0.526,0.0,12.97,-0.0,0.0,11.65,-0.0,0.346,12.85,-0.0,0.106,12.85,-0.327,-0.271,12.85,-0.197,-0.298,12.85,0.217,0.127,12.85,0.39,0.0,14.2,-0.0,0.0,13.012,-0.0,0.388,5.2,-0.1,0.304,5.2,-0.245,0.136,5.2,-0.245,0.052,5.2,-0.1,0.136,5.2,0.045,0.304,5.2,0.045,0.506,6.65,-0.162,0.431,6.65,-0.291,0.283,6.65,-0.291,0.209,6.65,-0.162,0.283,6.65,-0.034,0.431,6.65,-0.034,0.623,8.1,-0.225,0.559,8.1,-0.336,0.431,8.1,-0.336,0.367,8.1,-0.225,0.431,8.1,-0.114,0.559,8.1,-0.114,0.74,9.55,-0.287,0.687,9.55,-0.381,0.578,9.55,-0.381,0.525,9.55,-0.287,0.578,9.55,-0.194,0.687,9.55,-0.194,0.858,11.0,-0.35,0.814,11.0,-0.426,0.726,11.0,-0.426,0.682,11.0,-0.35,0.726,11.0,-0.274,0.814,11.0,-0.274,1.805,5.3,-0.134,1.111,5.3,-1.156,0.002,5.3,-1.424,-0.866,5.3,-0.694,-0.872,5.3,0.428,-0.036,5.3,1.319,1.167,5.3,0.958,0.296,6.688,-0.134,0.296,5.05,-0.134,1.458,6.9,-0.203,1.047,6.9,-0.955,0.184,6.9,-1.356,-0.595,6.9,-0.706,-0.631,6.9,0.316,0.224,6.9,0.775,1.136,6.9,0.66,0.448,8.145,-0.203,0.448,6.65,-0.203,1.524,8.3,-0.264,1.118,8.3,-0.938,0.369,8.3,-1.191,-0.1,8.3,-0.591,-0.283,8.3,0.152,0.419,8.3,0.445,1.09,8.3,0.375,0.58,9.419,-0.264,0.58,8.05,-0.264,1.223,9.6,-0.32,1.116,9.6,-0.837,0.561,9.6,-0.943,0.081,9.6,-0.62,0.108,9.6,-0.033,0.551,9.6,0.35,1.086,9.6,0.159,0.704,10.603,-0.32,0.704,9.35,-0.32,0.375,10.35,-0.0,0.108,10.35,-0.331,-0.245,10.35,-0.178,-0.302,10.35,0.219,0.095,10.35,0.291,0.0,11.7,-0.0,0.0,10.512,-0.0,-0.048,5.2,-0.16,-0.124,5.2,-0.292,-0.276,5.2,-0.292,-0.352,5.2,-0.16,-0.276,5.2,-0.028,-0.124,5.2,-0.028,-0.191,6.275,-0.26,-0.258,6.275,-0.376,-0.392,6.275,-0.376,-0.46,6.275,-0.26,-0.392,6.275,-0.144,-0.258,6.275,-0.144,-0.333,7.35,-0.36,-0.391,7.35,-0.461,-0.508,7.35,-0.461,-0.567,7.35,-0.36,-0.508,7.35,-0.259,-0.391,7.35,-0.259,-0.475,8.425,-0.46,-0.525,8.425,-0.546,-0.625,8.425,-0.546,-0.674,8.425,-0.46,-0.625,8.425,-0.374,-0.525,8.425,-0.374,-0.618,9.5,-0.56,-0.659,9.5,-0.631,-0.741,9.5,-0.631,-0.782,9.5,-0.56,-0.741,9.5,-0.489,-0.659,9.5,-0.489,0.761,5.3,-0.234,0.339,5.3,-1.026,-0.549,5.3,-1.354,-1.244,5.3,-0.692,-1.475,5.3,0.335,-0.586,5.3,1.05,0.369,5.3,0.596,-0.293,6.58,-0.234,-0.293,5.05,-0.234,0.245,6.9,-0.383,0.038,6.9,-1.032,-0.644,6.9,-1.105,-1.229,6.9,-0.745,-1.289,6.9,0.007,-0.648,6.9,0.359,0.021,6.9,0.244,-0.479,8.011,-0.383,-0.479,6.65,-0.383,0.319,8.85,-0.0,0.085,8.85,-0.261,-0.214,8.85,-0.156,-0.258,8.85,0.187,0.096,8.85,0.296,0.0,10.2,-0.0,0.0,9.012,-0.0],"t":[1,7,0,1,9,8,2,10,9,4,10,3,4,12,11,6,12,5,6,7,13,8,14,7,8,16,15,9,17,16,11,17,10,11,19,18,13,19,12,13,14,20,14,22,21,15,23,22,17,23,16,18,24,17,19,25,18,20,26,19,20,21,27,21,22,28,22,23,28,23,24,28,24,25,28,25,26,28,26,27,28,27,21,28,30,35,29,31,36,30,31,38,37,33,38,32,34,39,33,34,35,40,36,41,35,37,42,36,38,43,37,39,44,38,40,45,39,35,46,40,42,47,41,43,48,42,44,49,43,45,50,44,46,51,45,41,52,46,48,53,47,49,54,48,50,55,49,51,56,50,52,57,51,47,58,52,59,60,66,60,61,66,61,62,66,62,63,66,63,64,66,64,65,66,65,59,66,60,59,67,61,60,67,62,61,67,63,62,67,64,63,67,65,64,67,59,65,67,68,69,75,69,70,75,70,71,75,71,72,75,72,73,75,73,74,75,74,68,75,69,68,76,70,69,76,71,70,76,72,71,76,73,72,76,74,73,76,68,74,76,77,78,84,78,79,84,79,80,84,80,81,84,81,82,84,82,83,84,83,77,84,78,77,85,79,78,85,80,79,85,81,80,85,82,81,85,83,82,85,77,83,85,86,87,93,87,88,93,88,89,93,89,90,93,90,91,93,91,92,93,92,86,93,87,86,94,88,87,94,89,88,94,90,89,94,91,90,94,92,91,94,86,92,94,95,96,102,96,97,102,97,98,102,98,99,102,99,100,102,100,101,102,101,95,102,96,95,103,97,96,103,98,97,103,99,98,103,100,99,103,101,100,103,95,101,103,104,105,111,105,106,111,106,107,111,107,108,111,108,109,111,109,110,111,110,104,111,105,104,112,106,105,112,107,106,112,108,107,112,109,108,112,110,109,112,104,110,112,113,114,118,114,115,118,115,116,118,116,117,118,117,113,118,114,113,119,115,114,119,116,115,119,117,116,119,113,117,119,120,127,126,121,128,127,122,129,128,124,129,123,125,130,124,120,131,125,126,133,132,127,134,133,128,135,134,130,135,129,131,136,130,126,137,131,132,139,138,133,140,139,134,141,140,136,141,135,137,142,136,132,143,137,138,145,144,139,146,145,140,147,146,142,147,141,143,148,142,138,149,143,150,151,157,151,152,157,152,153,157,153,154,157,154,155,157,155,156,157,156,150,157,151,150,158,152,151,158,153,152,158,154,153,158,155,154,158,156,155,158,150,156,158,159,160,166,160,161,166,161,162,166,162,163,166,163,164,166,164,165,166,165,159,166,160,159,167,161,160,167,162,161,167,163,162,167,164,163,167,165,164,167,159,165,167,168,169,175,169,170,175,170,171,175,171,172,175,172,173,175,173,174,175,174,168,175,169,168,176,170,169,176,171,170,176,172,171,176,173,172,176,174,173,176,168,174,176,177,178,184,178,179,184,179,180,184,180,181,184,181,182,184,182,183,184,183,177,184,178,177,185,179,178,185,180,179,185,181,180,185,182,181,185,183,182,185,177,183,185,186,187,191,187,188,191,188,189,191,189,190,191,190,186,191,187,186,192,188,187,192,189,188,192,190,189,192,186,190,192,194,199,193,195,200,194,195,202,201,196,203,202,197,204,203,193,204,198,200,205,199,201,206,200,201,208,207,202,209,208,203,210,209,199,210,204,206,211,205,207,212,206,207,214,213,208,215,214,209,216,215,205,216,210,212,217,211,213,218,212,213,220,219,214,221,220,215,222,221,211,222,216,223,224,230,224,225,230,225,226,230,226,227,230,227,228,230,228,229,230,229,223,230,224,223,231,225,224,231,226,225,231,227,226,231,228,227,231,229,228,231,223,229,231,232,233,239,233,234,239,234,235,239,235,236,239,236,237,239,237,238,239,238,232,239,233,232,240,234,233,240,235,234,240,236,235,240,237,236,240,238,237,240,232,238,240,241,242,246,242,243,246,243,244,246,244,245,246,245,241,246,242,241,247,243,242,247,244,243,247,245,244,247,241,245,247,1,8,7,1,2,9,2,3,10,4,11,10,4,5,12,6,13,12,6,0,7,8,15,14,8,9,16,9,10,17,11,18,17,11,12,19,13,20,19,13,7,14,14,15,22,15,16,23,17,24,23,18,25,24,19,26,25,20,27,26,20,14,21,30,36,35,31,37,36,31,32,38,33,39,38,34,40,39,34,29,35,36,42,41,37,43,42,38,44,43,39,45,44,40,46,45,35,41,46,42,48,47,43,49,48,44,50,49,45,51,50,46,52,51,41,47,52,48,54,53,49,55,54,50,56,55,51,57,56,52,58,57,47,53,58,120,121,127,121,122,128,122,123,129,124,130,129,125,131,130,120,126,131,126,127,133,127,128,134,128,129,135,130,136,135,131,137,136,126,132,137,132,133,139,133,134,140,134,135,141,136,142,141,137,143,142,132,138,143,138,139,145,139,140,146,140,141,147,142,148,147,143,149,148,138,144,149,194,200,199,195,201,200,195,196,202,196,197,203,197,198,204,193,199,204,200,206,205,201,207,206,201,202,208,202,203,209,203,204,210,199,205,210,206,212,211,207,213,212,207,208,214,208,209,215,209,210,216,205,211,216,212,218,217,213,219,218,213,214,220,214,215,221,215,216,222,211,217,222],"c":["553b2c","553b2c","553b2c","553b2c","50372a","553b2c","50372a","5c3f30","5c3f30","5c3f30","5c3f30","5c3f30","5c3f30","5c3f30","664735","664735","664735","694937","694937","694937","694937","2c1f17","2c1f17","2c1f17","2c1f17","2c1f17","2c1f17","2c1f17","2c1f17","2c1e17","2c1e17","2c1e17","2c1e17","2c1e17","2c1e17","2d1f17","2d1f17","2d1f17","2d1f17","2d1f17","2d1f17","35241b","35241b","35241b","35241b","35241b","35241b","2f2018","2f2018","2f2018","2f2018","2f2018","2f2018","36261c","36261c","36261c","36261c","36261c","36261c","2a442c","2a442c","2a442c","2a442c","2a442c","2a442c","2a442c","131f14","101a11","2f4b2f","335233","365636","365636","365636","355435","355435","192719","101b12","2a442c","131f14","2c462d","2c462d","2c462d","2a442c","2c462d","142014","101b12","365636","355435","385938","385938","385938","385938","365636","192819","101b12","2b462d","2c482e","2b462d","2b462d","2b462d","2c482e","2c482e","142015","111c12","375837","395a39","375837","395a39","395a39","395a39","375837","192919","111c13","29432b","2b452c","29432b","2b452c","2b452c","2e4a30","192919","2c1e17","2c1e17","2c1e17","2c1e17","2c1e17","2c1e17","493226","493226","3e2a20","2d1f17","2d1f17","432e23","34241b","34241b","4a3427","3e2b20","4a3427","4a3427","2e2018","2e2018","2e2018","2e2018","2e2018","2e2018","77533e","74503c","5d4030","463024","4c3528","664736","131e14","131e14","131e14","131e14","131e14","131e14","131e14","131f14","1c2e1f","355435","335233","355435","182718","182718","182718","324f32","182718","101b12","2c462d","2a442c","28412a","131f14","131f14","131f14","131f14","142014","101b12","385938","385938","335133","192819","192819","192819","355435","192819","19291b","142015","142015","142015","142015","142015","142015","192819","2c1e17","2c1e17","2c1e17","2c1e17","2c1e17","2c1e17","2d1f17","2d1f17","2d1f17","2d1f17","2d1f17","2d1f17","34241b","34241b","34241b","34241b","34241b","34241b","2e1f18","2e1f18","2e1f18","2e1f18","2e1f18","2e1f18","453024","583d2e","654635","5c4030","553b2c","422e22","131e14","131e14","131e14","131e14","131e14","131e14","131e14","131f14","1e3121","182718","182718","182718","355435","324f32","182718","182718","182718","1a2b1d","132014","132014","132014","132014","132014","142015","192719"]},"hemlock":{"v":[0.36,0.0,-0.0,0.18,0.0,-0.312,-0.18,0.0,-0.312,-0.36,0.0,-0.0,-0.18,0.0,0.312,0.18,0.0,0.312,0.195,3.75,-0.0,0.097,3.75,-0.169,-0.097,3.75,-0.169,-0.195,3.75,-0.0,-0.097,3.75,0.169,0.097,3.75,0.169,0.15,7.5,-0.0,0.075,7.5,-0.13,-0.075,7.5,-0.13,-0.15,7.5,-0.0,-0.075,7.5,0.13,0.075,7.5,0.13,0.105,11.25,-0.0,0.052,11.25,-0.091,-0.052,11.25,-0.091,-0.105,11.25,-0.0,-0.052,11.25,0.091,0.052,11.25,0.091,0.06,15.0,-0.0,0.03,15.0,-0.052,-0.03,15.0,-0.052,-0.06,15.0,-0.0,-0.03,15.0,0.052,0.03,15.0,0.052,0.0,15.0,-0.0,2.049,4.35,-0.0,1.196,4.35,-1.5,-0.388,4.35,-1.701,-1.731,4.35,-0.834,-1.809,4.35,0.871,-0.42,4.35,1.841,1.02,4.35,1.278,0.0,5.99,-0.0,0.0,4.773,-0.0,1.578,6.05,-0.0,1.026,6.05,-1.287,-0.414,6.05,-1.815,-1.562,6.05,-0.752,-1.558,6.05,0.75,-0.422,6.05,1.847,0.915,6.05,1.147,0.0,7.635,-0.0,0.0,6.472,-0.0,1.621,7.75,-0.0,0.91,7.75,-1.141,-0.352,7.75,-1.543,-1.56,7.75,-0.751,-1.274,7.75,0.613,-0.399,7.75,1.75,0.824,7.75,1.033,0.0,9.252,-0.0,0.0,8.172,-0.0,1.379,9.35,-0.0,0.854,9.35,-1.071,-0.273,9.35,-1.194,-1.242,9.35,-0.598,-1.204,9.35,0.58,-0.295,9.35,1.293,0.906,9.35,1.136,0.0,10.743,-0.0,0.0,9.773,-0.0,0.909,10.85,-0.0,0.656,10.85,-0.823,-0.269,10.85,-1.18,-0.867,10.85,-0.417,-1.119,10.85,0.539,-0.219,10.85,0.961,0.729,10.85,0.915,0.0,12.105,-0.0,0.0,11.273,-0.0,0.708,12.25,-0.0,0.49,12.25,-0.614,-0.173,12.25,-0.759,-0.615,12.25,-0.296,-0.771,12.25,0.371,-0.177,12.25,0.775,0.532,12.25,0.667,0.0,13.34,-0.0,0.0,12.672,-0.0,0.507,13.45,-0.0,0.318,13.45,-0.399,-0.112,13.45,-0.492,-0.419,13.45,-0.202,-0.513,13.45,0.247,-0.095,13.45,0.417,0.353,13.45,0.442,0.0,14.375,-0.0,0.0,13.873,-0.0,0.08,14.9,-0.0,0.0,14.9,-0.08,-0.08,14.9,-0.0,-0.0,14.9,0.08,0.163,15.65,0.19,0.489,15.85,0.569],"t":[1,6,0,2,7,1,3,8,2,4,9,3,5,10,4,0,11,5,7,12,6,8,13,7,9,14,8,10,15,9,11,16,10,6,17,11,13,18,12,14,19,13,15,20,14,16,21,15,17,22,16,12,23,17,19,24,18,19,26,25,21,26,20,22,27,21,22,29,28,18,29,23,24,25,30,25,26,30,26,27,30,27,28,30,28,29,30,29,24,30,31,32,38,32,33,38,33,34,38,34,35,38,35,36,38,36,37,38,37,31,38,32,31,39,33,32,39,34,33,39,35,34,39,36,35,39,37,36,39,31,37,39,40,41,47,41,42,47,42,43,47,43,44,47,44,45,47,45,46,47,46,40,47,41,40,48,42,41,48,43,42,48,44,43,48,45,44,48,46,45,48,40,46,48,49,50,56,50,51,56,51,52,56,52,53,56,53,54,56,54,55,56,55,49,56,50,49,57,51,50,57,52,51,57,53,52,57,54,53,57,55,54,57,49,55,57,58,59,65,59,60,65,60,61,65,61,62,65,62,63,65,63,64,65,64,58,65,59,58,66,60,59,66,61,60,66,62,61,66,63,62,66,64,63,66,58,64,66,67,68,74,68,69,74,69,70,74,70,71,74,71,72,74,72,73,74,73,67,74,68,67,75,69,68,75,70,69,75,71,70,75,72,71,75,73,72,75,67,73,75,76,77,83,77,78,83,78,79,83,79,80,83,80,81,83,81,82,83,82,76,83,77,76,84,78,77,84,79,78,84,80,79,84,81,80,84,82,81,84,76,82,84,85,86,92,86,87,92,87,88,92,88,89,92,89,90,92,90,91,92,91,85,92,86,85,93,87,86,93,88,87,93,89,88,93,90,89,93,91,90,93,85,91,93,94,95,98,95,96,98,96,97,98,97,94,98,94,96,99,1,7,6,2,8,7,3,9,8,4,10,9,5,11,10,0,6,11,7,13,12,8,14,13,9,15,14,10,16,15,11,17,16,6,12,17,13,19,18,14,20,19,15,21,20,16,22,21,17,23,22,12,18,23,19,25,24,19,20,26,21,27,26,22,28,27,22,23,29,18,24,29],"c":["473b31","473b31","473b31","473b31","473b31","473b31","44382e","44382e","44382e","44382e","44382e","44382e","43342c","40322a","43342c","40322a","43342c","3d3028","27201b","27201b","27201b","27201b","27201b","27201b","544237","654f42","624d40","654f42","5f4b3f","2d231e","28211b","203a28","203a28","203a28","203a28","203a28","203a28","203a28","0f1a12","132117","294832","284631","2a4a34","294832","294832","2a4a34","284631","132217","132117","213a28","213a28","213a28","223c29","203927","223c29","203927","0f1b12","132217","2a4a34","2a4a34","2a4a34","2a4a34","294832","2a4a34","294832","142218","132218","203a28","203a28","213c29","203a28","213c29","203a28","213c29","0f1c13","142218","2a4933","2a4933","2a4933","2a4933","2b4c35","2a4933","2b4c35","142318","142318","213b28","213b28","213b28","213b28","213b28","203927","213b28","101c13","142318","233f2b","233f2b","233f2b","233f2b","233f2b","2e5038"]},"maple":{"v":[0.844,0.0,-0.0,0.278,0.0,-0.481,-0.422,0.0,-0.731,-0.556,0.0,-0.0,-0.422,0.0,0.731,0.278,0.0,0.481,0.27,1.4,-0.0,0.135,1.4,-0.234,-0.135,1.4,-0.234,-0.27,1.4,-0.0,-0.135,1.4,0.234,0.135,1.4,0.234,0.24,2.8,-0.0,0.12,2.8,-0.208,-0.12,2.8,-0.208,-0.24,2.8,-0.0,-0.12,2.8,0.208,0.12,2.8,0.208,0.0,2.8,-0.0,0.125,2.596,-0.028,0.227,2.605,-0.129,0.125,2.504,-0.231,0.024,2.495,-0.129,1.251,5.1,-1.288,1.256,4.697,-1.294,2.475,5.191,-0.203,0.805,5.369,0.22,-0.477,5.229,-1.213,0.779,5.343,-2.899,2.571,5.287,-2.242,1.83,6.364,0.216,-0.031,6.352,-0.372,-0.163,6.22,-2.184,1.934,6.469,-3.033,3.011,6.403,-1.395,1.434,7.092,-1.471,-0.175,2.565,0.06,-0.072,2.71,-0.043,-0.175,2.535,-0.146,-0.278,2.39,-0.043,-2.156,5.95,-0.531,-2.158,5.372,-0.529,-0.594,6.103,0.563,-2.647,6.176,1.181,-3.979,6.158,-0.609,-2.821,6.001,-2.261,-0.58,6.117,-1.686,-1.463,7.326,1.171,-3.579,7.334,0.472,-3.711,7.202,-1.63,-1.519,7.269,-2.388,-0.439,7.036,-0.347,-2.07,8.011,-0.617,-0.002,2.487,0.282,0.1,2.651,0.18,-0.002,2.613,0.078,-0.104,2.449,0.18,-0.019,4.76,1.54,-0.1,4.218,1.621,1.523,5.082,2.416,-0.595,4.9,3.227,-1.723,4.968,1.513,-0.638,4.856,-0.022,1.424,4.983,0.48,0.64,6.103,3.063,-1.446,5.952,2.584,-1.335,6.064,0.438,0.585,6.048,-0.175,1.625,5.892,1.627,-0.028,6.613,1.548],"t":[1,6,0,1,8,7,3,8,2,3,10,9,5,10,4,5,6,11,7,12,6,8,13,7,9,14,8,10,15,9,11,16,10,6,17,11,12,13,18,13,14,18,14,15,18,15,16,18,16,17,18,17,12,18,19,20,23,20,21,23,21,22,23,22,19,23,24,25,26,25,24,29,24,26,27,24,27,28,24,28,29,25,29,34,26,25,30,27,26,31,28,27,32,29,28,33,25,34,30,26,30,31,27,31,32,28,32,33,29,33,34,30,34,35,31,30,35,32,31,35,33,32,35,34,33,35,36,37,40,37,38,40,38,39,40,39,36,40,41,42,43,42,41,46,41,43,44,41,44,45,41,45,46,42,46,51,43,42,47,44,43,48,45,44,49,46,45,50,42,51,47,43,47,48,44,48,49,45,49,50,46,50,51,47,51,52,48,47,52,49,48,52,50,49,52,51,50,52,53,54,57,54,55,57,55,56,57,56,53,57,58,59,60,59,58,63,58,60,61,58,61,62,58,62,63,59,63,68,60,59,64,61,60,65,62,61,66,63,62,67,59,68,64,60,64,65,61,65,66,62,66,67,63,67,68,64,68,69,65,64,69,66,65,69,67,66,69,68,67,69,1,7,6,1,2,8,3,9,8,3,4,10,5,11,10,5,0,6,7,13,12,8,14,13,9,15,14,10,16,15,11,17,16,6,12,17],"c":["554637","574839","554637","574839","574839","554637","5d4c3c","5f4f3e","5d4c3c","5a4a3b","5d4c3c","5d4c3c","5c4d3d","504334","5c4d3d","43382c","594b3b","5c4d3d","524435","332b22","685845","685745","332b21","352d23","487134","497234","213518","587c3d","5a853f","6a9449","577f3d","405e2d","517839","5c8740","6b974a","5d8841","332b22","332b22","625241","6b5a47","362d23","58813e","293c1d","567f3d","4c7736","6b964a","476932","679047","4d7937","4d7837","5d8841","52793a","4e7a38","6b5a47","332b22","332b22","332b21","352c23","466d32","4b7535","4a7535","669047","52793a","4d7236","5b8640","4c7636","223518","293c1c","497335","59833f"]}};
+const PNW = (() => {
+  const geos = {};
+  function geo(name){
+    if (geos[name]) return geos[name];
+    const d = PNW_DATA[name], nv = d.c.length, vcol = new Float32Array(nv * 3);
+    for (let i = 0; i < nv; i++){ const h = parseInt(d.c[i], 16);
+      vcol[i * 3] = ((h >> 16) & 255) / 255; vcol[i * 3 + 1] = ((h >> 8) & 255) / 255; vcol[i * 3 + 2] = (h & 255) / 255; }
+    const nt = d.t.length / 3, pos = new Float32Array(nt * 9), col = new Float32Array(nt * 9);
+    for (let f = 0; f < nt; f++) for (let k = 0; k < 3; k++){
+      const vi = d.t[f * 3 + k], o = f * 9 + k * 3;
+      pos[o] = d.v[vi * 3]; pos[o + 1] = d.v[vi * 3 + 1]; pos[o + 2] = d.v[vi * 3 + 2];
+      col[o] = vcol[vi * 3]; col[o + 1] = vcol[vi * 3 + 1]; col[o + 2] = vcol[vi * 3 + 2];
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    g.computeVertexNormals();
+    return geos[name] = g;
+  }
+  const uTime = { value: 0 };
+  function swayMat(amp){
+    const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
+    m.onBeforeCompile = sh => {
+      sh.uniforms.uT = uTime;
+      sh.vertexShader = ('uniform float uT;\n' + sh.vertexShader).replace('#include <begin_vertex>',
+        ['#include <begin_vertex>',
+         '#ifdef USE_INSTANCING',
+         '  float pnwPh = instanceMatrix[3][0] * 0.63 + instanceMatrix[3][2] * 0.87;',
+         '#else',
+         '  float pnwPh = 0.0;',
+         '#endif',
+         'float pnwSw = ' + amp.toFixed(2) + ' * position.y * 0.012;',
+         'transformed.x += sin(uT * 1.05 + pnwPh + position.y * 0.35) * pnwSw;',
+         'transformed.z += cos(uT * 0.85 + pnwPh * 1.31) * pnwSw * 0.6;'].join('\n'));
+    };
+    return m;
+  }
+  function instanced(scene, name, places, windAmp){
+    if (!places.length) return null;
+    const m = windAmp ? swayMat(windAmp) : new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
+    const im = new THREE.InstancedMesh(geo(name), m, places.length);
+    const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), E = new THREE.Euler(), S = new THREE.Vector3(), T = new THREE.Vector3();
+    places.forEach((p, i) => { E.set(0, p.ry || 0, 0); Q.setFromEuler(E); S.setScalar(p.s || 1); T.set(p.x, p.y, p.z); M.compose(T, Q, S); im.setMatrixAt(i, M); });
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = true; im.receiveShadow = true;
+    scene.add(im); return im;
+  }
+  function mist(scene, x, y, z, w, d, strength){
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d, 1, 1), new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, uniforms: { uT: uTime, uS: { value: strength || 0.32 } },
+      vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      fragmentShader: [
+        'uniform float uT; uniform float uS; varying vec2 vUv;',
+        'float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+        'float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);',
+        '  return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }',
+        'void main(){',
+        '  vec2 p = vUv * vec2(3.0, 1.6) + vec2(uT * 0.018, uT * 0.006);',
+        '  float m2 = n(p) * 0.6 + n(p * 2.7 + 5.0) * 0.4;',
+        '  float e = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x) * smoothstep(0.0, 0.35, vUv.y) * smoothstep(1.0, 0.65, vUv.y);',
+        '  gl_FragColor = vec4(0.77, 0.82, 0.79, smoothstep(0.4, 0.85, m2) * uS * e);',
+        '}'].join('\n') }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.renderOrder = 3; scene.add(m); return m;
+  }
+  function ravens(scene, cx, cy, cz, r){
+    const list = [];
+    for (let i = 0; i < 2; i++){
+      const b = new THREE.Mesh(geo('raven'), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }));
+      b.scale.setScalar(2.4); scene.add(b);
+      list.push({ b, a0: i * 2.6, r: r * (1 + i * 0.22), h: cy + i * 3.5 });
+    }
+    return t => { for (const v of list){ const a = v.a0 + t * 0.10;
+      v.b.position.set(cx + Math.cos(a) * v.r, v.h + Math.sin(t * 0.6 + v.a0) * 0.9, cz + Math.sin(a) * v.r);
+      v.b.rotation.y = -a - Math.PI / 2; v.b.rotation.z = 0.18 * Math.sin(t * 4.2 + v.a0 * 3.0); } };
+  }
+  /* gradient sky dome: fog-matched horizon fading to a deeper grey-green zenith */
+  function sky(scene, cx, cz, R){
+    const g = new THREE.SphereGeometry(R, 18, 10), pa = g.attributes.position, cols = new Float32Array(pa.count * 3);
+    const h = new THREE.Color(0xAFBEB2), t = new THREE.Color(0x87988E), c2 = new THREE.Color();
+    for (let i = 0; i < pa.count; i++){ const f = Math.pow(Math.max(0, Math.min(1, pa.getY(i) / R)), 0.7);
+      c2.copy(h).lerp(t, f); cols[i * 3] = c2.r; cols[i * 3 + 1] = c2.g; cols[i * 3 + 2] = c2.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false }));
+    m.position.set(cx, -12, cz); scene.add(m); return m;
+  }
+  return { geo, instanced, mist, ravens, sky, tick: t => { uTime.value = t; } };
+})();
+</script>
+
+<script>
+'use strict';
+const D2R = Math.PI / 180, G9 = 9.81;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+const chord = (l1, l2, deg) => Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos(deg * D2R));
+function hash(n){ const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+/* =============== the bike ===============
+   Two bikes share this physics; a global BIKE set before this script picks one (the labs leave it unset: the V10).
+   v10    Santa Cruz V10 CC 29/27.5 MX, size M, low -- Jackson Goldstone's 2023 Syndicate race bike. Travel, spring, wheels,
+          reach and chainstay from kinematic-model/data/bike_specs.yaml (owner-supplied Pinkbike bike check); stack / HTA /
+          STA / BB / wheelbase from the published V10 geometry chart. Lower-link-driven VPP, refitted to 208 mm over a 250x75
+          shock, LR 2.86->2.59 (tools/vpp_fit.py); lower pivot behind the BB, shock driven off the lower link as on the V10.
+   murmur Starling Murmur 2021, size L, as Pinkbike's 2021 Field Test rode it: 150 mm Ohlins fork, 140 mm rear on an Ohlins
+          TTX coil, 29" wheels. Geometry from mtbkin's configs/geometry/pinkbike2021/starling_murmur.yaml (the 160 mm chart
+          corrected for the 150 mm fork). Chosen because it is the full-suspension bike the mtbkin keypoint model tracks most
+          tightly (BB-to-rear-axle spread 6.9 px, 99% of frames) -- and it tracks tightly for the same reason it is easy to
+          model: a steel single pivot, so the swingarm is one rigid triangle (pivot, axle, shock strut) and the shock is driven
+          straight off it. Pivot and shock mounts are placed from the Field Test photos to give 140 mm over a 230x60 shock. */
+const BIKE_ID = typeof BIKE !== 'undefined' && BIKE === 'murmur' ? 'murmur' : 'v10';
+const BIKES = {
+  v10: { name: 'Santa Cruz V10 CC MX',
+    geo: { reach: 0.447, stack: 0.668, hta: 63.5 * D2R, sta: 75.0 * D2R, cs: 0.455, wb: 1.275, bb: 0.350,
+      rF: 0.373, rR: 0.354, forkTravel: 0.200, offset: 0.052, ht: 0.125, stroke: 0.075, e2e: 0.250, travelR: 0.208 },
+    link: { kind: 'vpp', P1: { x: -0.03703, y: 0.08419 }, L1: 0.07216, P3: { x: -0.09307, y: 0.29010 }, L2: 0.15568, D: 0.12988,
+      AX: { x: 0.46254, y: 0.17557 }, S: { x: -0.10098, y: 0.02219 }, F: { x: 0.02571, y: 0.24762 }, th0: 0.47243 },
+    /* 37 lb (17 kg) built from its parts, frame-local (kg, x, y): frame+links, Fox 40, cockpit, DHX2 coil, post+saddle, cranks+drivetrain+pedals, brakes */
+    parts: [[3.6, 0.12, 0.34], [2.9, 0.62, 0.42], [0.9, 0.50, 0.66], [1.2, 0.0, 0.14], [0.3, -0.15, 0.55], [1.2, 0.02, 0.02], [0.8, 0.30, 0.20]],
+    mUF: 2.6, mUR: 3.6,                                                       // 29 DD front wheel; 27.5 DD rear with cassette and rotor
+    rig: { frame: 0x14161C, frame2: 0x1F3B7A, decal: 0xE9F0F5, forkUp: 0xC8952A, forkLow: 0x111111, coil: 0x111111,
+      tt: 0.055, dt: 0.062, st: 0.05, ht: 0.065, cs: 0.05, ss: 0.038, stanch: 0.042, lower: 0.058, strut: true } },
+  murmur: { name: 'Starling Murmur',
+    geo: { reach: 0.488, stack: 0.636, hta: 65.0 * D2R, sta: 77.0 * D2R, cs: 0.445, wb: 1.255, bb: 0.337,
+      rF: 0.372, rR: 0.372, forkTravel: 0.150, offset: 0.044, ht: 0.110, stroke: 0.060, e2e: 0.230, travelR: 0.140 },
+    /* single pivot: P1 the main pivot; AX0 and S0 the axle and the swingarm's shock mount at full extension, frame-local;
+       F the frame's shock mount under the top tube. th0 = 0 means "as drawn"; the table rotates the swingarm from there. */
+    link: { kind: 'single', P1: { x: 0.015, y: 0.090 }, P3: { x: 0.015, y: 0.090 }, AX0: { x: -0.4436, y: 0.035 },
+      S0: { x: -0.0359, y: 0.3030 }, F: { x: 0.1835, y: 0.2338 }, th0: 0 },   // fit: 140 mm / 60 mm, LR 2.44->2.23
+    /* 35 lb (15.9 kg): steel frame+swingarm, Ohlins RXF36, cockpit, TTX coil, dropper+saddle, cranks+drivetrain+pedals, brakes */
+    parts: [[4.3, 0.10, 0.33], [2.2, 0.66, 0.40], [0.9, 0.52, 0.64], [0.75, 0.07, 0.35], [0.6, -0.14, 0.52], [1.4, 0.02, 0.02], [0.8, 0.30, 0.20]],
+    mUF: 2.2, mUR: 2.8,                                                       // 29 trail wheels, EXO+ casings
+    rig: { frame: 0x2B2F33, frame2: 0x2B2F33, decal: 0xC49A5A, forkUp: 0x1C1C1C, forkLow: 0x141414, coil: 0xE3B324,
+      tt: 0.032, dt: 0.038, st: 0.032, ht: 0.044, cs: 0.026, ss: 0.020, stanch: 0.036, lower: 0.050, strut: false } }
+};
+const BK = BIKES[BIKE_ID], GEO = BK.geo;
+const V2 = (x, y) => ({ x, y });
+const dDown = V2(Math.cos(GEO.hta), -Math.sin(GEO.hta));          // down the steering axis
+const dFwd  = V2(Math.sin(GEO.hta),  Math.cos(GEO.hta));          // perpendicular, forward
+const HEAD_TOP = V2(GEO.reach, GEO.stack);
+const HEAD_BOT = V2(HEAD_TOP.x + GEO.ht * dDown.x, HEAD_TOP.y + GEO.ht * dDown.y);
+const CROWN = V2(HEAD_BOT.x + 0.022 * dDown.x, HEAD_BOT.y + 0.022 * dDown.y);
+const AXLE_F_TARGET = V2(GEO.wb - GEO.cs, GEO.rF - GEO.bb);
+const A2C = (AXLE_F_TARGET.y - CROWN.y - GEO.offset * dFwd.y) / dDown.y;   // axle-to-crown, full extension
+const axleFLocal = s => V2(CROWN.x + (A2C - s) * dDown.x + GEO.offset * dFwd.x, CROWN.y + (A2C - s) * dDown.y + GEO.offset * dFwd.y);
+const stDir = V2(-Math.cos(GEO.sta), Math.sin(GEO.sta));          // up the (effective) seat tube
+const SEAT_CLUSTER = V2(stDir.x * 0.44, stDir.y * 0.44);
+const dUp = V2(-dDown.x, -dDown.y);
+const BAR = V2(HEAD_TOP.x + 0.03 * dUp.x + 0.045, HEAD_TOP.y + 0.03 * dUp.y + 0.035);
+const GRIP_Z = 0.37, CRANK = 0.165, PEDAL_Z = 0.145;
+
+/* =============== the rear linkage: a lower-link-driven four-bar (VPP) or a single pivot, one solver =============== */
+const VPP = BK.link;
+function vppSolve(th, prevP4){
+  const P1 = VPP.P1, P3 = VPP.P3;
+  if (VPP.kind === 'single'){                                             // the whole swingarm turns about P1
+    const c = Math.cos(th - VPP.th0), s = Math.sin(th - VPP.th0);
+    const rot = p => V2(P1.x + (p.x - P1.x) * c - (p.y - P1.y) * s, P1.y + (p.x - P1.x) * s + (p.y - P1.y) * c);
+    const axle = rot(VPP.AX0), S = rot(VPP.S0);
+    return { P2: P1, P4: S, axle, S, shock: Math.hypot(S.x - VPP.F.x, S.y - VPP.F.y) };
+  }
+  const P2 = V2(P1.x + VPP.L1 * Math.cos(th), P1.y + VPP.L1 * Math.sin(th));
+  const vx = P3.x - P2.x, vy = P3.y - P2.y, d = Math.hypot(vx, vy);
+  const a = (VPP.D * VPP.D - VPP.L2 * VPP.L2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, VPP.D * VPP.D - a * a));
+  const mx = P2.x + a * vx / d, my = P2.y + a * vy / d, px = -vy / d, py = vx / d;
+  const c1 = V2(mx + h * px, my + h * py), c2 = V2(mx - h * px, my - h * py);
+  const P4 = prevP4 ? (Math.hypot(c1.x - prevP4.x, c1.y - prevP4.y) < Math.hypot(c2.x - prevP4.x, c2.y - prevP4.y) ? c1 : c2) : c1;
+  const ex = V2((P4.x - P2.x) / VPP.D, (P4.y - P2.y) / VPP.D), ey = V2(-ex.y, ex.x);
+  const axle = V2(P2.x + VPP.AX.x * ex.x + VPP.AX.y * ey.x, P2.y + VPP.AX.x * ex.y + VPP.AX.y * ey.y);
+  const lx = V2((P2.x - P1.x) / VPP.L1, (P2.y - P1.y) / VPP.L1), ly = V2(-lx.y, lx.x);
+  const S = V2(P1.x + VPP.S.x * lx.x + VPP.S.y * ly.x, P1.y + VPP.S.x * lx.y + VPP.S.y * ly.y);
+  const shock = Math.hypot(S.x - VPP.F.x, S.y - VPP.F.y);
+  return { P2, P4, axle, S, shock };
+}
+/* table over wheel travel t: axle, stroke, leverage, link positions */
+const VT = { n: 0, t: [], ax: [], ay: [], st: [], lr: [], P2: [], P4: [], S: [], th: [] };
+(function buildTable(){
+  let prev = null, rows = [];
+  for (let s = 0; s <= 1.3; s += 0.004){
+    const r = vppSolve(VPP.th0 - s, prev); prev = r.P4;
+    rows.push(Object.assign({ th: VPP.th0 - s }, r));
+    if (r.axle.y - rows[0].axle.y > GEO.travelR + 0.012) break;
+  }
+  const y0 = rows[0].axle.y, e0 = rows[0].shock;
+  for (const r of rows){ VT.t.push(r.axle.y - y0); VT.ax.push(r.axle.x); VT.ay.push(r.axle.y); VT.st.push(e0 - r.shock);
+    VT.P2.push(r.P2); VT.P4.push(r.P4); VT.S.push(r.S); VT.th.push(r.th); }
+  VT.n = rows.length;
+  for (let i = 0; i < VT.n; i++){
+    const a = Math.max(0, i - 1), b = Math.min(VT.n - 1, i + 1);
+    VT.lr.push((VT.t[b] - VT.t[a]) / Math.max(1e-6, VT.st[b] - VT.st[a]));
+  }
+})();
+function vtLookup(t){                       // interpolate by travel (clamped to table)
+  const tt = clamp(t, 0, VT.t[VT.n - 1]);
+  let lo = 0, hi = VT.n - 1;
+  while (hi - lo > 1){ const m = (lo + hi) >> 1; if (VT.t[m] <= tt) lo = m; else hi = m; }
+  const f = (tt - VT.t[lo]) / Math.max(1e-9, VT.t[hi] - VT.t[lo]);
+  const L = (arr) => lerp(arr[lo], arr[hi], f);
+  const LP = (arr) => V2(lerp(arr[lo].x, arr[hi].x, f), lerp(arr[lo].y, arr[hi].y, f));
+  return { ax: L(VT.ax), ay: L(VT.ay), st: L(VT.st), lr: L(VT.lr), P2: LP(VT.P2), P4: LP(VT.P4), S: LP(VT.S) };
+}
+
+/* =============== terrain: an elevation-profiled course of trail features =============== */
+const SEG = {
+  flat: (len, grade) => ({ len, grade, type: 'dirt', h: () => 0 }),
+  roots: (len, grade, A) => ({ len, grade, type: 'dirt', h: t => A * Math.max(0, Math.sin(t * 4.1)) * (0.5 + 0.5 * Math.sin(t * 1.3 + 1)) }),
+  rollers: (n, lam, A, grade) => ({ len: n * lam, grade, type: 'dirt', h: t => A * (1 - Math.cos(2 * Math.PI * t / lam)) / 2 }),
+  washboard: (n, lam, A, grade) => ({ len: n * lam, grade, type: 'dirt', h: t => A * Math.pow(Math.max(0, Math.sin(Math.PI * t / lam)), 1.4) }),
+  rocks: (len, grade, hmax) => ({ len, grade, type: 'rock', h: t => {
+    const cw = 0.45, cell = Math.floor(t / cw), f = t / cw - cell;
+    const a = 0.02 + hash(cell) * hmax, b = 0.02 + hash(cell + 1) * hmax;
+    const w = Math.pow(Math.sin(Math.PI * t / len), 0.3);
+    return (a + (b - a) * smooth((f - 0.82) / 0.18)) * w; } }),
+  gout: (len, D, grade) => ({ len, grade, type: 'dirt', h: t => -D * (1 - Math.pow(Math.abs(2 * t / len - 1), 1.5)) }),
+  kicker: (H, L, deck, gapLen, gapDepth, landH, landL, grade) => ({ len: L + deck + gapLen + landL, grade, type: 'built',   // tabletop: lip, deck, landing
+    h: t => t < L ? H * Math.pow(t / L, 1.5) : t < L + deck + gapLen ? H - (H - landH) * Math.max(0, t - L - deck) / gapLen : landH * (1 - (t - L - deck - gapLen) / landL) }),
+  corner: (len, R, bankDeg, grade) => ({ len, grade, type: 'dirt', corner: { R, bank: bankDeg * D2R }, noPedal: [0, 99],
+    h: t => bankDeg > 0 ? 0 : 0.02 * Math.max(0, Math.sin(t * 6.3)) }),                                              // flat corners carry braking ripples
+  huck: (H, up, ledge, out, grade) => ({ len: up + ledge + out, grade, type: 'built',
+    h: t => t < up ? H * (1 - Math.cos(Math.PI * t / up)) / 2 : t < up + ledge ? H : 0 }),
+  /* North Shore vocabulary */
+  rootweb: (len, grade, A) => ({ len, grade, type: 'dirt',                                              // interlaced roots at three scales
+    h: t => A * (0.55 * Math.max(0, Math.sin(t * 5.3)) + 0.30 * Math.max(0, Math.sin(t * 8.7 + 1.2)) + 0.35 * Math.max(0, Math.sin(t * 2.9 + 2.1))) }),
+  steps: (len, grade, step, drop) => ({ len, grade, type: 'dirt',                                       // root staircase: repeated drops
+    h: t => { const f = (t % step) / step; return drop * (1 - smooth(f / 0.30)) * Math.pow(Math.sin(Math.PI * Math.min(t / len, 1)), 0.2); } }),
+  slab: (len, grade) => ({ len, grade, type: 'rock', noPedal: [0, 99],                                  // smooth granite roll
+    h: t => 0.015 * Math.sin(t * 1.7) }),
+  ladder: (len, grade) => ({ len, grade, type: 'built',                                                 // cedar ladder bridge: crown + plank ripple
+    h: t => 0.05 * Math.sin(Math.PI * t / len) + (Math.floor(t / 0.30) % 2 ? 0.012 : 0) }),
+  chute: (len, grade) => ({ len, grade, type: 'dirt', noPedal: [0, 99],                                 // steep loam with braking ruts
+    h: t => 0.05 * Math.pow(Math.max(0, Math.sin(Math.PI * t / 0.8)), 1.4) }),
+  /* bike-park vocabulary: a tabletop whose lip is a circular arc of radius R rolling into a straight face at lipDeg, a flat
+     deck, and a landing that rolls over a knuckle onto a straight down-ramp at landDeg and rounds out at the bottom.
+     hEnd lifts (step-up) or drops (step-down) the trail after the landing. */
+  table: (H, lipDeg, R, deck, landDeg, grade, hEnd = 0) => {
+    const th = lipDeg * D2R, ya = R * (1 - Math.cos(th)), xa = R * Math.sin(th), face = Math.max(0, H - ya) / Math.tan(th), lipL = xa + face;
+    const drop = H - hEnd, landL = drop / Math.tan(landDeg * D2R) + 2.2, run = 1.5;
+    return { len: lipL + deck + landL + run, grade, type: 'built', noPedal: [0, 99], lipAt: lipL, hEnd, jump: { H, deck, lipDeg, landDeg },
+      h: t => {
+        if (t < xa) return R - Math.sqrt(Math.max(0, R * R - t * t));                                       // radiused transition
+        if (t < lipL) return ya + (t - xa) * Math.tan(th);                                                   // straight face to the lip
+        if (t < lipL + deck) return H;                                                                       // deck
+        if (t < lipL + deck + landL){ const u = (t - lipL - deck) / landL; return H - drop * (u * u * (3 - 2 * u)); }   // knuckle, ramp, round-out
+        return hEnd; } };
+  }
+};
+const COURSES = {};
+COURSES.ladies = [
+  /* Modelled on Ladies Only, Mt Fromme, North Vancouver -- segment sequence and character
+     compiled from ride guides and POV footage (steep rooty upper, root staircase, cedar
+     ladder bridges, rock rolls, tight tree gates, loam hips out). Grades and lengths are
+     plausible-scale, not surveyed; the return climb is the fireroad, as ridden. */
+  Object.assign(SEG.flat(5, 0.0), { name: 'DROP-IN', turn: 0 }),
+  Object.assign(SEG.flat(6, -0.07), { name: 'OFF THE FIREROAD', turn: -20 }),
+  Object.assign(SEG.rootweb(24, -0.14, 0.085), { name: 'UPPER ROOTS 14%', turn: 16 }),
+  Object.assign(SEG.corner(8, 5, 0, -0.08), { name: 'TREE GATE L', turn: -56 }),
+  Object.assign(SEG.steps(12, -0.18, 1.55, 0.13), { name: 'ROOT STAIRCASE 18%', noPedal: [0, 99] }),
+  Object.assign(SEG.ladder(9, -0.05), { name: 'LADDER BRIDGE 1' }),
+  Object.assign(SEG.rootweb(10, -0.07, 0.045), { name: 'OFF-CAMBER TRAVERSE', turn: 26 }),
+  Object.assign(SEG.slab(7, -0.26), { name: 'ROCK ROLL 26%' }),
+  Object.assign(SEG.corner(9, 6, 28, -0.05), { name: 'CATCH BERM R 28°', turn: 96 }),
+  Object.assign(SEG.chute(8, -0.22), { name: 'CHUTE 22%' }),
+  Object.assign(SEG.corner(7, 5, 0, -0.06), { name: 'TREE GATE R', turn: 48 }),
+  Object.assign(SEG.corner(7, 5, 0, -0.06), { name: 'TREE GATE L', turn: -52 }),
+  Object.assign(SEG.rootweb(18, -0.16, 0.075), { name: 'MID ROOT WEB 16%', noPedal: [0, 99] }),
+  Object.assign(SEG.ladder(7, -0.04), { name: 'LADDER BRIDGE 2' }),
+  Object.assign(SEG.huck(0.6, 4.0, 1.5, 6.0, -0.04), { name: 'LADDER STEP-DOWN', noPedal: [2.0, 9.0] }),
+  Object.assign(SEG.rollers(3, 5.5, 0.35, -0.10), { name: 'LOAM HIPS', turn: -14 }),
+  Object.assign(SEG.slab(6, -0.24), { name: 'LOWER SLAB 24%' }),
+  Object.assign(SEG.gout(6, 0.4, -0.05), { name: 'COMPRESSION' }),
+  Object.assign(SEG.corner(10, 7, 30, -0.06), { name: 'FINAL BERM L 30°', turn: -112 }),
+  Object.assign(SEG.flat(10, -0.04), { name: 'SPRINT OUT' }),
+  Object.assign(SEG.flat(6, 0.0), { name: 'FINISH' })
+];
+COURSES.tortuga = [
+  /* Modelled on Tortuga, Ride Kanuga Bike Park (Hendersonville, NC): the intermediate jump line. Trailforks / MTB Project:
+     0.2 mi, 85 ft of descent, 10% average and 18% max grade, seven tabletops from 10 to 25 ft plus a step-up and a
+     step-down, merging into First In Flight. Feature order and the berm S read off POV footage (a left berm after the
+     first two tables, the big step-up, then a hard right-left S, then the two biggest tables before the turn-out).
+     Sizes are plausible-scale, not surveyed. */
+  Object.assign(SEG.flat(5, 0.0), { name: 'DROP-IN', turn: 0 }),
+  Object.assign(SEG.flat(20, -0.16), { name: 'ROLL-IN 16%', turn: -8 }),
+  Object.assign(SEG.table(0.80, 22, 3.5, 3.0, 24, -0.05), { name: 'TABLE 1 · 10 FT' }),
+  Object.assign(SEG.flat(7, -0.14), { name: 'STRAIGHT', turn: 14 }),
+  Object.assign(SEG.table(0.90, 24, 3.6, 3.7, 25, -0.05), { name: 'TABLE 2 · 12 FT' }),
+  Object.assign(SEG.corner(12, 8, 25, -0.09), { name: 'BERM L 25°', turn: -78 }),
+  Object.assign(SEG.flat(8, -0.14), { name: 'STRAIGHT' }),
+  Object.assign(SEG.table(1.00, 25, 4.0, 4.6, 25, -0.05), { name: 'TABLE 3 · 15 FT' }),
+  Object.assign(SEG.flat(8, -0.14), { name: 'STRAIGHT', turn: 10 }),
+  Object.assign(SEG.table(1.30, 28, 4.2, 5.5, 22, -0.03, 0.6), { name: 'STEP-UP · 18 FT' }),
+  Object.assign(SEG.corner(11, 7.5, 26, -0.09), { name: 'S-BERM R 26°', turn: 84 }),
+  Object.assign(SEG.corner(12, 8, 28, -0.09), { name: 'S-BERM L 28°', turn: -90 }),
+  Object.assign(SEG.table(1.00, 25, 4.0, 4.6, 25, -0.06), { name: 'TABLE 4 · 15 FT' }),
+  Object.assign(SEG.flat(7, -0.14), { name: 'STRAIGHT', turn: -8 }),
+  Object.assign(SEG.table(0.90, 24, 3.8, 5.5, 26, -0.04, -0.9), { name: 'STEP-DOWN · 18 FT' }),
+  Object.assign(SEG.flat(9, -0.14), { name: 'STRAIGHT' }),
+  Object.assign(SEG.table(1.20, 27, 4.5, 6.1, 26, -0.06), { name: 'TABLE 5 · 20 FT' }),
+  Object.assign(SEG.flat(9, -0.14), { name: 'STRAIGHT', turn: 12 }),
+  Object.assign(SEG.table(1.30, 28, 4.5, 6.7, 26, -0.05), { name: 'TABLE 6 · 22 FT' }),
+  Object.assign(SEG.flat(8, -0.14), { name: 'STRAIGHT' }),
+  Object.assign(SEG.table(1.45, 30, 5.0, 7.6, 27, -0.06), { name: 'TABLE 7 · 25 FT' }),
+  Object.assign(SEG.flat(10, -0.07), { name: 'TURN-OUT TO FIRST IN FLIGHT', turn: 30 }),
+  Object.assign(SEG.flat(6, 0.0), { name: 'FINISH' })
+];
+const COURSE_ID = (() => { try { return COURSES[localStorage.getItem('course')] ? localStorage.getItem('course') : 'ladies'; } catch (e) { return 'ladies'; } })();
+const COURSE = COURSES[COURSE_ID];
+/* The trail is generated from the course itself: each segment is a constant-curvature arc (turn in degrees over its
+   length), then a cubic Hermite curve closes the loop back to the start and becomes the RETURN CLIMB, whose grade is
+   set so the elevation profile also closes. So the lap is a true loop: corner radii are exact and nothing teleports. */
+const PATH = { ds: 0.25, x: [], z: [], th: [], k: [], n: 0 };
+let COURSE_LEN = 0;
+(function buildPath(){
+  let x = 0, z = 0, th = 0;
+  for (const g of COURSE){
+    const n = Math.max(1, Math.round(g.len / PATH.ds)); g.len = n * PATH.ds;
+    const kap = (g.turn || 0) * D2R / g.len;
+    for (let i = 0; i < n; i++){ PATH.x.push(x); PATH.z.push(z); PATH.th.push(th); PATH.k.push(kap); x += Math.cos(th) * PATH.ds; z += Math.sin(th) * PATH.ds; th += kap * PATH.ds; }
+  }
+  const p0 = [x, z], t0 = [Math.cos(th), Math.sin(th)], m = 0.9 * Math.hypot(x, z);
+  const H = u => { const h00 = 2*u*u*u - 3*u*u + 1, h10 = u*u*u - 2*u*u + u, h01 = -2*u*u*u + 3*u*u, h11 = u*u*u - u*u;
+    return [h00 * p0[0] + h10 * m * t0[0] + h11 * m, h00 * p0[1] + h10 * m * t0[1]]; };
+  const fine = []; for (let i = 0; i <= 4000; i++) fine.push(H(i / 4000));
+  const pts = [fine[0]]; let acc = 0;
+  for (let i = 1; i < fine.length; i++){ acc += Math.hypot(fine[i][0] - fine[i-1][0], fine[i][1] - fine[i-1][1]); if (acc >= PATH.ds){ pts.push(fine[i]); acc = 0; } }
+  const retLen = pts.length * PATH.ds;
+  let prevTh = th;
+  for (let i = 0; i < pts.length; i++){
+    const nx = i + 1 < pts.length ? pts[i+1] : [0, 0];
+    let a = Math.atan2(nx[1] - pts[i][1], nx[0] - pts[i][0]);
+    while (a - prevTh > Math.PI) a -= 2 * Math.PI; while (a - prevTh < -Math.PI) a += 2 * Math.PI;   // unwrap
+    PATH.x.push(pts[i][0]); PATH.z.push(pts[i][1]); PATH.th.push(a); PATH.k.push((a - prevTh) / PATH.ds); prevTh = a;
+  }
+  PATH.n = PATH.x.length;
+  const ret = Object.assign(SEG.roots(retLen, 0, 0.025), { name: 'RETURN CLIMB' });
+  COURSE.push(ret);
+  COURSE_LEN = 0; for (const g of COURSE){ g.start = COURSE_LEN; COURSE_LEN += g.len; }
+  let b = 0; for (const g of COURSE){ if (g === ret) g.grade = -b / g.len; g.base = b; b += g.grade * g.len + (g.hEnd || 0); }
+})();
+function pathAt(sIn){
+  let sp = sIn % COURSE_LEN; if (sp < 0) sp += COURSE_LEN;
+  const f = sp / PATH.ds, i = Math.min(PATH.n - 1, Math.floor(f)), j = (i + 1) % PATH.n, t = f - i;
+  let th1 = PATH.th[j]; const th0 = PATH.th[i]; while (th1 - th0 > Math.PI) th1 -= 2 * Math.PI; while (th1 - th0 < -Math.PI) th1 += 2 * Math.PI;
+  return { x: lerp(PATH.x[i], PATH.x[j], t), z: lerp(PATH.z[i], PATH.z[j], t), theta: lerp(th0, th1, t), kappa: lerp(PATH.k[i], PATH.k[j], t) };
+}
+function segAt(u){
+  let p = u % COURSE_LEN; if (p < 0) p += COURSE_LEN;
+  let lo = 0, hi = COURSE.length;
+  while (hi - lo > 1){ const m = (lo + hi) >> 1; if (COURSE[m].start <= p) lo = m; else hi = m; }
+  return [COURSE[lo], p - COURSE[lo].start];
+}
+function terrainAt(u){ const [g, t] = segAt(u); return g.base + g.grade * t + g.h(t); }
+/* discrete obstacles laid on the trail: each is both a height profile the tyres roll over and a mesh in the scene */
+const OBST = [];
+function addObst(segName, t, o){ const g = COURSE.find(x => x.name === segName); if (!g) return; OBST.push(Object.assign({ u: g.start + t }, o)); }
+/* Upper roots: interlaced cedar roots crossing at angles */
+addObst('UPPER ROOTS 14%', 3.0, { type: 'log', r: 0.07, yaw: 0.5 });
+addObst('UPPER ROOTS 14%', 6.5, { type: 'log', r: 0.10, yaw: -0.4 });
+addObst('UPPER ROOTS 14%', 9.2, { type: 'log', r: 0.06, yaw: 0.8 });
+addObst('UPPER ROOTS 14%', 13.0, { type: 'log', r: 0.11, yaw: -0.6 });
+addObst('UPPER ROOTS 14%', 17.4, { type: 'log', r: 0.08, yaw: 0.3 });
+addObst('UPPER ROOTS 14%', 21.0, { type: 'rock', h: 0.17, w: 0.5 });
+/* the staircase treads are roots */
+addObst('ROOT STAIRCASE 18%', 1.5, { type: 'log', r: 0.09, yaw: 0.25 });
+addObst('ROOT STAIRCASE 18%', 4.6, { type: 'log', r: 0.10, yaw: -0.3 });
+addObst('ROOT STAIRCASE 18%', 7.7, { type: 'log', r: 0.08, yaw: 0.45 });
+addObst('ROOT STAIRCASE 18%', 10.8, { type: 'log', r: 0.11, yaw: -0.2 });
+addObst('OFF-CAMBER TRAVERSE', 4.0, { type: 'log', r: 0.07, yaw: 0.9 });
+addObst('OFF-CAMBER TRAVERSE', 7.5, { type: 'rock', h: 0.15, w: 0.45 });
+/* rock roll entry lip and runout catch rocks */
+addObst('ROCK ROLL 26%', 0.6, { type: 'shelf', h: 0.14, w: 1.4, ramp: 1.1 });
+addObst('CHUTE 22%', 6.5, { type: 'rock', h: 0.20, w: 0.55 });
+addObst('MID ROOT WEB 16%', 2.0, { type: 'log', r: 0.09, yaw: -0.5 });
+addObst('MID ROOT WEB 16%', 5.2, { type: 'log', r: 0.07, yaw: 0.6 });
+addObst('MID ROOT WEB 16%', 8.0, { type: 'log', r: 0.12, yaw: 0.2 });
+addObst('MID ROOT WEB 16%', 11.4, { type: 'log', r: 0.08, yaw: -0.7 });
+addObst('MID ROOT WEB 16%', 14.6, { type: 'rock', h: 0.22, w: 0.6 });
+addObst('LOAM HIPS', 8.0, { type: 'log', r: 0.13, yaw: 0.15 });
+addObst('COMPRESSION', 5.2, { type: 'rock', h: 0.16, w: 0.5 });
+function obstH(o, d){                                               // height of obstacle o at distance d from its centre
+  if (o.type === 'log'){ const r = o.r; return Math.abs(d) < r ? r + Math.sqrt(r * r - d * d) : 0; }
+  const half = o.w / 2;
+  if (o.type === 'rock'){ const e = 0.06; const a = Math.abs(d); return a < half ? o.h * smooth((half - a) / e) : 0; }
+  if (o.type === 'shelf'){ const x = d + half; if (x < 0 || x > o.w) return 0; return x < o.ramp ? o.h * smooth(x / o.ramp) : o.h; }
+  return 0;
+}
+function groundAt(u){
+  let h = terrainAt(u);
+  for (const o of OBST){ const d = u - o.u; if (d > -2 && d < 2) h += obstH(o, d); }
+  return h;
+}
+function baseGrade(u){ return segAt(u)[0].grade; }
+function groundType(u){ return segAt(u)[0].type; }
+/* tyre enveloping: the contact patch of a wheel of radius r rolling over g(x) */
+const ENV_OFF = [-0.85, -0.5, 0, 0.5, 0.85];
+function groundEnv(u, r){
+  let best = -1e9;
+  for (const k of ENV_OFF){ const dx = k * r; const y = groundAt(u + dx) - (r - Math.sqrt(r * r - dx * dx)); if (y > best) best = y; }
+  return best;
+}
+
+/* =============== dampers and springs =============== */
+const V_KNEE = 0.5;                                   // wheel-speed knee between low- and high-speed circuits
+function damper(v, lsC, hsC, lsR, hsR, knee = V_KNEE){   // v>0 compressing (wheel toward chassis); returns force resisting motion
+  const av = Math.abs(v), ls = v > 0 ? lsC : lsR, hs = v > 0 ? hsC : hsR;
+  const f = av < knee ? ls * av : ls * knee + hs * (av - knee);
+  return v > 0 ? f : -f;
+}
+const clicks = (base, range, c, n) => base * Math.pow(range, c / n);
+function forkSpring(x, psi, tokens){                   // EVOL-style: positive chamber ramps, negative balances top-out
+  const pA = psi * 6894.76 * 1.02e-3;
+  const L = 0.215 - tokens * 0.009, Ln = 0.085;
+  const pos = Math.pow(L / Math.max(0.004, L - x), 1.3), neg = Math.pow(Ln / (Ln + x), 1.3);
+  let f = pA * (pos - neg);
+  if (x < 0) f = 40000 * x;                            // top-out bumper
+  return Math.min(f, 15000);
+}
+function airShock(S, psi){                             // RockShox Super Deluxe-style: 65 mm stroke, positive ramp, negative balances top-out
+  const pA = psi * 6894.76 * 1.72e-3, L = 0.075, Ln = 0.040;
+  let f = pA * (Math.pow(L / Math.max(0.003, L - S), 1.25) - Math.pow(Ln / (Ln + S), 1.25));
+  if (S > GEO.stroke - 0.006) f += 400000 * (S - (GEO.stroke - 0.006));
+  if (S < 0) f = 40000 * S;
+  return Math.min(f, 40000);
+}
+function shockSpring(S){ return tune.rAir ? airShock(S, tune.rPsi) : coilSpring(S, tune.rK); }
+function coilSpring(S, k){                             // S = shaft stroke (m); k in N/m at the shaft
+  let f = k * S + 60;                                  // 60 N of preload
+  if (S > GEO.stroke - 0.006) f += 400000 * (S - (GEO.stroke - 0.006));
+  f = Math.min(f, 40000);
+  if (S < 0) f = 40000 * S;
+  return f;
+}
+
+/* =============== bodies =============== */
+/* the bike built from its parts, frame-local (kg, m): sprung CoM and pitch inertia follow from them (see BIKES) */
+const PARTS = BK.parts;
+const M_UF = BK.mUF, M_UR = BK.mUR;
+const IW_F = 0.72 * M_UF * GEO.rF * GEO.rF, IW_R = 0.70 * M_UR * GEO.rR * GEO.rR;   // most wheel mass sits at the rim and tyre
+const M_SPRUNG = PARTS.reduce((a, q) => a + q[0], 0);
+const COM = V2(PARTS.reduce((a, q) => a + q[0] * q[1], 0) / M_SPRUNG, PARTS.reduce((a, q) => a + q[0] * q[2], 0) / M_SPRUNG);
+const I_SPRUNG = PARTS.reduce((a, q) => a + q[0] * ((q[1] - COM.x) ** 2 + (q[2] - COM.y) ** 2), 0) + 0.9;      // + the parts' own inertia
+let M_RIDER = 150 * 0.4536;                                                       // Goldstone, ~68 kg
+/* rider body-segment masses (fraction of body mass) and where they sit for the current pose */
+function riderCoM(){
+  const hips = V2(cur.hx, cur.hy + rider.u), tor = cur.torso * D2R;
+  const sh = V2(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor));
+  const head = V2(sh.x + 0.17 * Math.cos(tor + 35 * D2R), sh.y + 0.17 * Math.sin(tor + 35 * D2R));
+  const pedal = V2(0, -0.05);
+  const x = 0.50 * (hips.x + sh.x) / 2 + 0.08 * head.x + 0.10 * (sh.x + BAR.x) / 2 + 0.32 * (hips.x + pedal.x) / 2;   // torso 50%, head 8%, arms 10%, legs 32%
+  const y = 0.50 * (hips.y + sh.y) / 2 + 0.08 * head.y + 0.10 * (sh.y + BAR.y) / 2 + 0.32 * (hips.y + pedal.y) / 2;
+  return V2(x, y);
+}
+const chassis = { y: 0, vy: 0, phi: 0, w: 0 };
+const wheelF = { y: 0, vy: 0, x: 0, s: 0, sv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rF, kT: 55000, cT: 350, om: 0, slip: 0, fx: 0, tb: 0, I: IW_F };
+const wheelR = { y: 0, vy: 0, x: 0, t: 0, tv: 0, tire: 0, ema: 0, bo: 0, boFlash: 0, boCd: 0, r: GEO.rR, kT: 65000, cT: 400, st: 0, lr: 2.95, om: 0, slip: 0, fx: 0, tb: 0, td: 0, I: IW_R };
+const rider = { y: 0, vy: 0, u: 0, k: 9000, c: 900, hx: -0.40, hy: 0.62, xTarget: -0.40, yTarget: 0.62, pop: 0 };
+let v = 3.0, scroll = 0, riding = true, lap = 1;
+const MU_DIRT = 0.75;
+const corner = { active: false, lean: 0, g: 1, R: 0, bank: 0, ahead: 99, vLimit: 99, braking: false, usage: 0, sliding: false, aLat: 0 };
+function updateCorner(){
+  const [seg, t] = segAt(scroll);
+  const P = pathAt(scroll + 1.2);                                              // the rider sets the lean up slightly ahead of the wheels
+  const kap = Math.abs(P.kappa);
+  const bank = seg.corner ? seg.corner.bank * smooth(Math.min(t, seg.len - t) / 3) : 0;
+  const cap = G9 * Math.tan(Math.min(1.45, bank + Math.atan(MU_DIRT)));      // lateral acceleration the surface can give
+  let aLat = v * v * kap;
+  corner.usage = aLat / Math.max(0.01, cap); corner.sliding = corner.usage > 1 && kap > 0.02;
+  aLat = Math.min(aLat, cap); corner.aLat = aLat;
+  corner.g = Math.sqrt(1 + (aLat / G9) * (aLat / G9));
+  corner.lean = Math.atan2(aLat, G9) * (P.kappa < 0 ? 1 : -1);                // positive = leaning left
+  corner.active = kap > 0.025; corner.bank = bank;
+  corner.braking = false; corner.vLimit = 99; corner.ahead = 99;
+  for (let d = 0; d <= 45; d += 1.5){                                          // look ahead for the tightest bend the grip can't hold at this speed
+    const Q = pathAt(scroll + d), k2 = Math.abs(Q.kappa); if (k2 < 0.02) continue;
+    const sq = segAt(scroll + d)[0], b2 = sq.corner ? sq.corner.bank : 0;
+    const vl = Math.sqrt(G9 * Math.tan(Math.min(1.45, b2 + Math.atan(MU_DIRT))) / k2) * 0.97;
+    if (v > vl && d < (v * v - vl * vl) / (2 * 4.5) + 2){ corner.braking = true; if (vl < corner.vLimit){ corner.vLimit = vl; corner.ahead = d; } }
+  }
+}
+const tune = {};
+let riderMode = 'pro', assistMode = 'none', effortW = 300, vCap = 26 * 0.447, shockType = 'coil';
+const ASSIST = { none: 0 };                                                        // DH bike: no motor
+
+/* world transform helpers */
+function toWorld(p){ const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi); return V2(p.x * c - p.y * s, chassis.y + p.x * s + p.y * c); }
+function worldVel(p){ const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi); return chassis.vy + chassis.w * (p.x * c - p.y * s); }
+
+function applyTuning(){
+  const g = id => +ui[id].value;
+  tune.rAir = shockType === 'air';
+  if (tune.rAir){ tune.rPsi = g('rSpring'); } else { tune.rK = g('rSpring') * 175.13; }
+  tune.rLsC = clicks(500, 6.0, g('rLsc'), 16); tune.rHsC = clicks(300, 4.5, g('rHsc'), 8);
+  tune.rLsR = clicks(650, 7.0, g('rLsr'), 16); tune.rHsR = clicks(350, 4.5, g('rHsr'), 8);
+  tune.fPsi = g('fSpring'); tune.fTok = g('fVol');
+  tune.fLsC = clicks(320, 6.0, g('fLsc'), 16); tune.fHsC = clicks(220, 4.5, g('fHsc'), 8);
+  tune.fLsR = clicks(480, 7.0, g('fLsr'), 16); tune.fHsR = clicks(280, 4.5, g('fHsr'), 8);
+  for (const [id, suf] of [['rSpring',''],['rLsc',''],['rHsc',''],['rLsr',''],['rHsr',''],['fSpring',''],['fVol',''],['fLsc',''],['fHsc',''],['fLsr',''],['fHsr','']])
+    ui[id + 'Out'].textContent = ui[id].value + suf;
+  computeSag();
+}
+/* static sag: solve each end against its static load with the rider in the attack position */
+function computeSag(){
+  const Wtot = (M_SPRUNG + M_RIDER) * G9;
+  const rx = -0.22 + 0.29;                                                            // rider CoM in the balanced attack position
+  const xCom = (M_SPRUNG * COM.x + M_RIDER * rx) / (M_SPRUNG + M_RIDER);
+  const xF = axleFLocal(0).x, xR = VT.ax[0];
+  const Wf = Wtot * (xCom - xR) / (xF - xR), Wr = Wtot - Wf;
+  let lo = 0, hi = GEO.forkTravel;
+  for (let i = 0; i < 40; i++){ const m = (lo + hi) / 2; (forkSpring(m, tune.fPsi, tune.fTok) * Math.sin(GEO.hta) < Wf) ? lo = m : hi = m; }
+  wheelF.sag = lo;
+  lo = 0; hi = GEO.travelR;
+  for (let i = 0; i < 40; i++){ const m = (lo + hi) / 2; const k = vtLookup(m); (shockSpring(k.st) / k.lr < Wr) ? lo = m : hi = m; }
+  wheelR.sag = lo;
+  ui.fSag.textContent = Math.round(wheelF.sag / GEO.forkTravel * 100) + '%';
+  ui.rSag.textContent = Math.round(wheelR.sag / GEO.travelR * 100) + '%';
+  ui.sagF.style.top = (wheelF.sag / GEO.forkTravel * 100) + '%';
+  ui.sagR.style.top = (wheelR.sag / GEO.travelR * 100) + '%';
+}
+
+/* =============== rider posture controller =============== */
+/* Each pose is a hip x position plus TARGET joint angles: the hip height is solved so the leading knee sits at `knee`
+   (measured against the bottom pedal when pedaling, the level front pedal when coasting) and the torso angle is solved
+   so the elbow sits at `elbow` with the hands on the grips. PRO numbers are from the Asa Vermette / Goldstone frames,
+   GOLDSTONE numbers are the side-view frames of his Val di Sole 2023 chase run (kinematic-model/output/goldstone/vds_2023,
+   238 frames): knee p10 127 / p25 158 / p50 170, elbow p10 117 / p25 141 / p50 156. A chase drone sits above and behind the
+   rider, so 2D angles read tall; p25 is used as the cruising attack stance, p10 as the deep absorb, p75-p90 as the pop.
+   Measured knee angular speed p90 330 deg/s sets the pro absorb time constant. AVERAGE from Charlie; k/c are the leg spring-damper. */
+const POSE = {
+  pro: {                                                                    // GOLDSTONE (Val di Sole 2023 chase footage)
+    seated:  { hx: -0.15, knee: 148, elbow: 130, k: 30000, c: 1500 },        // fireroad return
+    climb:   { hx: -0.22, knee: 152, elbow: 122, k: 12000, c: 1000 },
+    attack:  { hx: -0.21, knee: 150, elbow: 138, k: 8500,  c: 900  },        // tall, loose DH cruise: side-view p25
+    preload: { hx: -0.24, knee: 118, elbow: 102, k: 9000,  c: 950  },
+    pop:     { hx: -0.20, knee: 168, elbow: 152, k: 14000, c: 1100 },        // extension at the lip: p75-p90
+    air:     { hx: -0.22, knee: 160, elbow: 146, k: 7000,  c: 800  },        // legs long in the air, arms working (airborne frames)
+    land:    { hx: -0.24, knee: 127, elbow: 117, k: 8000,  c: 1000 },        // deep absorb: side-view p10
+    huck:    { hx: -0.34, knee: 138, elbow: 124, k: 9000,  c: 1000 }
+  },
+  avg: {
+    seated:  { hx: -0.14, knee: 152, elbow: 148, k: 34000, c: 1700 },
+    climb:   { hx: -0.16, knee: 155, elbow: 148, k: 20000, c: 1300 },
+    attack:  { hx: -0.16, knee: 157, elbow: 145, k: 22000, c: 1400 },
+    preload: { hx: -0.20, knee: 146, elbow: 140, k: 20000, c: 1300 },
+    pop:     { hx: -0.24, knee: 160, elbow: 150, k: 24000, c: 1500 },
+    air:     { hx: -0.26, knee: 150, elbow: 140, k: 18000, c: 1200 },
+    land:    { hx: -0.26, knee: 148, elbow: 140, k: 22000, c: 1400 },
+    huck:    { hx: -0.28, knee: 155, elbow: 145, k: 22000, c: 1400 }
+  }
+};
+const KNEE_CAP = { pro: 178, avg: 166 }, ELBOW_CAP = { pro: 175, avg: 164 };                   // Goldstone caps = his side-view p90
+function solvePose(P, hxShift, usesBottomPedal){
+  const hx = P.hx + hxShift;
+  const refX = usesBottomPedal ? 0 : CRANK, refY = (usesBottomPedal ? -CRANK : 0) + 0.04;
+  const ck = chord(0.44, 0.44, P.knee);
+  const hy = refY + Math.sqrt(Math.max(0.01, ck * ck - (hx - refX) * (hx - refX)));
+  // shoulders: on the 0.5 m torso circle about the hips AND on the arm-chord circle about the grips
+  const gx = BAR.x, gy = BAR.y + 0.02, ce = chord(0.31, 0.29, P.elbow);
+  const dx = gx - hx, dy = gy - hy, d = Math.hypot(dx, dy), ux = dx / d, uy = dy / d;
+  let torso;
+  if (d >= 0.5 + ce - 0.002) torso = Math.atan2(uy, ux) / D2R;                       // can't reach: torso along the line, elbows open up to their cap
+  else { const a = (0.25 - ce * ce + d * d) / (2 * d), h = Math.sqrt(Math.max(0, 0.25 - a * a)); torso = Math.atan2(uy * a + ux * h, ux * a - uy * h) / D2R; }
+  return { hx, hy, torso, kneeMax: Math.min(P.knee + 12, KNEE_CAP[riderMode]), elbowMax: Math.min(P.elbow + 15, ELBOW_CAP[riderMode]) };
+}
+let poseState = 'seated', poseT = 0, airT = 0, contactT = 0, pedaling = true, crank = 0, dropper = 1, brakeF = 0, snapCam = true;
+const cur = { hx: -0.15, hy: 0.70, torso: 42, kneeMax: 158, elbowMax: 145 };
+function poseController(dt, grade, airborne, u){
+  const seg = segAt(u)[0];
+  const distToLip = seg.lipAt !== undefined ? seg.lipAt - segAt(u)[1] : (seg.name === 'BIG JUMP') ? (3.0 + 0.8) - segAt(u)[1] : 99;
+  const distToLedge = (seg.name === 'HUCK TO FLAT') ? (8.0 + 2.5) - segAt(u)[1] : 99;
+  let next = poseState;
+  if (airborne){ airT += dt; contactT = 0; next = airT > 0.08 ? 'air' : poseState; }
+  else {
+    contactT += dt; airT = 0;
+    if (poseState === 'air' || (poseState === 'land' && contactT < 0.45)) next = 'land';
+    else if (distToLip > 0 && distToLip < 0.35 + v * 0.12) next = 'pop';
+    else if (distToLip > 0 && distToLip < 1.0 + v * 0.30) next = 'preload';                                 // crouch into the transition first: the pop then has somewhere to come from
+    else if (distToLedge > 0 && distToLedge < 0.4 + v * 0.2) next = 'huck';
+    else if (pedaling && seg.grade > -0.025 && (seg.name === 'START' || seg.name === 'FINISH')) next = 'seated';
+    else if (pedaling) next = 'climb';
+    else next = 'attack';
+  }
+  if (next !== poseState){ poseState = next; poseT = 0; }
+  poseT += dt;
+  const P = POSE[riderMode][poseState];
+  const steep = clamp(-grade, 0, 0.25);
+  const att = poseState === 'attack' && riderMode === 'pro';
+  const tgt = solvePose(P, att ? -0.35 * steep : 0, poseState === 'seated' || poseState === 'climb');
+  const tau = poseState === 'pop' ? 0.07 : poseState === 'preload' ? 0.10 : poseState === 'huck' ? 0.10 : (riderMode === 'pro' ? 0.14 : 0.30);
+  const a = 1 - Math.exp(-dt / tau);
+  cur.hx += (tgt.hx - cur.hx) * a; cur.hy += (tgt.hy - cur.hy) * a; cur.torso += (tgt.torso - cur.torso) * a; cur.kneeMax = tgt.kneeMax; cur.elbowMax = tgt.elbowMax;
+  rider.xTarget = cur.hx; rider.yTarget = cur.hy;
+  rider.k += (P.k - rider.k) * a; rider.c += (P.c - rider.c) * a;
+  dropper += (((poseState === 'seated' || poseState === 'climb') ? 1 : 0) - dropper) * (1 - Math.exp(-dt / 0.5));
+}
+
+/* =============== physics step =============== */
+const PDT = 1 / 600;
+let gradeS = 0, hudPower = 0, accelX = 0;
+function reset(){
+  scroll = 0; v = 2.5; lap = 1;
+  const g0 = groundAt(0);
+  chassis.phi = 0; chassis.w = 0; chassis.vy = 0;
+  wheelF.s = wheelF.sag; wheelR.t = wheelR.sag;
+  const af = axleFLocal(wheelF.s), ar = vtLookup(wheelR.t);
+  chassis.y = g0 + Math.max(wheelF.r - af.y, wheelR.r - ar.ay) + 0.0;
+  wheelF.y = g0 + wheelF.r; wheelR.y = g0 + wheelR.r; wheelF.vy = wheelR.vy = 0;
+  wheelF.x = af.x; wheelR.x = ar.ax;
+  wheelF.bo = wheelR.bo = 0; wheelF.ema = wheelF.sag; wheelR.ema = wheelR.sag;
+  wheelF.om = v / wheelF.r; wheelR.om = v / wheelR.r; wheelF.tb = wheelR.tb = wheelR.td = 0;
+  poseState = 'seated'; const p0 = solvePose(POSE[riderMode].seated, 0, true); cur.hx = p0.hx; cur.hy = p0.hy; cur.torso = p0.torso; cur.kneeMax = p0.kneeMax; cur.elbowMax = p0.elbowMax;
+  rider.u = 0; rider.vy = 0; rider.y = toWorld(V2(cur.hx, cur.hy)).y;
+  rider.xTarget = cur.hx; rider.yTarget = cur.hy;
+  snapCam = true;
+}
+function step(dt){
+  /* --- kinematic positions of the wheels on the chassis --- */
+  const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi);
+  const crownW = toWorld(CROWN);
+  const axisDown = V2(dDown.x * c - dDown.y * s, dDown.x * s + dDown.y * c);      // rotated steering axis
+  const fwdR = V2(dFwd.x * c - dFwd.y * s, dFwd.x * s + dFwd.y * c);
+  // front: stroke from the vertical separation crown -> axle along the (rotated) axis
+  wheelF.s = A2C - (wheelF.y - crownW.y - GEO.offset * fwdR.y) / axisDown.y;
+  const axleFl = axleFLocal(wheelF.s); wheelF.x = (axleFl.x * c - axleFl.y * s);
+  const vCrown = worldVel(CROWN);
+  wheelF.sv = -(wheelF.vy - vCrown) / axisDown.y;                                    // >0 compressing
+  // rear: invert the VPP table for the travel whose (rotated) axle height equals the wheel height
+  {
+    let lo = -0.02, hi = GEO.travelR + 0.02;
+    for (let i = 0; i < 22; i++){ const m = (lo + hi) / 2; const k = vtLookup(m); const ay = chassis.y + (k.ax * s + (k.ay + (m - clamp(m, 0, VT.t[VT.n - 1]))) * c); (ay < wheelR.y) ? lo = m : hi = m; }
+    wheelR.t = (lo + hi) / 2;
+    const k = vtLookup(wheelR.t);
+    wheelR.x = k.ax * c - k.ay * s; wheelR.st = k.st; wheelR.lr = k.lr;
+    const vAxle = worldVel(V2(k.ax, k.ay));
+    wheelR.tv = (wheelR.vy - vAxle) / c;                                            // >0 compressing (axle rising in frame)
+  }
+  /* --- terrain under each wheel --- */
+  const gF = groundEnv(scroll + wheelF.x, wheelF.r), gR = groundEnv(scroll + wheelR.x, wheelR.r);
+  const slF = (groundEnv(scroll + wheelF.x + 0.02, wheelF.r) - groundEnv(scroll + wheelF.x - 0.02, wheelF.r)) / 0.04;
+  const slR = (groundEnv(scroll + wheelR.x + 0.02, wheelR.r) - groundEnv(scroll + wheelR.x - 0.02, wheelR.r)) / 0.04;
+  const slFx = (groundEnv(scroll + wheelF.x + 0.12, wheelF.r) - groundEnv(scroll + wheelF.x - 0.12, wheelF.r)) / 0.24;   // longer baseline for the drive/drag force
+  const slRx = (groundEnv(scroll + wheelR.x + 0.12, wheelR.r) - groundEnv(scroll + wheelR.x - 0.12, wheelR.r)) / 0.24;
+  const gradeNow = (groundAt(scroll + wheelF.x) - groundAt(scroll + wheelR.x)) / (wheelF.x - wheelR.x);
+  gradeS += (gradeNow - gradeS) * Math.min(1, dt * 6);
+  /* --- tyre forces --- */
+  function tyre(w, g, sl){
+    const d = g + w.r - w.y;
+    if (d <= 0){ w.tire = 0; return 0; }
+    const vg = sl * v;
+    let f = w.kT * d + w.cT * (vg - w.vy);
+    f = clamp(f, 0, 20000); w.tire = f; return f;
+  }
+  const tF = tyre(wheelF, gF, slF), tR = tyre(wheelR, gR, slR);
+  /* --- wheel spin and longitudinal tyre forces (slip curve peaks near 15% slip, slides at ~72% of peak) --- */
+  const fCirc = Math.sqrt(Math.max(0, 1 - Math.min(1, corner.usage) ** 2));
+  const muX = sl => MU_DIRT * Math.sin(1.6 * Math.atan(9 * sl));
+  wheelF.slip = (wheelF.om * wheelF.r - v) / Math.max(v, 1.0); wheelR.slip = (wheelR.om * wheelR.r - v) / Math.max(v, 1.0);
+  wheelF.fx = muX(wheelF.slip) * tF * fCirc; wheelR.fx = muX(wheelR.slip) * tR * fCirc;
+  const airNow = tF <= 0 && tR <= 0;
+  // brakes: 65/35 front/rear; the PRO rider modulates a locking wheel, the AVERAGE rider does not
+  let TbF = brakeF * 0.65 * wheelF.r, TbR = brakeF * 0.35 * wheelR.r;
+  if (riderMode === 'pro'){ if (wheelF.slip < -0.30) TbF *= 0.45; if (wheelR.slip < -0.30) TbR *= 0.45; }
+  if (airNow && riderMode === 'pro'){ if (chassis.phi > 0.10) TbR = Math.max(TbR, 90); }          // nose high in the air: tap the rear brake
+  let Td = pedaling ? Math.min(hudPower / Math.max(wheelR.om, 2.0), 240) : 0;
+  if (airNow) Td = (riderMode === 'pro' && chassis.phi < -0.14 && wheelR.om * wheelR.r < 1.4 * v) ? 80 : 0;   // nose low in the air: a pedal stroke lifts it (until the wheel is spun up)
+  wheelF.tb = TbF; wheelR.tb = TbR; wheelR.td = Td;
+  wheelF.om = Math.max(0, wheelF.om + ((-TbF - wheelF.fx * wheelF.r) / wheelF.I) * dt);
+  wheelR.om = Math.max(0, wheelR.om + ((Td - TbR - wheelR.fx * wheelR.r) / wheelR.I) * dt);
+  if (airNow) chassis.w += ((Td - TbF - TbR) / (I_SPRUNG + 0.55 * M_RIDER * 0.36 * 0.36)) * dt;                                         // in the air the brake and drive torques react on the frame
+  const Fdive = -wheelF.fx * Math.cos(GEO.hta) * Math.sin(GEO.hta);                                   // braking pushes the front wheel up the 64-degree fork axis
+  /* --- suspension forces (positive = pushing wheel down / chassis up) --- */
+  const fAxis = forkSpring(wheelF.s, tune.fPsi, tune.fTok) + damper(wheelF.sv, tune.fLsC, tune.fHsC, tune.fLsR, tune.fHsR);
+  const Ff = fAxis * (-axisDown.y);
+  const LR0 = VT.lr[0], lr2 = LR0 * LR0;                                              // damper coefficients are wheel-rate at top-out, converted to the shaft
+  const Fshock = shockSpring(wheelR.st) + damper(wheelR.tv / wheelR.lr, tune.rLsC * lr2, tune.rHsC * lr2, tune.rLsR * lr2, tune.rHsR * lr2, V_KNEE / LR0);
+  let Fr = Fshock / wheelR.lr;
+  {
+    // chain tension and brake torque react through the swingarm: anti-squat (30/50 gear, ~110% -> -40%) and anti-rise (85% -> -25%)
+    const tmm = wheelR.t / GEO.travelR * 160;
+    const AS = (110 - 0.22 * tmm - 0.028 * Math.pow(Math.max(0, tmm - 95), 2)) / 100;
+    const AR = (85 - 110 * (wheelR.t / GEO.travelR)) / 100;
+    const wt = (M_SPRUNG + M_RIDER) * accelX * 0.90 / Math.max(0.8, wheelF.x - wheelR.x);   // load moved rear<->front by accel, h_cg ~0.9 m
+    if (pedaling && accelX > 0) Fr += AS * wt;
+    if (brakeF > 0 && accelX < 0) Fr -= AR * (-wt);
+  }
+  /* bottom-out counters */
+  for (const [w, comp, trav] of [[wheelF, wheelF.s, GEO.forkTravel], [wheelR, wheelR.t, GEO.travelR]]){
+    if (comp > trav - 0.003 && w.boCd <= 0){ w.bo++; w.boFlash = 0.35; w.boCd = 0.6; }
+    w.boCd -= dt; w.ema += (Math.max(0, comp) - w.ema) * Math.min(1, dt * 1.6);
+  }
+  /* --- rider on legs --- */
+  const rcm = riderCoM(), comX = rcm.x;                                              // rider CoM from the body segments in the current pose
+  const hipsW = toWorld(V2(rider.xTarget, rider.yTarget)), hipsV = worldVel(V2(rider.xTarget, rider.yTarget));
+  rider.u = rider.y - hipsW.y;
+  let Frider = -rider.k * rider.u - rider.c * (rider.vy - hipsV) + M_RIDER * G9;    // legs hold body weight at u = 0
+  if (rider.u < -0.30) Frider += -60000 * (rider.u + 0.30);
+  if (rider.u > 0.22) Frider += -60000 * (rider.u - 0.22);
+  if (poseState === 'pop' && poseT < 0.18) Frider += (riderMode === 'pro' ? 600 : 200);     // the push off the lip
+  const airborne = tF <= 0 && tR <= 0;
+  /* --- chassis --- */
+  const armF = V2(axleFl.x * c - axleFl.y * s, 0), armR = V2(wheelR.x, 0), armH = V2(comX * c - rider.yTarget * s, 0);
+  const comW = V2(COM.x * c - COM.y * s, 0);
+  const GL = G9 * corner.g;                                                            // cornering load: the resultant of gravity and lateral acceleration
+  let Fy = Ff + Fr - Frider - M_SPRUNG * GL;
+  let Tz = (armF.x - comW.x) * Ff + (armR.x - comW.x) * Fr - (armH.x - comW.x) * Frider;
+  const inAir = tF <= 0 && tR <= 0;
+  const phiRef = inAir ? -0.10 : clamp(Math.atan(gradeS), -0.35, 0.35);
+  const mScale = M_RIDER / 78;                                                        // a heavier rider has more authority over the bars, and more mass to move
+  const kp = (inAir ? 900 : 350) * mScale, cp = (inAir ? 220 : 150) * mScale;
+  Tz += -kp * (chassis.phi - phiRef) - cp * chassis.w;
+  /* front wheel off a ledge: the rider pushes the bars forward and shifts back so the bike leaves level. Only while
+     the nose is still low and not already rotating up: past that the same push is what loops a bike out, and the
+     rider does the opposite -- straight arms driving the bars down (~M g x 0.4 m of reach), which no roller kick beats. */
+  if (tF <= 0 && tR > 0 && v > 2 && chassis.phi < 0.22 && chassis.w < 2.5) Tz += riderMode === 'pro' ? 320 : 120;
+  if (!inAir && chassis.phi > 0.35) Tz -= (riderMode === 'pro' ? 1400 : 900) * mScale * (chassis.phi - 0.35) + 120 * mScale * Math.max(0, chassis.w);
+  const hCg = (M_SPRUNG * COM.y + M_RIDER * rcm.y) / (M_SPRUNG + M_RIDER) + Math.max(0, chassis.y - gF);   // combined CoM height above the ground
+  // longitudinal forces at the ground pitch the mass above them: tyre slip forces plus the push-back of bump faces (base grade excluded: that moment is already in the geometry)
+  const NcapT = 1.6 * (M_SPRUNG + M_RIDER + M_UF + M_UR) * G9;
+  const bumpX = -(Math.min(tF, NcapT) * clamp(slFx - baseGrade(scroll + wheelF.x), -0.7, 0.7) + Math.min(tR, NcapT) * clamp(slRx - baseGrade(scroll + wheelR.x), -0.7, 0.7));
+  Tz += (wheelF.fx + wheelR.fx + bumpX) * hCg;
+  chassis.vy += (Fy / M_SPRUNG) * dt; chassis.y += chassis.vy * dt;
+  const I_EFF = I_SPRUNG + 0.55 * M_RIDER * 0.36 * 0.36;                            // the rider's body pitches with the bike through stiff arms and legs
+  chassis.w += (Tz / I_EFF) * dt; chassis.w = clamp(chassis.w, -6.3, 6.3); chassis.phi += chassis.w * dt;   // 6.3 rad/s = 360 deg/s: a stiff-armed rider caps the frame's pitch rate through a hard hit; measured pro DH pitch rate (FPV chase footage, kinematic-model/data/videos.yaml) peaks at 279-284 deg/s
+  chassis.phi = clamp(chassis.phi, -0.9, 0.9);
+  /* --- wheels --- */
+  wheelF.vy += ((tF - Ff + Fdive) / M_UF - GL) * dt; wheelF.y += wheelF.vy * dt;
+  wheelR.vy += ((tR - Fr) / M_UR - GL) * dt; wheelR.y += wheelR.vy * dt;
+  /* hard stops: an inelastic catch at the end of travel so nothing tunnels */
+  {
+    const crown2 = toWorld(CROWN), vCr = worldVel(CROWN);
+    const sMax = GEO.forkTravel + 0.004;
+    const sNow = A2C - (wheelF.y - crown2.y - GEO.offset * fwdR.y) / axisDown.y;
+    if (sNow > sMax){ wheelF.y = crown2.y + GEO.offset * fwdR.y + (A2C - sMax) * axisDown.y; const rel = wheelF.vy - vCr; if (rel > 0){ chassis.vy += rel * M_UF / M_SPRUNG; wheelF.vy = vCr; } }
+    const tMax = GEO.travelR + 0.004, k2 = vtLookup(tMax);
+    const yMax = chassis.y + k2.ax * s + k2.ay * c, vAx = worldVel(V2(k2.ax, k2.ay));
+    if (wheelR.y > yMax){ wheelR.y = yMax; const rel = wheelR.vy - vAx; if (rel > 0){ chassis.vy += rel * M_UR / M_SPRUNG; wheelR.vy = vAx; } }
+  }
+  /* --- rider mass --- */
+  rider.vy += (Frider / M_RIDER - GL) * dt; rider.y += rider.vy * dt;
+  /* --- longitudinal: power, assist, drag, grade, bump drag, braking --- */
+  const grade = gradeS;
+  const seg = segAt(scroll)[0];
+  const segT = segAt(scroll)[1];
+  const noPedal = seg.noPedal ? (segT > seg.noPedal[0] && segT < seg.noPedal[1]) : false;
+  pedaling = !airborne && v < vCap * 0.97 && grade > -0.07 && !noPedal && poseState !== 'land';
+  const Prider = pedaling ? effortW * (poseState === 'climb' ? 1.25 : 1) : 0;
+  const Pmotor = (pedaling && v < 8.9) ? Math.min(500, Prider * ASSIST[assistMode]) * clamp((8.9 - v) / 1.5, 0, 1) : 0;
+  hudPower = Prider + Pmotor;
+  const Mt = M_SPRUNG + M_RIDER + M_UF + M_UR, MtEff = Mt + IW_F / (wheelF.r * wheelF.r) + IW_R / (wheelR.r * wheelR.r);   // spinning wheels add to the mass to accelerate
+  const Fdrag = 0.5 * 1.2 * 0.62 * v * v, Froll = 0.018 * Mt * G9 * (airborne ? 0 : 1);
+  // the ground pushes along its own normal: a tilted contact turns tyre load into drive (downhill) or drag (uphill, bump faces)
+  // a real tyre wraps a log or a rock edge, and the rider unweights over it: cap the tilt and the load that go into the drag term
+  const Ncap = 1.6 * Mt * G9;
+  const Fground = -(Math.min(tF, Ncap) * clamp(slFx, -0.7, 0.7) + Math.min(tR, Ncap) * clamp(slRx, -0.7, 0.7));
+  updateCorner();
+  if (airborne) corner.braking = false;
+  // friction circle: lateral grip in use leaves less for driving and braking
+  const fCircle = Math.sqrt(Math.max(0, 1 - Math.min(1, corner.usage) * Math.min(1, corner.usage)));
+  brakeF = (!airborne && v > vCap) ? Math.min(0.55 * Mt * G9, Mt * (v - vCap) * 2.5) : 0;
+  if (corner.braking) brakeF = Math.max(brakeF, Mt * 4.5);
+  brakeF = Math.min(brakeF, 1.15 * MU_DIRT * (tF + tR));                             // brake demand; lock-up is decided by the slip curve
+  if (corner.sliding) v = Math.max(1, v - 2.5 * (corner.usage - 1) * dt);      // the tyres scrub when the lateral demand exceeds the grip
+  accelX = (wheelF.fx + wheelR.fx - Fdrag - Froll + Fground) / MtEff;
+  v = Math.max(0.5, v + accelX * dt);
+  scroll += v * dt;
+  crank += (pedaling ? 82 / 60 * 2 * Math.PI : 0) * dt;
+  if (!pedaling){ const level = corner.active ? 0 : Math.PI / 2; let d = ((level - crank) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI; crank += d * Math.min(1, dt * 6); }   // level pedals; outside (right) foot down in a left turn
+  poseController(dt, grade, airborne, scroll);
+  if (scroll >= COURSE_LEN){ scroll -= COURSE_LEN; lap++; }
+}
+
+/* =============== ui =============== */
+const $ = id => document.getElementById(id);
+const ui = {};
+for (const id of ['rSpring','rLsc','rHsc','rLsr','rHsr','fSpring','fVol','fLsc','fHsc','fLsr','fHsr'])
+  { ui[id] = $(id); ui[id + 'Out'] = $(id + 'Out'); ui[id].addEventListener('input', applyTuning); }
+for (const id of ['fSag','rSag','sagF','sagR','fillF','fillR','packF','packR','barF','barR','fPack','rPack','fUsed','rUsed','fBo','rBo','rLR','fAx',
+  'effort','effortOut','vcap','vcapOut','rideBtn','restartBtn','hudSec','hudSpd','hudGrade','hudState','hudPower','vKnee','vHip','vElbow','vTorso','bKnee','bHip','bElbow','bTorso']) ui[id] = $(id);
+ui.rlb = $('rlb'); ui.rlbOut = $('rlbOut');
+ui.rlb.addEventListener('input', () => { M_RIDER = +ui.rlb.value * 0.4536; ui.rlbOut.textContent = ui.rlb.value + ' lb'; applyTuning(); });
+ui.effort.addEventListener('input', () => { effortW = +ui.effort.value; ui.effortOut.textContent = effortW + ' W'; });
+ui.vcap.addEventListener('input', () => { vCap = +ui.vcap.value * 0.447; ui.vcapOut.textContent = ui.vcap.value + ' mph'; });
+ui.rideBtn.addEventListener('click', () => { riding = !riding; ui.rideBtn.textContent = riding ? 'PAUSE' : 'RIDE'; ui.rideBtn.dataset.riding = riding ? '' : '1'; });
+ui.restartBtn.addEventListener('click', () => reset());
+function segButtons(id, cb){ const el = $(id); el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { el.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(b.dataset.v); })); }
+segButtons('riderSeg', vv => { riderMode = vv; });
+document.querySelectorAll('#courseSeg button').forEach(b => { b.classList.toggle('on', b.dataset.v === COURSE_ID); b.addEventListener('click', () => { try { localStorage.setItem('course', b.dataset.v); } catch (e) {} location.reload(); }); });
+document.title = COURSE_ID === 'tortuga' ? 'Suspension Lab · Tortuga' : 'Suspension Lab';
+segButtons('shockSeg', vv => {
+  shockType = vv;
+  if (vv === 'air'){ ui.rSpring.min = 120; ui.rSpring.max = 260; ui.rSpring.step = 5; ui.rSpring.value = 205; $('rSpringLbl').innerHTML = '<u>AIR</u><br>psi'; }
+  else { ui.rSpring.min = 300; ui.rSpring.max = 650; ui.rSpring.step = 25; ui.rSpring.value = 625; $('rSpringLbl').innerHTML = '<u>COIL</u><br>lb/in'; }
+  applyTuning();
+});
+/* DH envelope bands from kinematic-model/src/disciplines.py */
+const BANDS = { knee: [100, 155, 60, 180], hip: [55, 115, 30, 150], elbow: [90, 160, 60, 180], torso: [15, 55, 0, 90] };
+for (const [k, b] of Object.entries(BANDS)){ const el = ui['b' + k[0].toUpperCase() + k.slice(1)].querySelector('.ok'); el.style.left = ((b[0] - b[2]) / (b[3] - b[2]) * 100) + '%'; el.style.width = ((b[1] - b[0]) / (b[3] - b[2]) * 100) + '%'; }
+function setJoint(k, val){
+  const b = BANDS[k], name = k[0].toUpperCase() + k.slice(1);
+  ui['v' + name].textContent = Math.round(val) + '°';
+  const pt = ui['b' + name].querySelector('.pt');
+  pt.style.left = clamp((val - b[2]) / (b[3] - b[2]) * 100, 0, 100) + '%';
+  pt.classList.toggle('out', val < b[0] || val > b[1]);
+}
+applyTuning();
+reset();
+if (matchMedia('(prefers-reduced-motion: reduce)').matches){ riding = false; ui.rideBtn.textContent = 'RIDE'; ui.rideBtn.dataset.riding = '1'; }
+
+function updateHud(joints){
+  for (const [w, comp, trav, fill, pack, packV, used, bo, bar] of [
+    [wheelF, wheelF.s, GEO.forkTravel, ui.fillF, ui.packF, ui.fPack, ui.fUsed, ui.fBo, ui.barF],
+    [wheelR, wheelR.t, GEO.travelR, ui.fillR, ui.packR, ui.rPack, ui.rUsed, ui.rBo, ui.barR]
+  ]){
+    const pct = clamp(comp / trav * 100, 0, 100), ema = w.ema / trav * 100;
+    fill.style.height = pct.toFixed(1) + '%'; pack.style.top = clamp(ema, 0, 100).toFixed(1) + '%';
+    packV.textContent = Math.round(ema) + '%'; packV.classList.toggle('warn', ema > w.sag / trav * 100 + 18);
+    used.textContent = Math.round(clamp(comp, 0, trav) * 1000); bo.textContent = w.bo;
+    bar.classList.toggle('bo', w.boFlash > 0); w.boFlash -= 1 / 60;
+  }
+  ui.rLR.textContent = wheelR.lr.toFixed(2); ui.fAx.textContent = Math.round((axleFLocal(wheelF.s).x - axleFLocal(0).x) * 1000) + ' mm';
+  const seg = segAt(scroll)[0];
+  ui.hudSec.textContent = seg.name + '  ·  LAP ' + lap;
+  ui.hudSpd.textContent = (v / 0.447).toFixed(0) + ' mph';
+  ui.hudGrade.textContent = (gradeS * 100).toFixed(0) + '%';
+  ui.hudState.textContent = { seated: 'SEATED PEDAL', climb: gradeS > 0.045 ? 'STANDING CLIMB' : 'STANDING PEDAL', attack: 'ATTACK', preload: 'PRELOAD INTO THE LIP', pop: 'POP', air: 'AIRBORNE', land: 'ABSORB LANDING', huck: 'HUCK: WEIGHT BACK' }[poseState];
+  const lockF = wheelF.tire > 0 && wheelF.om * wheelF.r < 0.35 * v, lockR = wheelR.tire > 0 && wheelR.om * wheelR.r < 0.35 * v;
+  ui.hudPower.textContent = (brakeF > 50 && !corner.sliding) ? ('BRAKING ' + Math.round(brakeF) + ' N · slip F ' + Math.round(wheelF.slip * 100) + '% R ' + Math.round(wheelR.slip * 100) + '%' + (lockF ? ' · FRONT LOCKED' : lockR ? ' · REAR LOCKED' : '') + (corner.braking ? ' · for corner' : '')) : corner.sliding ? ('SLIDING · grip ' + Math.round(corner.usage * 100) + '%') : corner.active ? ((corner.lean > 0 ? 'LEFT ' : 'RIGHT ') + corner.g.toFixed(2) + ' g · lean ' + Math.abs(Math.round(corner.lean / D2R)) + '° · grip ' + Math.round(corner.usage * 100) + '%' + (corner.braking ? ' · braking' : '')) : corner.braking ? 'BRAKING for corner (' + Math.round(corner.vLimit / 0.447) + ' mph)' : hudPower > 0 ? Math.round(hudPower) + ' W (rider)' : (brakeF > 0 ? 'BRAKING' : 'coasting');
+  for (const k of ['knee', 'hip', 'elbow', 'torso']) setJoint(k, joints[k]);
+}
+
+/* =============== 3d world =============== */
+const _tBuild = performance.now();
+const canvas = $('cv');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setSize(1344, 756, false);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xA9B8AE); scene.fog = new THREE.Fog(0xAFBEB2, 20, 118);
+const camera = new THREE.PerspectiveCamera(44, 448 / 252, 0.1, 400);
+let camAz = 0, camEl = 0;
+const camPos = new THREE.Vector3(-4, 3, 4), camLook = new THREE.Vector3();
+let dragging = false, px = 0, py = 0;
+canvas.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e => { if (!dragging) return; camAz = clamp(camAz + (e.clientX - px) * 0.006, -2.6, 2.6); camEl = clamp(camEl + (e.clientY - py) * 0.006, -0.6, 1.2); px = e.clientX; py = e.clientY; });
+canvas.addEventListener('pointerup', () => dragging = false);
+scene.add(new THREE.HemisphereLight(0xCBD8CE, 0x2E3A26, 0.55));
+const sun = new THREE.DirectionalLight(0xF2F6EA, 1.0); sun.position.set(25, 80, 12);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 26, bottom: -26, near: 4, far: 170 });
+sun.shadow.bias = -0.0015; sun.shadow.camera.updateProjectionMatrix(); scene.add(sun, sun.target);
+scene.add(new THREE.AmbientLight(0x9AA69A, 0.06));
+const mat = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.88, metalness: 0 });
+const box = (w, h, d, c) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c));
+
+/* ---- heightfield: hills, bench-cut to the trail's elevation profile ---- */
+const pathSamp = [];
+for (let i = 0; i < PATH.n; i += 4) pathSamp.push({ x: PATH.x[i], z: PATH.z[i], s: i * PATH.ds, th: PATH.th[i], h: terrainAt(i * PATH.ds) });
+let bx0 = 1e9, bx1 = -1e9, bz0 = 1e9, bz1 = -1e9;
+for (const q of pathSamp){ bx0 = Math.min(bx0, q.x); bx1 = Math.max(bx1, q.x); bz0 = Math.min(bz0, q.z); bz1 = Math.max(bz1, q.z); }
+const WCX = (bx0 + bx1) / 2, WCZ = (bz0 + bz1) / 2, WSIZE = Math.max(bx1 - bx0, bz1 - bz0) + 120, GRID = 150;
+function hills(x, z){ return 3.2 * Math.sin(x * 0.045 + 1.3) * Math.cos(z * 0.037 - 0.4) + 2.2 * Math.sin(x * 0.09 - z * 0.06 + 2) + 1.2 * Math.cos(z * 0.13 + x * 0.02) + 0.6 * Math.sin(x * 0.31) * Math.cos(z * 0.27); }
+function trailInfo(x, z){                                                     // inverse-distance blend of the trail elevation, nearest sample, signed side
+  let wsum = 0, hsum = 0, best = null, bd = 1e9;
+  for (const q of pathSamp){ const dx = x - q.x, dz = z - q.z, d2 = dx * dx + dz * dz; if (d2 < bd){ bd = d2; best = q; } const w = 1 / (d2 * d2 + 1); wsum += w; hsum += w * q.h; }
+  const d = Math.sqrt(bd);
+  const side = Math.sign(-Math.sin(best.th) * (x - best.x) + Math.cos(best.th) * (z - best.z));   // +1 = rider's right
+  return { h: hsum / wsum, d, s: best.s, side };
+}
+function bankAt(s){ const [g, t] = segAt(s); return g.corner ? g.corner.bank * smooth(Math.min(t, g.len - t) / 3) : 0; }
+function worldHeight(x, z, ti){
+  ti = ti || trailInfo(x, z);
+  const w = smooth((ti.d - 3.0) / 10);
+  let h = ti.h + w * hills(x, z);
+  const bk = bankAt(ti.s);                                                    // the berm's outer bank rises off the trail edge
+  if (bk > 0 && ti.side > 0 && ti.d < 4) h += Math.tan(bk) * Math.min(ti.d, 2.6) * (1 - w);
+  return h;
+}
+const terrainGeo = new THREE.PlaneGeometry(WSIZE, WSIZE, GRID, GRID); terrainGeo.rotateX(-Math.PI / 2);
+{
+  const pos = terrainGeo.attributes.position, col = new Float32Array(pos.count * 3), c = new THREE.Color();
+  const hs = new Float32Array(pos.count), ds = new Float32Array(pos.count);
+  for (let i = 0; i < pos.count; i++){ const x = pos.getX(i) + WCX, z = pos.getZ(i) + WCZ, ti = trailInfo(x, z); hs[i] = worldHeight(x, z, ti); ds[i] = ti.d; pos.setXYZ(i, x, hs[i] - 0.03, z); }
+  const W = GRID + 1;
+  for (let i = 0; i < pos.count; i++){
+    const x = pos.getX(i), z = pos.getZ(i);
+    const ix = i % W, iz = Math.floor(i / W), i1 = Math.min(pos.count - 1, i + 1), i2 = Math.min(pos.count - 1, i + W);
+    const cell = WSIZE / GRID, slope = Math.hypot((hs[i1] - hs[i]) / cell, (hs[i2] - hs[i]) / cell);
+    if (ds[i] < 1.7) c.setHex(0x382A1E);
+    else if (slope > 0.75) c.setHex(0x545E57);
+    else { const n = 0.5 + 0.5 * Math.sin(x * 0.7) * Math.cos(z * 0.9);
+      const duff = Math.sin(x * 0.23 + 1.7) * Math.cos(z * 0.19) > 0.55;                       // needle litter under the canopy
+      if (duff) c.setHSL(0.06, 0.26, 0.10 + 0.035 * n); else c.setHSL(0.31 + 0.03 * n, 0.20, 0.075 + 0.045 * n); }
+    col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+  }
+  terrainGeo.setAttribute('color', new THREE.BufferAttribute(col, 3)); terrainGeo.computeVertexNormals();
+}
+{ const tm = new THREE.Mesh(terrainGeo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95 })); tm.receiveShadow = true; scene.add(tm); }
+
+/* ---- trail ribbon: the full-detail surface the wheels ride (features, obstacles, berm tilt) ---- */
+const RIB_L = [-1.4, -1.0, -0.65, -0.35, -0.12, 0, 0.12, 0.35, 0.65, 1.0, 1.4], RIB_DS = 0.16, RIB_N = Math.floor(COURSE_LEN / RIB_DS);
+{
+  const nv = RIB_N * RIB_L.length, pos = new Float32Array(nv * 3), col = new Float32Array(nv * 3), idx = [], c = new THREE.Color();
+  const GC = { dirt: 0x352718, rock: 0x565E53, built: 0x6B5738 };
+  for (let i = 0; i < RIB_N; i++){
+    const s0 = i * RIB_DS, P = pathAt(s0), h0 = groundAt(s0), bk = bankAt(s0), rx = -Math.sin(P.theta), rz = Math.cos(P.theta);
+    const base = GC[groundType(s0)];
+    for (let j = 0; j < RIB_L.length; j++){
+      const l = RIB_L[j], k = (i * RIB_L.length + j) * 3;
+      let h = h0 - 0.06 * l * l;
+      if (bk > 0 && l > 0) h += Math.tan(bk) * l;
+      pos[k] = P.x + rx * l; pos[k + 1] = h + 0.02; pos[k + 2] = P.z + rz * l;
+      c.setHex(base); c.offsetHSL(0, 0, ((i + j) % 2 ? -0.03 : 0.02) - 0.05 * Math.abs(l));
+      col[k] = c.r; col[k + 1] = c.g; col[k + 2] = c.b;
+    }
+    const i2 = (i + 1) % RIB_N;
+    for (let j = 0; j + 1 < RIB_L.length; j++){ const a = i * RIB_L.length + j, b = i2 * RIB_L.length + j; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setIndex(idx); g.computeVertexNormals(); window.RIBBON_GEO = g;
+  { const rb = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide, roughness: 0.95 })); rb.receiveShadow = true; scene.add(rb); }
+}
+
+/* ---- obstacles on the ribbon ---- */
+for (const o of OBST){
+  let m;
+  if (o.type === 'log'){ m = new THREE.Mesh(new THREE.CylinderGeometry(o.r, o.r * 0.92, 2.8, 10), mat(o.r < 0.1 ? 0x54402E : 0x4A3626)); m.rotation.x = Math.PI / 2; m.rotation.y = o.yaw || 0; }
+  else if (o.type === 'rock'){ m = box(o.w, o.h, 1.9, 0x777D74); }
+  else { m = box(o.w, o.h, 2.4, 0x5E655C); }
+  const P = pathAt(o.u), base = terrainAt(o.u);
+  const holder = new THREE.Group(); holder.position.set(P.x, base, P.z); holder.rotation.y = -P.theta;
+  m.castShadow = m.receiveShadow = true;
+  m.position.set(0, o.type === 'log' ? o.r : o.h / 2 - 0.02, 0); holder.add(m); scene.add(holder);
+}
+
+/* ---- PNW forest: cedar/fir canopy clear of the trail, fern + salal understorey below the camera line ---- */
+{
+  let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  const P = { cedar: [], cedar3: [], fir: [], hemlock: [], maple: [], snag: [], fern: [], salal: [], boulder: [], stump: [] };
+  const put = (a, x, z, y, s0, s1) => a.push({ x, y, z, ry: rnd() * 6.28, s: s0 + rnd() * (s1 - s0) });
+  const at = (dMin, dMax) => {                                                 // rejection-sample a band around the trail
+    for (let k = 0; k < 40; k++){
+      const x = WCX + (rnd() - 0.5) * WSIZE * 0.92, z = WCZ + (rnd() - 0.5) * WSIZE * 0.92, ti = trailInfo(x, z);
+      if (ti.d >= dMin && ti.d <= dMax) return { x, z, ti };
+    }
+    return null;
+  };
+  for (let i = 0; i < 320; i++){                                               // canopy: trunks only, 6 m off the line, hugging the corridor
+    const q = at(6.0, 42); if (!q) continue;
+    const y = worldHeight(q.x, q.z, q.ti);
+    const r = rnd(), sp = r < 0.28 ? P.cedar : r < 0.34 ? P.cedar3 : r < 0.58 ? P.fir : r < 0.86 ? P.hemlock : r < 0.91 ? P.snag : P.maple;
+    put(sp, q.x, q.z, y - 0.2, 0.65, 1.2);
+  }
+  for (let i = 0; i < 170; i++){ const q = at(1.9, 4.8); if (q) put(P.fern, q.x, q.z, worldHeight(q.x, q.z, q.ti) - 0.02, 0.8, 1.5); }
+  for (let i = 0; i < 90; i++){ const q = at(2.2, 7.0); if (q) put(P.salal, q.x, q.z, worldHeight(q.x, q.z, q.ti) - 0.03, 0.8, 1.6); }
+  for (let i = 0; i < 34; i++){ const q = at(2.6, 1e9); if (q) put(P.boulder, q.x, q.z, worldHeight(q.x, q.z, q.ti) - 0.06, 0.6, 2.2); }
+  for (let i = 0; i < 14; i++){ const q = at(3.2, 12); if (q) put(P.stump, q.x, q.z, worldHeight(q.x, q.z, q.ti) - 0.05, 0.8, 1.5); }
+  window.PNW_PLACEMENTS = P;
+  PNW.instanced(scene, 'cedar', P.cedar, 1.0); PNW.instanced(scene, 'cedar3', P.cedar3, 1.0);
+  PNW.instanced(scene, 'fir', P.fir, 0.8); PNW.instanced(scene, 'hemlock', P.hemlock, 0.9);
+  PNW.instanced(scene, 'maple', P.maple, 1.6);
+  PNW.instanced(scene, 'snag', P.snag, 0); PNW.instanced(scene, 'fern', P.fern, 3.2);
+  PNW.instanced(scene, 'salal', P.salal, 2.0); PNW.instanced(scene, 'boulder', P.boulder, 0);
+  PNW.instanced(scene, 'stump', P.stump, 0);
+  for (let i = 0; i < 26; i++){                                                // far ridgelines, ghosted by the fog
+    const a = i / 26 * Math.PI * 2, R = WSIZE * 0.62 + (i % 3) * 14, h = 18 + (i % 4) * 9;
+    const m = box(h * 1.5, h * 1.5, 2, i % 2 ? 0x74887B : 0x677C71); m.rotation.z = Math.PI / 4; m.rotation.y = -a;
+    m.position.set(WCX + Math.cos(a) * R, -4, WCZ + Math.sin(a) * R); scene.add(m);
+  }
+  for (const t of [0.18, 0.47, 0.78]){                                         // mist pooling in the low corners of the loop
+    const q = pathAt(t * COURSE_LEN);
+    PNW.mist(scene, q.x + 9, terrainAt(t * COURSE_LEN) + 1.1, q.z - 7, 26, 14, 0.20);
+  }
+  window.PNW_RAVENS = PNW.ravens(scene, WCX, 26, WCZ, WSIZE * 0.3);
+  PNW.sky(scene, WCX, WCZ, WSIZE * 0.95);
+}
+window.WORLD_BUILD_MS = performance.now() - _tBuild;
+/* world export for the Blender render pipeline (tools/render_trail.py): terrain, ribbon, obstacles, flora, path */
+window.WORLD_EXPORT = () => {
+  const tp = terrainGeo.attributes.position.array, tc = terrainGeo.attributes.color.array, ti = terrainGeo.index.array;
+  const rib = window.RIBBON_GEO;
+  const obst = OBST.map(o => { const P = pathAt(o.u); return Object.assign({ x: P.x, z: P.z, y: terrainAt(o.u), theta: P.theta }, o); });
+  const path = []; for (let i = 0; i < PATH.n; i += 2) path.push([PATH.x[i], groundAt(i * PATH.ds), PATH.z[i]]);
+  return { terrain: { pos: Array.from(tp), col: Array.from(tc), idx: Array.from(ti) },
+           ribbon: rib ? { pos: Array.from(rib.attributes.position.array), col: Array.from(rib.attributes.color.array), idx: Array.from(rib.index.array) } : null,
+           obst, flora: window.PNW_PLACEMENTS, path, center: [WCX, WCZ], size: WSIZE, course: COURSE.map(g => ({ name: g.name, start: g.start, len: g.len })) };
+};
+/* ---- minimap ---- */
+const mm = $('mm'), mmc = mm.getContext('2d');
+function drawMinimap(){
+  const W = mm.width, Hh = mm.height, scale = Math.min(W, Hh) * 0.88 / Math.max(bx1 - bx0, bz1 - bz0);
+  const tx = x => W / 2 + (x - WCX) * scale, tz = z => Hh / 2 + (z - WCZ) * scale;
+  mmc.clearRect(0, 0, W, Hh); mmc.fillStyle = 'rgba(20,24,16,0.6)'; mmc.fillRect(0, 0, W, Hh);
+  mmc.strokeStyle = '#D9A441'; mmc.lineWidth = 2; mmc.beginPath();
+  for (let i = 0; i < PATH.n; i += 2){ const X = tx(PATH.x[i]), Z = tz(PATH.z[i]); i === 0 ? mmc.moveTo(X, Z) : mmc.lineTo(X, Z); }
+  mmc.closePath(); mmc.stroke();
+  mmc.fillStyle = '#9A958B'; for (const o of OBST){ const P = pathAt(o.u); mmc.fillRect(tx(P.x) - 1.5, tz(P.z) - 1.5, 3, 3); }
+  const P = pathAt(scroll); mmc.fillStyle = '#EFE8D6'; mmc.beginPath(); mmc.arc(tx(P.x), tz(P.z), 3.5, 0, 7); mmc.fill();
+  mmc.strokeStyle = '#EFE8D6'; mmc.beginPath(); mmc.moveTo(tx(P.x), tz(P.z)); mmc.lineTo(tx(P.x) + Math.cos(P.theta) * 9, tz(P.z) + Math.sin(P.theta) * 9); mmc.stroke();
+}
+
+/* limbs */
+const DOWN = new THREE.Vector3(0, -1, 0), _dir = new THREE.Vector3();
+function limb(len, w, d, color){ const g = new THREE.BoxGeometry(w, len, d); g.translate(0, -len / 2, 0); const m = new THREE.Mesh(g, mat(color)); m.userData.len = len; return m; }
+function aimLimb(m, a, b){ m.position.copy(a); _dir.subVectors(b, a); const L = _dir.length() || 0.001; m.scale.y = L / m.userData.len; m.quaternion.setFromUnitVectors(DOWN, _dir.divideScalar(L)); }
+function ik(a, b, l1, l2, prefer, maxAngleDeg){
+  // planar two-bone solve. The joint always bends the anatomical way: knees forward ('fwd'), elbows down-and-back ('down').
+  // Past the joint limit the end drifts short of its target rather than the joint locking straight.
+  const bb = b.clone();
+  let dx = bb.x - a.x, dy = bb.y - a.y, d = Math.hypot(dx, dy);
+  const dMax = chord(l1, l2, maxAngleDeg), dMin = Math.abs(l1 - l2) + 0.02;
+  if (d > dMax || d < dMin){ const f = clamp(d, dMin, dMax) / d; dx *= f; dy *= f; bb.x = a.x + dx; bb.y = a.y + dy; d = Math.hypot(dx, dy); }
+  const ux = dx / d, uy = dy / d;
+  const al = (l1 * l1 - l2 * l2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, l1 * l1 - al * al));
+  let px = uy, py = -ux;
+  if ((prefer === 'fwd' && px < 0) || (prefer === 'down' && py > 0)){ px = -px; py = -py; }
+  const joint = new THREE.Vector3(a.x + ux * al + px * h, a.y + uy * al + py * h, (a.z + bb.z) / 2);
+  return { joint, end: bb };
+}
+const angleAt = (a, b, c) => { const v1 = a.clone().sub(b), v2 = c.clone().sub(b); return Math.acos(clamp(v1.dot(v2) / (v1.length() * v2.length()), -1, 1)) / D2R; };
+
+/* colours: Syndicate V10 (gloss black, team blue, white logo band), Fox 40 Kashima, Red Bull helmet */
+const RV = BK.rig;                                                       // per-bike colours and tube sizes
+const HALF_SHELL = typeof RIG_STYLE !== 'undefined' && RIG_STYLE === 'enduro';   // enduro half shell instead of the full-face
+const C = { frame: RV.frame, frame2: RV.frame2, decal: RV.decal, forkUp: RV.forkUp, forkLow: RV.forkLow, sw: RV.frame, link: RV.frame2, coil: RV.coil, tire: 0x2B2622, rim: 0x1C1C1C, hub: 0x3A3A3A,
+  skin: 0xD8AA80, jersey: 0x1F3B7A, pants: 0x15161A, helmet: 0xF2F2F0, shoe: 0x25211E, motor: 0x1B1B1B };
+const P3 = (x, y, z = 0) => new THREE.Vector3(x, y, z);
+const rig = new THREE.Group(); rig.rotation.order = 'YXZ'; scene.add(rig);
+const frame = new THREE.Group(); rig.add(frame);
+function tube(a, b, t, c, d){ const m = limb(1, t, d || t, c); frame.add(m); aimLimb(m, a, b); return m; }
+tube(P3(HEAD_TOP.x - 0.01, HEAD_TOP.y - 0.01), P3(SEAT_CLUSTER.x - 0.02, SEAT_CLUSTER.y + 0.03), RV.tt, C.frame, RV.tt * 1.1);   // top tube, nearly straight
+tube(P3(HEAD_BOT.x, HEAD_BOT.y + 0.01), P3(0.13, 0.06), RV.dt, C.frame, RV.dt);                                              // down tube
+tube(P3(HEAD_BOT.x - 0.04, HEAD_BOT.y - 0.03), P3(0.16, 0.10), 0.02, C.decal, RV.dt * 1.5);                                  // decal band
+tube(P3(0.02, 0.10), P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y + 0.06), RV.st, C.frame);                                             // seat tube
+if (RV.strut) tube(P3(0.06, 0.13), P3(VPP.F.x + 0.01, VPP.F.y + 0.02), 0.045, C.frame2);                                     // shock mount strut off the down tube (V10)
+else tube(P3(VPP.F.x - 0.02, VPP.F.y - 0.02), P3(VPP.F.x + 0.06, VPP.F.y + 0.05), 0.03, C.frame);                            // shock tab under the top tube (single pivot)
+tube(P3(HEAD_TOP.x + 0.012, HEAD_TOP.y + 0.025), P3(HEAD_BOT.x - 0.012, HEAD_BOT.y - 0.025), RV.ht, C.frame);                // head tube
+const chainring = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.01, 12), mat(0x3A3A3A)); chainring.rotation.x = Math.PI / 2; chainring.position.set(0, 0, 0.09); frame.add(chainring);
+const brace = limb(1, 0.03, 0.15, C.sw); frame.add(brace);
+const upperLink = limb(1, 0.03, 0.09, C.link); frame.add(upperLink);
+const lowerLink = limb(1, 0.035, 0.10, C.link); frame.add(lowerLink);
+const lowerLinkArm = limb(1, 0.03, 0.08, C.link); frame.add(lowerLinkArm);
+const shockBody = limb(1, 0.05, 0.05, 0x2A2A2A), shockCoil = limb(1, 0.072, 0.072, C.coil), shockShaft = limb(1, 0.026, 0.026, 0xC9C2B0);
+frame.add(shockBody, shockCoil, shockShaft);
+const chainL = limb(1, RV.cs, RV.cs * 0.8, C.sw), chainR = limb(1, RV.cs, RV.cs * 0.8, C.sw), seatL = limb(1, RV.ss, RV.ss * 0.85, C.sw), seatR = limb(1, RV.ss, RV.ss * 0.85, C.sw);
+frame.add(chainL, chainR, seatL, seatR);
+const stanchL = limb(1, RV.stanch, RV.stanch, C.forkUp), stanchR = limb(1, RV.stanch, RV.stanch, C.forkUp), lowerL = limb(1, RV.lower, RV.lower, C.forkLow), lowerR = limb(1, RV.lower, RV.lower, C.forkLow), arch = limb(1, 0.04, 0.04, C.forkLow);
+frame.add(stanchL, stanchR, lowerL, lowerR, arch);
+const post = limb(1, 0.031, 0.031, 0xC8952A); frame.add(post);
+const saddle = box(0.27, 0.045, 0.09, 0x1E1A18); frame.add(saddle);
+const stem = limb(1, 0.035, 0.035, 0x1E1E1E); frame.add(stem); aimLimb(stem, P3(HEAD_TOP.x, HEAD_TOP.y), P3(BAR.x, BAR.y));
+const bar = box(0.035, 0.035, 2 * GRIP_Z + 0.04, 0x1E1E1E); bar.position.set(BAR.x, BAR.y, 0); frame.add(bar);
+const GRIP_L = P3(BAR.x, BAR.y, GRIP_Z), GRIP_R = P3(BAR.x, BAR.y, -GRIP_Z);
+const crankL = limb(CRANK, 0.03, 0.025, 0x25211E), crankR = limb(CRANK, 0.03, 0.025, 0x25211E); frame.add(crankL, crankR);
+const pedL = box(0.1, 0.02, 0.07, 0x6F675A), pedR = box(0.1, 0.02, 0.07, 0x6F675A); frame.add(pedL, pedR);
+/* rider */
+/* full-face: a shell around the whole head plus a chin bar. Half shell: a shorter shell that sits on top and wraps the
+   back, leaving the face open -- the enduro lid. */
+const torso = limb(0.5, 0.16, 0.24, C.jersey), head = box(0.15, 0.15, 0.15, C.skin),
+      helmet = HALF_SHELL ? box(0.19, 0.125, 0.205, C.helmet) : box(0.22, 0.20, 0.21, C.helmet), visor = box(0.11, 0.025, 0.2, C.helmet);
+const chinBar = HALF_SHELL ? new THREE.Object3D() : box(0.075, 0.07, 0.19, C.helmet), goggle = box(0.02, 0.06, 0.17, 0x1E1A18);
+const hipBox = box(0.17, 0.14, 0.22, C.pants);
+const uArmL = limb(0.31, 0.06, 0.06, C.jersey), lArmL = limb(0.29, 0.05, 0.05, C.jersey), uArmR = limb(0.31, 0.06, 0.06, C.jersey), lArmR = limb(0.29, 0.05, 0.05, C.jersey);
+const thighL = limb(0.44, 0.085, 0.085, C.pants), shinL = limb(0.44, 0.065, 0.065, C.pants), thighR = limb(0.44, 0.085, 0.085, C.pants), shinR = limb(0.44, 0.065, 0.065, C.pants);
+const shoeL = box(0.15, 0.055, 0.08, C.shoe), shoeR = box(0.15, 0.055, 0.08, C.shoe);
+const numberPlate = box(0.01, 0.12, 0.16, 0xffffff);
+frame.add(torso, head, helmet, visor, chinBar, goggle, hipBox, uArmL, lArmL, uArmR, lArmR, thighL, shinL, thighR, shinR, shoeL, shoeR, numberPlate);
+/* wheels */
+function wheel(r){ const g = new THREE.Group();
+  const tire = new THREE.Mesh(new THREE.TorusGeometry(r - 0.033, 0.036, 6, 16), mat(C.tire));                    // open wheel: tyre ring
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(r - 0.075, 0.014, 5, 16), mat(C.rim));                     // rim ring
+  const hub = box(0.07, 0.07, 0.11, C.hub); g.add(tire, rim, hub);
+  const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.008, 12), mat(0xB8B4AC)); rotor.rotation.x = Math.PI / 2; rotor.position.z = -0.07; g.add(rotor);
+  for (let i = 0; i < 6; i++){ const s = box(0.008, (r - 0.075) * 2, 0.008, 0xC9C2B0); s.rotation.z = i * Math.PI / 6; s.position.z = (i % 2 ? 0.02 : -0.02); g.add(s); }   // 12 spokes as 6 crossed pairs
+  return g; }
+const wF = wheel(GEO.rF), wR = wheel(GEO.rR); rig.add(wF, wR);
+const cassette = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.04, 12), mat(0x8E8A82)); cassette.rotation.x = Math.PI / 2; cassette.position.z = 0.085; wR.add(cassette);
+const shadF = box(0.55, 0.02, 0.3, 0x3F3226), shadR = box(0.55, 0.02, 0.3, 0x3F3226); rig.add(shadF, shadR);
+
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
+const jointsOut = { knee: 130, hip: 90, elbow: 120, torso: 25 };
+let leanVis = 0, leanVel = 0, leanAcc = 0, yawVis = 0, steerVis = 0, headTurnVis = 0;
+function pose(dt){
+  const gy = groundAt(scroll), PW = pathAt(scroll);                    // the rig sits on the trail, yawed to the tangent, rolled to the lean
+  rig.position.set(PW.x, gy, PW.z);
+  rig.rotation.x = -leanVis; rig.rotation.y = -PW.theta;
+  frame.position.set(0, chassis.y - gy, 0); frame.rotation.z = chassis.phi; frame.updateMatrixWorld(true);
+  const c = Math.cos(chassis.phi), s = Math.sin(chassis.phi);
+  /* rear linkage from the table */
+  const k = vtLookup(wheelR.t);
+  const axR = P3(k.ax, k.ay);
+  aimLimb(lowerLink, P3(VPP.P1.x, VPP.P1.y), P3(k.P2.x, k.P2.y));
+  aimLimb(lowerLinkArm, P3(VPP.P1.x, VPP.P1.y), VPP.kind === 'single' ? P3(VPP.P1.x, VPP.P1.y) : P3(k.S.x, k.S.y));   // single pivot: the upper link IS the strut
+  aimLimb(upperLink, P3(VPP.P3.x, VPP.P3.y), P3(k.P4.x, k.P4.y));
+  for (const [cs, ss, zz] of [[chainL, seatL, 0.075], [chainR, seatR, -0.075]]){
+    aimLimb(cs, P3(k.P2.x, k.P2.y, zz), P3(axR.x, axR.y, zz)); aimLimb(ss, P3(k.P4.x, k.P4.y, zz), P3(axR.x, axR.y, zz)); }
+  _a.set(k.P2.x, k.P2.y, 0).lerp(_c.set(axR.x, axR.y, 0), 0.42); _b.set(k.P4.x, k.P4.y, 0).lerp(_c, 0.42); aimLimb(brace, _a, _b);
+  _a.set(VPP.F.x, VPP.F.y, 0); _b.set(k.S.x, k.S.y, 0);
+  aimLimb(shockBody, _a, _c.copy(_a).lerp(_b, 0.45)); aimLimb(shockShaft, _c.copy(_a).lerp(_b, 0.4), _b); aimLimb(shockCoil, _c.copy(_a).lerp(_b, 0.12), _a.clone().lerp(_b, 0.85));
+  /* fork */
+  const axF = axleFLocal(wheelF.s);
+  for (const [st, lo, zz] of [[stanchL, lowerL, 0.085], [stanchR, lowerR, -0.085]]){
+    _a.set(CROWN.x, CROWN.y, zz); _b.set(axF.x, axF.y, zz);
+    aimLimb(st, _a, _c.copy(_a).lerp(_b, 0.55)); aimLimb(lo, _c.copy(_a).lerp(_b, 0.38), _b); }
+  aimLimb(arch, _a.set(axF.x - 0.05 * dDown.x * 3, axF.y - 0.05 * dDown.y * 3, 0.085), _b.set(axF.x - 0.05 * dDown.x * 3, axF.y - 0.05 * dDown.y * 3, -0.085));
+  /* wheels in world */
+  wF.position.set(axF.x * c - axF.y * s, chassis.y - gy + axF.x * s + axF.y * c, 0);
+  wR.position.set(axR.x * c - axR.y * s, chassis.y - gy + axR.x * s + axR.y * c, 0);
+  wF.rotation.z -= wheelF.om * dt; wR.rotation.z -= wheelR.om * dt;
+  const gFv = groundAt(scroll + wF.position.x), gRv = groundAt(scroll + wR.position.x);
+  shadF.position.set(wF.position.x, gFv - gy + 0.012, 0); shadR.position.set(wR.position.x, gRv - gy + 0.012, 0);
+  shadF.scale.x = clamp(1 - (wF.position.y + gy - gFv - GEO.rF) * 1.2, 0.25, 1); shadR.scale.x = clamp(1 - (wR.position.y + gy - gRv - GEO.rR) * 1.2, 0.25, 1);
+  bar.rotation.y = steerVis; head.rotation.y = headTurnVis; helmet.rotation.y = headTurnVis; visor.rotation.y = headTurnVis; goggle.rotation.y = headTurnVis; chinBar.rotation.y = headTurnVis;
+  /* dropper + saddle */
+  const sh = 0.47 + 0.185 * dropper;
+  const sad = P3(stDir.x * sh, stDir.y * sh); aimLimb(post, P3(SEAT_CLUSTER.x, SEAT_CLUSTER.y), sad); saddle.position.set(sad.x - 0.03, sad.y + 0.02, 0);
+  /* cranks (forward pedaling: top -> forward -> bottom) */
+  const pl = P3(Math.sin(crank) * CRANK, Math.cos(crank) * CRANK, PEDAL_Z), pr = P3(-Math.sin(crank) * CRANK, -Math.cos(crank) * CRANK, -PEDAL_Z);
+  aimLimb(crankL, P3(0, 0, 0.1), _a.set(pl.x, pl.y, 0.1)); aimLimb(crankR, P3(0, 0, -0.1), _a.set(pr.x, pr.y, -0.1));
+  pedL.position.copy(pl); pedR.position.copy(pr);
+  /* rider: hips follow the rider mass on its legs */
+  const hips = P3(cur.hx, cur.hy + rider.u, 0);
+  const tor = cur.torso * D2R;
+  const shoulders = P3(hips.x + 0.5 * Math.cos(tor), hips.y + 0.5 * Math.sin(tor), 0);
+  hipBox.position.set(hips.x, hips.y + 0.02, 0); hipBox.rotation.z = tor * 0.5;
+  aimLimb(torso, shoulders, hips);
+  const neck = tor + 35 * D2R;
+  head.position.set(shoulders.x + 0.17 * Math.cos(neck), shoulders.y + 0.17 * Math.sin(neck), 0);
+  if (HALF_SHELL){ helmet.position.set(head.position.x - 0.035, head.position.y + 0.045, 0); helmet.rotation.z = (neck - 90 * D2R) * 0.5; }
+  else { helmet.position.set(head.position.x - 0.01, head.position.y + 0.02, 0); helmet.rotation.z = neck - 90 * D2R; }
+  visor.position.set(head.position.x + 0.10, head.position.y + 0.11, 0); visor.rotation.z = -0.25;
+  chinBar.position.set(head.position.x + 0.12, head.position.y - 0.045, 0); goggle.position.set(head.position.x + 0.10, head.position.y + 0.035, 0);
+  numberPlate.position.set(BAR.x + 0.04, BAR.y + 0.02, 0);
+  const elbowMax = cur.elbowMax;
+  let elbowAng = 0, kneeAng = 0;
+  for (const [ua, la, grip, zz] of [[uArmL, lArmL, GRIP_L, 0.13], [uArmR, lArmR, GRIP_R, -0.13]]){
+    _a.set(shoulders.x, shoulders.y - 0.02, zz);
+    const r = ik(_a, grip, 0.31, 0.29, 'down', elbowMax);
+    r.joint.z = (zz > 0 ? 1 : -1) * (riderMode === 'pro' ? 0.46 : 0.30);       // elbows out wide, DH style
+    aimLimb(ua, _a, r.joint); aimLimb(la, r.joint, r.end);
+    if (zz > 0) elbowAng = angleAt(_a, r.joint, r.end);
+  }
+  for (const [th, sh, ped, zz, shoe] of [[thighL, shinL, pl, 0.10, shoeL], [thighR, shinR, pr, -0.10, shoeR]]){
+    _a.set(hips.x, hips.y, zz); _b.set(ped.x, ped.y + 0.04, ped.z);
+    const r = ik(_a, _b, 0.44, 0.44, 'fwd', cur.kneeMax);
+    aimLimb(th, _a, r.joint); aimLimb(sh, r.joint, r.end);
+    shoe.position.set(ped.x + (pedaling ? 0 : -0.02), ped.y + 0.045, ped.z); shoe.rotation.z = pedaling ? 0 : (riderMode === 'pro' ? -0.25 : 0.05);   // heels dropped
+    if (zz > 0) kneeAng = angleAt(_a, r.joint, r.end);
+  }
+  const kneePt = P3(0, 0, 0); // hip angle uses the leading (left) leg
+  {
+    _a.set(hips.x, hips.y, 0.10); _b.set(pl.x, pl.y + 0.04, PEDAL_Z);
+    const r = ik(_a, _b, 0.44, 0.44, 'fwd', cur.kneeMax);
+    jointsOut.hip = angleAt(shoulders, _a, r.joint);
+  }
+  jointsOut.knee = kneeAng; jointsOut.elbow = elbowAng; jointsOut.torso = cur.torso - Math.atan(gradeS) / D2R + chassis.phi / D2R;
+  /* camera & backdrop follow */
+  /* roll: the bike is an inverted pendulum standing on its contact line, and the only thing that can lean it is the
+     steer angle. To start a lean the rider steers OUT of the turn for a moment (countersteer: the contact line moves out
+     from under the mass), then holds the geometric steer that balances the lean. The controller below does exactly
+     that, so the bars visibly flick the wrong way at every turn-in, and the lean rate is what speed and steer give
+     rather than a spring. In the air nothing pushes back: the lean holds. Below ~8 mph the model is not meaningful
+     and the speed is floored. */
+  const H_CG = 1.05, VLEAN = Math.max(3.5, v), inAir = poseState === 'air';
+  const gyro = 0.9 * (wheelF.I * wheelF.om + wheelR.I * wheelR.om);                // spinning wheels resist being rolled
+  const steerHold = clamp(G9 * GEO.wb * Math.sin(leanVis) / (VLEAN * VLEAN), -0.5, 0.5);      // the steer that balances this lean
+  const steerCmd = inAir ? steerVis * 0.9 : clamp(steerHold - 0.35 * (corner.lean - leanVis) + 0.12 * leanVel, -0.55, 0.55);
+  steerVis += (steerCmd - steerVis) * Math.min(1, dt * 14);                       // the bars cannot move instantly
+  leanAcc = inAir ? -1.5 * leanVel
+          : (G9 / H_CG) * Math.sin(leanVis) - (VLEAN * VLEAN / (H_CG * GEO.wb)) * Math.tan(steerVis) * Math.cos(leanVis) - (1.2 + 0.4 * gyro) * leanVel;
+  leanVel += leanAcc * dt; leanVis = clamp(leanVis + leanVel * dt, -1.1, 1.1);
+  const av = Math.min(1, dt * 5);
+  headTurnVis += (clamp(-pathAt(scroll + 6).kappa * 3, -0.7, 0.7) - headTurnVis) * av;
+  /* chase camera: behind and to the right, orbitable by drag */
+  const fx = Math.cos(PW.theta), fz = Math.sin(PW.theta), rx = -fz, rz = fx;
+  const az = camAz, r = 5.6, el = 0.33 + camEl;
+  const ox = -Math.cos(az) * 0.72 + Math.sin(az) * 0.69, oz = Math.sin(az) * 0.72 + Math.cos(az) * 0.69;
+  const want = new THREE.Vector3(PW.x + (fx * ox + rx * oz) * r * Math.cos(el), chassis.y + 0.4 + r * Math.sin(el), PW.z + (fz * ox + rz * oz) * r * Math.cos(el));
+  const tgt = new THREE.Vector3(PW.x, chassis.y + 0.55, PW.z);
+  if (snapCam){ camPos.copy(want); camLook.copy(tgt); snapCam = false; }
+  camPos.lerp(want, Math.min(1, dt * 5)); camLook.lerp(tgt, Math.min(1, dt * 9));
+  camera.position.copy(camPos); camera.lookAt(camLook);
+}
+/* =============== main loop =============== */
+let last = performance.now(), acc = 0;
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (riding){ acc += dt; let n = 0; while (acc >= PDT && n < 60){ step(PDT); acc -= PDT; n++; } }
+  pose(riding ? dt : 0); updateHud(jointsOut); drawMinimap();
+  PNW.tick(now / 1000); if (window.PNW_RAVENS) window.PNW_RAVENS(now / 1000);
+  sun.position.set(camLook.x + 24, camLook.y + 44, camLook.z + 14); sun.target.position.copy(camLook);
+  renderer.render(scene, camera);
+}
+requestAnimationFrame(tick);
+window.SIM = { chassis, wheelF, wheelR, rider, get v(){ return v; }, get scroll(){ return scroll; }, get state(){ return poseState; }, seg: () => segAt(scroll)[0].name, VT, GEO, A2C, joints: jointsOut };
+</script>
